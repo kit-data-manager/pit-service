@@ -66,7 +66,7 @@ dependencies {
    implementation("org.javers:javers-spring-boot-starter-sql:3.9.0")
    
    implementation("edu.kit.datamanager:service-base:0.1")
-   implementation("edu.kit.datamanager:generic-message-consumer:0.1.0")
+  // implementation("edu.kit.datamanager:generic-message-consumer:0.1.0")
 
    implementation("com.monitorjbl:spring-json-view:0.16")
    implementation("org.postgresql:postgresql:42.2.1")

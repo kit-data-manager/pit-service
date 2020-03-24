@@ -19,12 +19,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import edu.kit.datamanager.pit.pidsystem.HandleSystemRESTAdapter;
+import edu.kit.datamanager.pit.configuration.ApplicationProperties;
+import edu.kit.datamanager.pit.pidsystem.impl.HandleSystemRESTAdapter;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
-import edu.kit.datamanager.pit.pitservice.TypingService;
+import edu.kit.datamanager.pit.pitservice.impl.TypingService;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
-import edu.kit.datamanager.pit.typeregistry.TypeRegistry;
+import edu.kit.datamanager.pit.typeregistry.impl.TypeRegistry;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.RabbitMQMessagingService;
 import java.io.IOException;
@@ -33,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InjectionPoint;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -46,7 +48,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  */
 @SpringBootApplication
 @EnableScheduling
-@ComponentScan({"edu.kit.datamanager"})
+@ComponentScan({"edu.kit.datamanager", "edu.kit.datamanager.messaging.client"})
 public class Application{
 
 //  @Autowired
@@ -60,12 +62,12 @@ public class Application{
 
   @Bean
   public ITypeRegistry typeRegistry(){
-    return new TypeRegistry("baseUrl", "prefix");
+    return new TypeRegistry();
   }
 
   @Bean
   public IIdentifierSystem identifierSystem(){
-    return new HandleSystemRESTAdapter("baseUrl", "user", "password", "prefix");
+    return new HandleSystemRESTAdapter(applicationProperties());
   }
 
   @Bean
@@ -105,9 +107,14 @@ public class Application{
 //  public ApplicationProperties applicationProperties(){
 //    return new ApplicationProperties();
 //  }
+//  @Bean
+//  public IMessagingService messagingService(){
+//    return new RabbitMQMessagingService();
+//  }
   @Bean
-  public IMessagingService messagingService(){
-    return new RabbitMQMessagingService();
+  @ConfigurationProperties("pit")
+  public ApplicationProperties applicationProperties(){
+    return new ApplicationProperties();
   }
 
   public static void main(String[] args){

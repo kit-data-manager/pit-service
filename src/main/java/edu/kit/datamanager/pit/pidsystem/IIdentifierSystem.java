@@ -1,10 +1,10 @@
 package edu.kit.datamanager.pit.pidsystem;
 
-import edu.kit.datamanager.pit.pitservice.PIDInformation;
+import edu.kit.datamanager.pit.domain.PIDInformation;
 import java.io.IOException;
 import java.util.Map;
-import edu.kit.datamanager.pit.typeregistry.PropertyDefinition;
-import edu.kit.datamanager.pit.typeregistry.TypeDefinition;
+import edu.kit.datamanager.pit.domain.PropertyDefinition;
+import edu.kit.datamanager.pit.domain.TypeDefinition;
 
 /**
  * Main abstraction interface towards the identifier system containing

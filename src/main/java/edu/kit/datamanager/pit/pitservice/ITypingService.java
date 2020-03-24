@@ -1,14 +1,16 @@
 package edu.kit.datamanager.pit.pitservice;
 
-import edu.kit.datamanager.pit.EntityClass;
-import edu.kit.datamanager.pit.InconsistentRecordsException;
+import edu.kit.datamanager.pit.common.InconsistentRecordsException;
+import edu.kit.datamanager.pit.domain.PIDInformation;
+import edu.kit.datamanager.pit.domain.EntityClass;
 import java.io.IOException;
 import java.util.List;
 
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
-import edu.kit.datamanager.pit.typeregistry.PropertyDefinition;
-import edu.kit.datamanager.pit.typeregistry.TypeDefinition;
-import edu.kit.datamanager.pit.typeregistry.ProfileDefinition;
+import edu.kit.datamanager.pit.domain.PropertyDefinition;
+import edu.kit.datamanager.pit.domain.TypeDefinition;
+import edu.kit.datamanager.pit.domain.ProfileDefinition;
+import java.net.URISyntaxException;
 
 /**
  * Core interface for clients to contact. Implementations will provide the

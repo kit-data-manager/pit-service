@@ -1,0 +1,163 @@
+{
+   "identifier": "21.T11148/b9b76f887845e32d29f7",
+   "name": "HMCKernelInformationProfile",
+   "description": "Draft Kernel Information Profile used within the Helmholtz Metadata Incubator Platform (HMC).",
+   "standards": [{
+         "natureOfApplicability": "depends",
+         "name": "21.T11148/076759916209e5d62bd5",
+         "issuer": "DTR",
+         "details": "KernelInformationProfile"
+      }, {
+         "natureOfApplicability": "depends",
+         "name": "21.T11148/1c699a5d1b4ad3ba4956",
+         "issuer": "DTR",
+         "details": "digitalObjectType\n"
+      }, {
+         "natureOfApplicability": "depends",
+         "name": "21.T11148/b8457812905b83046284",
+         "issuer": "DTR",
+         "details": "digitalObjectLocation"
+      }, {
+         "natureOfApplicability": "depends",
+         "name": "21.T11148/8074aed799118ac263ad",
+         "issuer": "DTR",
+         "details": "digitalObjectPolicy"
+      }, {
+         "natureOfApplicability": "depends",
+         "name": "21.T11148/92e200311a56800b3e47",
+         "issuer": "DTR",
+         "details": "etag"
+      }, {
+         "natureOfApplicability": "depends",
+         "name": "21.T11148/397d831aa3a9d18eb52c",
+         "issuer": "DTR",
+         "details": "dateModified"
+      }, {
+         "natureOfApplicability": "depends",
+         "name": "21.T11148/29f92bd203dd3eaa5a1f",
+         "issuer": "DTR",
+         "details": "dateCreated"
+      }, {
+         "natureOfApplicability": "depends",
+         "name": "21.T11148/c692273deb2772da307f",
+         "issuer": "DTR",
+         "details": "version"
+      }, {
+         "natureOfApplicability": "depends",
+         "name": "21.T11148/e0efd6b4c8e71c6d077b",
+         "issuer": "DTR",
+         "details": "metadataDocuments"
+      }, {
+         "natureOfApplicability": "depends",
+         "name": "21.T11148/dc54ae4b6807f5887fda",
+         "issuer": "DTR",
+         "details": "license"
+      }],
+   "provenance": {
+      "contributors": [{
+            "identifiedUsing": "Handle",
+            "name": "21.T11148/fc3224b0abc8b35bd3cb",
+            "details": "Thomas Jejkal, Karlsruhe Institute of Technology"
+         }],
+      "creationDate": "2020-03-05T13:47:48.915Z",
+      "lastModificationDate": "2020-03-06T09:22:25.992Z"
+   },
+   "expectedUses": ["Generic PID Kernel Information Type Profile used in the context of HMC to describe any kind of FAIR Digital Object."],
+   "representationsAndSemantics": [{
+         "expression": "",
+         "value": "",
+         "subSchemaRelation": "",
+         "allowAbbreviatedForm": ""
+      }],
+   "properties": [{
+         "name": "KernelInformationProfile",
+         "identifier": "21.T11148/076759916209e5d62bd5",
+         "representationsAndSemantics": [{
+               "expression": "",
+               "value": "",
+               "obligation": "Mandatory",
+               "repeatable": "No"
+            }]
+      }, {
+         "name": "digitalObjectType",
+         "identifier": "21.T11148/1c699a5d1b4ad3ba4956",
+         "representationsAndSemantics": [{
+               "expression": "",
+               "value": "",
+               "obligation": "Mandatory",
+               "repeatable": "No"
+            }]
+      }, {
+         "name": "digitalObjectLocation",
+         "identifier": "21.T11148/b8457812905b83046284",
+         "representationsAndSemantics": [{
+               "expression": "",
+               "value": "",
+               "obligation": "Mandatory",
+               "repeatable": "Yes"
+            }]
+      }, {
+         "name": "digitalObjectPolicy",
+         "identifier": "21.T11148/8074aed799118ac263ad",
+         "representationsAndSemantics": [{
+               "expression": "",
+               "value": "",
+               "obligation": "Mandatory",
+               "repeatable": "No"
+            }]
+      }, {
+         "name": "etag",
+         "identifier": "21.T11148/92e200311a56800b3e47",
+         "representationsAndSemantics": [{
+               "expression": "",
+               "value": "",
+               "obligation": "Mandatory",
+               "repeatable": "No"
+            }]
+      }, {
+         "name": "dateModified",
+         "identifier": "21.T11148/397d831aa3a9d18eb52c",
+         "representationsAndSemantics": [{
+               "expression": "",
+               "value": "",
+               "obligation": "Optional",
+               "repeatable": "No"
+            }]
+      }, {
+         "name": "dateCreated",
+         "identifier": "21.T11148/29f92bd203dd3eaa5a1f",
+         "representationsAndSemantics": [{
+               "expression": "",
+               "value": "",
+               "obligation": "Mandatory",
+               "repeatable": "No"
+            }]
+      }, {
+         "name": "version",
+         "identifier": "21.T11148/c692273deb2772da307f",
+         "representationsAndSemantics": [{
+               "expression": "",
+               "value": "",
+               "obligation": "Optional",
+               "repeatable": "No"
+            }]
+      }, {
+         "name": "metadataDocuments",
+         "identifier": "21.T11148/e0efd6b4c8e71c6d077b",
+         "representationsAndSemantics": [{
+               "expression": "",
+               "value": "",
+               "obligation": "Optional",
+               "repeatable": "Yes"
+            }]
+      }, {
+         "name": "license",
+         "identifier": "21.T11148/dc54ae4b6807f5887fda",
+         "representationsAndSemantics": [{
+               "expression": "",
+               "value": "",
+               "obligation": "Mandatory",
+               "repeatable": "No"
+            }]
+      }]
+}

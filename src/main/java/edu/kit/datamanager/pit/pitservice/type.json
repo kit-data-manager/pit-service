@@ -1,0 +1,37 @@
+{
+   "identifier": "21.T11148/1c699a5d1b4ad3ba4956",
+   "name": "digitalObjectType",
+   "description": "Handle points to type definition in DTR for this type of object. Distinguishing metadata from data objects is a client decision within a particular usage context, which may to some extent rely on the digitalObjectType value provided. (context : KernelInformation)\n",
+   "standards": [{
+         "natureOfApplicability": "depends",
+         "name": "21.T11148/3626040cadcac1571685",
+         "issuer": "DTR"
+      }],
+   "provenance": {
+      "contributors": [{
+            "identifiedUsing": "Text",
+            "name": "Ulrich Schwardmann",
+            "details": "GWDG"
+         }],
+      "creationDate": "2019-04-01T11:01:52.469Z",
+      "lastModificationDate": "2019-11-14T12:28:19.011Z"
+   },
+   "representationsAndSemantics": [{
+         "expression": "",
+         "value": "",
+         "subSchemaRelation": "denyAdditionalProperties",
+         "allowAbbreviatedForm": "Yes"
+      }],
+   "properties": [{
+         "name": "digitalObjectType",
+         "identifier": "21.T11148/3626040cadcac1571685",
+         "representationsAndSemantics": [{
+               "expression": "",
+               "value": "",
+               "obligation": "Mandatory",
+               "repeatable": "No",
+               "allowOmitSubsidiaries": "Yes"
+            }]
+      }],
+   "validationSchema": "{\"definitions\": {\"21.T11148_3626040cadcac1571685\": {\"pattern\": \"^([0-9,A-Z,a-z])+(\\\\.([0-9,A-Z,a-z])+)*\\\\/([!-~])+$\", \"type\": \"string\", \"description\": \"Handle-Identifier-ASCII@21.T11148/3626040cadcac1571685\"}}, \"$schema\": \"http://json-schema.org/draft-04/schema#\", \"description\": \"digitalObjectType@21.T11148/1c699a5d1b4ad3ba4956\", \"$ref\": \"#/definitions/21.T11148_3626040cadcac1571685\"}"
+}

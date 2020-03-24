@@ -1,0 +1,25 @@
+{
+   "name": "Handle-Identifier-ASCII",
+   "provenance": {
+      "creationDate": "2016-05-03T16:19:51.674Z",
+      "lastModificationDate": "2017-02-09T13:13:46.218Z",
+      "contributors": [{
+            "identifiedUsing": "Text",
+            "name": "Ulrich Schwardmann",
+            "details": "GWDG"
+         }]
+   },
+   "validationSchema": "{\"definitions\": {}, \"$schema\": \"http://json-schema.org/draft-04/schema#\", \"type\": \"string\", \"description\": \"Handle-Identifier-ASCII@21.T11148/3626040cadcac1571685\", \"pattern\": \"^([0-9,A-Z,a-z])+(\\\\.([0-9,A-Z,a-z])+)*\\\\/([!-~])+$\"}",
+   "standards": [{
+         "natureOfApplicability": "depends",
+         "name": "3651",
+         "issuer": "RFC"
+      }],
+   "identifier": "21.T11148/3626040cadcac1571685",
+   "properties": [{
+         "dataType": "string",
+         "regexp": "^([0-9,A-Z,a-z])+(\\\\.([0-9,A-Z,a-z])+)*\\\\/([!-~])+$",
+         "flavour": "ecma-262-RegExp"
+      }],
+   "description": "Handle-String with ASCII prefix in its general syntax"
+}
