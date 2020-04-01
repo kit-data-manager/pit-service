@@ -1,10 +1,9 @@
 package edu.kit.datamanager.pit.pidsystem;
 
-import edu.kit.datamanager.pit.domain.PIDInformation;
+import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.TypeDefinition;
 import java.io.IOException;
 import java.util.Map;
-import edu.kit.datamanager.pit.domain.PropertyDefinition;
-import edu.kit.datamanager.pit.domain.TypeDefinition;
 
 /**
  * Main abstraction interface towards the identifier system containing
@@ -32,18 +31,18 @@ public interface IIdentifierSystem {
 	 *         pid is not registered, the method returns null.
 	 * @throws IOException
 	 */
-	public PIDInformation queryAllProperties(String pid) throws IOException;
+	public PIDRecord queryAllProperties(String pid) throws IOException;
 
 	/**
 	 * Queries a single property from the given PID.
 	 * 
 	 * @param pid
-	 * @param propertyDefinition
+	 * @param typeDefinition
 	 * @return the property value or null if there is no property of given name
 	 *         defined in this PID record.
 	 * @throws IOException
 	 */
-	public String queryProperty(String pid, PropertyDefinition propertyDefinition) throws IOException;
+	public String queryProperty(String pid, TypeDefinition typeDefinition) throws IOException;
 
 	/**
 	 * Registers a new PID with given property values. The method decides on a
@@ -74,7 +73,7 @@ public interface IIdentifierSystem {
 	 *         If the pid is not registered, the method returns null.
 	 * @throws IOException
 	 */
-	public PIDInformation queryByType(String pid, TypeDefinition typeDefinition) throws IOException;
+	public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws IOException;
 
 	/**
 	 * Remove the given PID. Obviously, this method is only for testing
