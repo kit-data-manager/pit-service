@@ -15,7 +15,6 @@ import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
  */
 public interface ITypingService extends IIdentifierSystem {
 
-   
 //**
 //   * Retrieves a property definition
 //   *
@@ -25,16 +24,15 @@ public interface ITypingService extends IIdentifierSystem {
 //   * @throws IOException
 //   */
 //  public PropertyDefinition describeProperty(String propertyIdentifier) throws IOException;
-
-  /**
-   * Retrieves a type definition
-   *
-   * @param typeIdentifier
-   * @return null if there is no type with given identifier, the definition
-   * record otherwise.
-   * @throws IOException
-   */
-  public edu.kit.datamanager.pit.domain.TypeDefinition describeType(String typeIdentifier) throws IOException;
+    /**
+     * Retrieves a type definition
+     *
+     * @param typeIdentifier
+     * @return null if there is no type with given identifier, the definition
+     * record otherwise.
+     * @throws IOException
+     */
+    public edu.kit.datamanager.pit.domain.TypeDefinition describeType(String typeIdentifier) throws IOException;
 
     public boolean conformsToType(String pid, String typeIdentifier) throws IOException;
 
@@ -50,7 +48,6 @@ public interface ITypingService extends IIdentifierSystem {
 //     * @throws IOException
 //     */
 //    public Object genericResolve(String pid) throws IOException;
-
     /**
      * Queries a single property from the PID.
      *

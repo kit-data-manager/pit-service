@@ -5,9 +5,12 @@ import java.io.IOException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
+import edu.kit.datamanager.pit.util.TypeValidationUtils;
 import edu.kit.datamanager.pit.web.ITypingRestResource;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -287,6 +290,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Schema(description = "PID Information Types API")
 public class TypingRESTResourceImpl implements ITypingRestResource {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TypingRESTResourceImpl.class);
+
     @Autowired
     protected ITypingService typingService;
 
@@ -299,9 +304,15 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
-        //
+        LOG.trace("Performing isPidMatchingProfile({}).", identifier);
         String profileId = getContentPathFromRequest("profile", request);
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        LOG.trace("Validating PID record with identifier {} against profile with identifier {} from request path.", identifier, profileId);
+        if (typingService.conformsToType(identifier, profileId)) {
+            LOG.trace("PID record with identifier {} is matching profile with identifier {}.", identifier, profileId);
+            return ResponseEntity.status(200).build();
+        }
+        LOG.error("PID record with identifier {} is NOT matching profile with identifier {}.", identifier, profileId);
+        return ResponseEntity.status(HttpStatus.CONFLICT.value()).body("Record with identifier " + identifier + " not matching profile with identifier " + profileId + ".");
     }
 
     @Override
@@ -309,10 +320,27 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
-        //
-        String typeId = getContentPathFromRequest("type", request);
 
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        LOG.trace("Performing isResourceMatchingType({}).", identifier);
+        String typeId = getContentPathFromRequest("type", request);
+        LOG.trace("Obtaining type definition for identifier {}.", typeId);
+        TypeDefinition typeDef = typingService.describeType(typeId);
+
+        if (typeDef == null) {
+            LOG.error("No type definition found for identifier {}.", typeId);
+            return ResponseEntity.status(404).body("No type found for identifier " + typeId + ".");
+        }
+
+        LOG.trace("Reading PID record for identifier {}.", identifier);
+        PIDRecord record = typingService.queryAllProperties(identifier);
+        LOG.trace("Validating PID record with identifier {} against type with id {} from request path.", identifier, typeId);
+        if (TypeValidationUtils.isValid(record, typeDef)) {
+            LOG.trace("PID record with identifier {} is matching type with identifier {}.", identifier, typeId);
+            return ResponseEntity.ok().build();
+        }
+
+        LOG.error("PID record with identifier {} is NOT matching type with identifier {}.", identifier, typeId);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("Record with identifier " + identifier + " not matching type with identifier " + typeId + ".");
     }
 
     @Override
@@ -320,13 +348,18 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
-        //
+        LOG.trace("Performing getProfile().");
+
         String profileId = getContentPathFromRequest("profile", request);
+        LOG.trace("Obtained profile identifier {} from request. Loading profile definition.", profileId);
+
         //read profile from type registry
         TypeDefinition profileDef = typingService.describeType(profileId);
         if (profileDef == null) {
-            return ResponseEntity.status(404).build();
+            LOG.error("No profile definition found for identifier {}.", profileId);
+            return ResponseEntity.status(404).body("No profile found for identifier " + profileId + ".");
         }
+        LOG.trace("Returning profile definition for identifier {}.", profileId);
         return ResponseEntity.status(200).body(profileDef);
     }
 
@@ -353,10 +386,15 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
+        LOG.trace("Performing isPidRegistered().");
         String pid = getContentPathFromRequest("pid", request);
+        LOG.trace("Obtained PID {} from request.", pid);
+
         if (typingService.isIdentifierRegistered(pid)) {
+            LOG.trace("PID successfully checked.");
             return ResponseEntity.ok().build();
         } else {
+            LOG.error("PID {} not found at configured identifier system.", pid);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Identifier with value " + pid + " not found.");
         }
     }

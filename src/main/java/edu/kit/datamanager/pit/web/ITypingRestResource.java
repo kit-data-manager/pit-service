@@ -47,16 +47,19 @@ public interface ITypingRestResource {
      * @throws IOException
      */
     @RequestMapping(path = "/profile/**", method = RequestMethod.HEAD)
-    @Operation(summary = "PID matching profile?", description = "Check if the PID record accessible via the provided identifier is matching the profile provided as the last path segment(s).")
+    @Operation(summary = "PID matching profile?",
+            description = "Check if the PID record accessible via the provided identifier is matching the profile provided "
+            + "as the last path segment(s). The check only includes the test for mandatory fields according to the profile. For "
+            + "in-depth tests endpoint /type/{identifier} should be used.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Found"),
         @ApiResponse(responseCode = "404", description = "Not found")
     })
-    public ResponseEntity isPidMatchingProfile(@RequestParam("identifier") String identifier, 
+    public ResponseEntity isPidMatchingProfile(@RequestParam("identifier") String identifier,
             final WebRequest request,
-          final HttpServletResponse response,
-          final UriComponentsBuilder uriBuilder
-) throws IOException;
+            final HttpServletResponse response,
+            final UriComponentsBuilder uriBuilder
+    ) throws IOException;
 
     /**
      * Check if a certain resource with a given PID is matching a type. The type
@@ -70,15 +73,18 @@ public interface ITypingRestResource {
      * @throws IOException
      */
     @RequestMapping(path = "/type/**", method = RequestMethod.HEAD)
-    @Operation(summary = "Resource matching type?", description = "Check if the resource accessible via the provided identifier is matching the datatype provided as the last path segment(s).")
+    @Operation(summary = "Resource matching type?",
+            description = "Check if the resource accessible via the provided identifier is matching the "
+            + "type provided as the last path segment(s). The check includes the test if all mandatory properties are in the record as well as "
+            + "an in-depth tests of the single elements for matching the sub-type's schema.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Found"),
         @ApiResponse(responseCode = "404", description = "Not found")
     })
-    public ResponseEntity isResourceMatchingType(@RequestParam("identifier") String identifier, 
+    public ResponseEntity isResourceMatchingType(@RequestParam("identifier") String identifier,
             final WebRequest request,
-          final HttpServletResponse response,
-          final UriComponentsBuilder uriBuilder) throws IOException;
+            final HttpServletResponse response,
+            final UriComponentsBuilder uriBuilder) throws IOException;
 
     /**
      * Get a profile by its identifier presented by the last path segment(s).
@@ -94,10 +100,10 @@ public interface ITypingRestResource {
         @ApiResponse(responseCode = "200", description = "Found"),
         @ApiResponse(responseCode = "404", description = "Not found")
     })
-    public ResponseEntity getProfile( 
+    public ResponseEntity getProfile(
             final WebRequest request,
-          final HttpServletResponse response,
-          final UriComponentsBuilder uriBuilder) throws IOException;
+            final HttpServletResponse response,
+            final UriComponentsBuilder uriBuilder) throws IOException;
 
     /**
      * Create a new PID using the record information provided in the request
@@ -118,10 +124,10 @@ public interface ITypingRestResource {
         @ApiResponse(responseCode = "200", description = "Found"),
         @ApiResponse(responseCode = "404", description = "Not found")
     })
-    public ResponseEntity createPID(@RequestBody final PIDRecord record, 
+    public ResponseEntity createPID(@RequestBody final PIDRecord record,
             final WebRequest request,
-          final HttpServletResponse response,
-          final UriComponentsBuilder uriBuilder) throws IOException;
+            final HttpServletResponse response,
+            final UriComponentsBuilder uriBuilder) throws IOException;
 
     /**
      * Create a new PID using the record information provided in the request
@@ -142,10 +148,10 @@ public interface ITypingRestResource {
         @ApiResponse(responseCode = "200", description = "Found"),
         @ApiResponse(responseCode = "404", description = "Not found")
     })
-    public ResponseEntity updatePID(@RequestBody final PIDRecord record, 
+    public ResponseEntity updatePID(@RequestBody final PIDRecord record,
             final WebRequest request,
-          final HttpServletResponse response,
-          final UriComponentsBuilder uriBuilder) throws IOException;
+            final HttpServletResponse response,
+            final UriComponentsBuilder uriBuilder) throws IOException;
 
     /**
      * Check if a certain PID provided as path segment(s) exist.
@@ -161,10 +167,10 @@ public interface ITypingRestResource {
         @ApiResponse(responseCode = "200", description = "Found"),
         @ApiResponse(responseCode = "404", description = "Not found")
     })
-    public ResponseEntity isPidRegistered( 
+    public ResponseEntity isPidRegistered(
             final WebRequest request,
-          final HttpServletResponse response,
-          final UriComponentsBuilder uriBuilder) throws IOException;
+            final HttpServletResponse response,
+            final UriComponentsBuilder uriBuilder) throws IOException;
 
     ////////////////
     ////////////////

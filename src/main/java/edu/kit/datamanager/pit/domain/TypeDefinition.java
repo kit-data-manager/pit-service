@@ -15,6 +15,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import lombok.Data;
+import org.everit.json.schema.Schema;
+import org.everit.json.schema.ValidationException;
+import org.everit.json.schema.loader.SchemaLoader;
+import org.json.JSONObject;
 
 /**
  *
@@ -26,6 +30,13 @@ public class TypeDefinition {
 
     private String name;
     private String identifier;
+    private String description;
+    private boolean optional = false;
+    private boolean repeatable = false;
+    private String expression;
+    private String value;
+    private Schema jsonSchema;
+
     private ProvenanceInformation provenance;
     @JsonProperty("properties")
     private Map<String, TypeDefinition> subTypes = new HashMap<>();
@@ -40,7 +51,43 @@ public class TypeDefinition {
         entries.forEach((entry) -> {
             props.add(entry.getKey());
         });
+
         return props;
+    }
+
+    public void setSchema(String schema) {
+        if (schema == null) {
+            return;
+        }
+
+        JSONObject jsonSchema = new JSONObject(schema);
+        this.jsonSchema = SchemaLoader.load(jsonSchema);
+        // schema.validate(jsonSubject);
+    }
+//^([0-9]{4})-([0]?[1-9]|1[0-2])-([0-2][0-9]|3[0-1])(T([0-1][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9](.[0-9]*)?(Z|([+|-]([0-1][0-9]|2[0-3]):[0-5][0-9])){1}))$
+//^([0-9]{4})([-]){1,1}[0]?[1-9]|1[0-2])([-]){1,1}([0-2][0-9]|3[0-1])(T([0-1][0-9]|2[0-3])([:]){1,1}([0-5][0-9])([:]){1,1}([0-5][0-9](.[0-9]*)?(Z|([+|-]([0-1][0-9]|2[0-3]):[0-5][0-9])){1}))$"
+
+    public boolean validate(String document) {
+        System.out.println("VALIDATE " + document);
+        if (jsonSchema != null) {
+            Object toValidate = document;
+            if (document.startsWith("{")) {
+                toValidate = new JSONObject(document);
+            }
+            try {
+                jsonSchema.validate(toValidate);
+                System.out.println("Is Valid!");
+            } catch (ValidationException ex) {
+                ex.printStackTrace();
+                System.out.println("FAILED!");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean isOptional(String property) {
+        return subTypes.get(property).isOptional();
     }
 
     public void addSubType(TypeDefinition subType) {

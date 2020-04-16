@@ -1,22 +1,22 @@
 buildscript {
-   repositories { 
-      mavenLocal()
-      jcenter()
-      mavenCentral()
-   }
-   dependencies {
-      classpath("org.springframework.boot:spring-boot-gradle-plugin:2.2.2.RELEASE")
-      classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.9.2'
-      //classpath 'org.kordamp.gradle:stats-gradle-plugin:0.2.2'
-   }
+    repositories { 
+        mavenLocal()
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.2.2.RELEASE")
+        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.9.2'
+        //classpath 'org.kordamp.gradle:stats-gradle-plugin:0.2.2'
+    }
 }
 
 plugins { 
-   id 'io.franzbecker.gradle-lombok' version '1.14'
-   id "io.spring.dependency-management" version "1.0.8.RELEASE" 
-   id "com.github.kt3k.coveralls" version "2.8.1" 
-   id "org.owasp.dependencycheck" version "3.1.2"
-   id "org.asciidoctor.convert" version "1.5.3"
+    id 'io.franzbecker.gradle-lombok' version '1.14'
+    id "io.spring.dependency-management" version "1.0.8.RELEASE" 
+    id "com.github.kt3k.coveralls" version "2.8.1" 
+    id "org.owasp.dependencycheck" version "3.1.2"
+    id "org.asciidoctor.convert" version "1.5.3"
 }
 
 apply plugin: 'java'
@@ -26,117 +26,119 @@ apply plugin: 'io.spring.dependency-management'
 
 
 jar {
-   baseName = 'pit-service'
-   version =  '0.1'
+    baseName = 'pit-service'
+    version =  '0.1'
 }
 
 repositories {
-   mavenLocal() 
-   jcenter()
-   mavenCentral()
-   maven { url 'http://oss.jfrog.org/artifactory/oss-snapshot-local/' }
+    mavenLocal() 
+    jcenter()
+    mavenCentral()
+    maven { url 'http://oss.jfrog.org/artifactory/oss-snapshot-local/' }
+    maven { url 'https://jitpack.io' }
 }
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
  
 configurations {
-   all*.exclude module : 'spring-boot-starter-logging'
+    all*.exclude module : 'spring-boot-starter-logging'
 }
 
 lombok {
-   version = '1.18.10'
-   sha256 = ""
+    version = '1.18.10'
+    sha256 = ""
 }
 
 if (project.hasProperty('travis')) {
-   println 'Using travis profile for building ' + project.getName()
-   apply from: 'gradle/build_dependencies.gradle'
-   apply from: 'gradle/profile-travis.gradle'
+    println 'Using travis profile for building ' + project.getName()
+    apply from: 'gradle/build_dependencies.gradle'
+    apply from: 'gradle/profile-travis.gradle'
 } else if (project.hasProperty('release') || project.hasProperty('clean-release')) {
-   println 'Using release profile for building ' + project.getName()
-   apply from: 'gradle/build_dependencies.gradle'
-   apply from: 'gradle/profile-release.gradle'   
+    println 'Using release profile for building ' + project.getName()
+    apply from: 'gradle/build_dependencies.gradle'
+    apply from: 'gradle/profile-release.gradle'   
 }
 
 dependencies {
-   implementation("org.springframework.boot:spring-boot-starter-data-rest")
-   implementation("org.springframework.boot:spring-boot-starter-mail") 
-   implementation("org.javers:javers-spring-boot-starter-sql:3.9.0")
+    implementation("org.springframework.boot:spring-boot-starter-data-rest")
+    implementation("org.springframework.boot:spring-boot-starter-mail") 
+    implementation("org.javers:javers-spring-boot-starter-sql:3.9.0")
    
-   implementation("edu.kit.datamanager:service-base:0.1")
-  // implementation("edu.kit.datamanager:generic-message-consumer:0.1.0")
+    implementation("edu.kit.datamanager:service-base:0.1")
+    // implementation("edu.kit.datamanager:generic-message-consumer:0.1.0")
 
-   implementation("com.monitorjbl:spring-json-view:0.16")
-   implementation("org.postgresql:postgresql:42.2.1")
-   implementation("org.apache.tika:tika-core:1.18") 
-   implementation ("org.javers:javers-core:5.3.2")
-
-   //Java 11 Support 
-   implementation('javax.xml.bind:jaxb-api:2.2.11')
-   implementation('com.sun.xml.bind:jaxb-core:2.2.11')
-   implementation('com.sun.xml.bind:jaxb-impl:2.2.11')
-   implementation('javax.activation:activation:1.1.1')
-   implementation('org.javassist:javassist:3.23.1-GA')
+    implementation("com.monitorjbl:spring-json-view:0.16")
+    implementation("org.postgresql:postgresql:42.2.1")
+    implementation("org.apache.tika:tika-core:1.18") 
+    implementation ("org.javers:javers-core:5.3.2")
+    implementation ("com.github.everit-org.json-schema:org.everit.json.schema:1.3.0")
     
-   implementation('org.apache.httpcomponents:httpclient:4.5.6')
+    //Java 11 Support 
+    implementation('javax.xml.bind:jaxb-api:2.2.11')
+    implementation('com.sun.xml.bind:jaxb-core:2.2.11')
+    implementation('com.sun.xml.bind:jaxb-impl:2.2.11')
+    implementation('javax.activation:activation:1.1.1')
+    implementation('org.javassist:javassist:3.23.1-GA')
+    
+    implementation('org.apache.httpcomponents:httpclient:4.5.6')
 
-   testImplementation("com.h2database:h2:1.4.194") 
-   testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
-   testImplementation("org.springframework.boot:spring-boot-starter-test")
-   testImplementation("org.springframework:spring-test")
-   testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("com.h2database:h2:1.4.194") 
+    testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework:spring-test")
+    testImplementation("org.springframework.security:spring-security-test")
    
-   //Java 11 Support 
-   testImplementation("org.mockito:mockito-core:2.18.0")
-   testImplementation("org.powermock:powermock-module-junit4:2.0.0-beta.5")
-   testImplementation("org.powermock:powermock-api-mockito2:2.0.0-beta.5")
+    //Java 11 Support 
+    testImplementation("org.mockito:mockito-core:2.18.0")
+    testImplementation("org.powermock:powermock-module-junit4:2.0.0-beta.5")
+    testImplementation("org.powermock:powermock-api-mockito2:2.0.0-beta.5")
 
-   testImplementation('org.springframework.restdocs:spring-restdocs-mockmvc:2.0.2.RELEASE')
-   testImplementation('org.asciidoctor:asciidoctor-gradle-plugin:1.5.9.2')
-   asciidoctor('org.springframework.restdocs:spring-restdocs-asciidoctor:2.0.2.RELEASE')
-   asciidoctor('com.github.allati.asciidoctor.monotree:asciidoctor-extension-monotree:0.0.1')
+    testImplementation('org.springframework.restdocs:spring-restdocs-mockmvc:2.0.2.RELEASE')
+    testImplementation('org.asciidoctor:asciidoctor-gradle-plugin:1.5.9.2')
+    asciidoctor('org.springframework.restdocs:spring-restdocs-asciidoctor:2.0.2.RELEASE')
+    asciidoctor('com.github.allati.asciidoctor.monotree:asciidoctor-extension-monotree:0.0.1')
 }
 
 bootJar {
-   manifest {
-      attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'
-   }
-   dependsOn asciidoctor
-   from ("${asciidoctor.outputDir}/html5") {
-      into 'static/docs'
-   }
-   launchScript()
+    manifest {
+        attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'
+    }
+    dependsOn asciidoctor
+    from ("${asciidoctor.outputDir}/html5") {
+        into 'static/docs'
+    }
+    launchScript()
 }
 
 test {
-   environment "spring.config.location", "classpath:/test/"
+    environment "spring.config.location", "classpath:/test/"
 
-   testLogging {
-      outputs.upToDateWhen {false}
-      showStandardStreams = true
-   }
+    testLogging {
+        outputs.upToDateWhen {false}
+        showStandardStreams = true
+    }
 }
 
 
 jacoco {
-   toolVersion = "0.8.2"
+    toolVersion = "0.8.2"
 }
 
 jacocoTestReport {
-   reports {
-      xml.enabled true
-      html.enabled true
-   }
-   afterEvaluate {
-      //exclude some classes/package from code coverage report
-      files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [\
+    reports {
+        xml.enabled true
+        html.enabled true
+    }
+    afterEvaluate {
+        //exclude some classes/package from code coverage report
+        classDirectories.setFrom(files(classDirectories.files.collect {
+                    fileTree(dir: it, exclude: [\
             'edu/kit/datamanager/collection/configuration/**', \
             'edu/kit/datamanager/collection/filters/**', \
             'edu/kit/datamanager/collection/Application*'
-               ])
-         })
-   }
+                        ])
+                }))
+    }
 }
 

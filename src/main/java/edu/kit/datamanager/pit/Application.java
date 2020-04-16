@@ -22,6 +22,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.pidsystem.impl.HandleSystemRESTAdapter;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
+import edu.kit.datamanager.pit.pidsystem.impl.FakeIdentifierSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.TypingService;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
@@ -67,7 +68,7 @@ public class Application{
 
   @Bean
   public IIdentifierSystem identifierSystem(){
-    return new HandleSystemRESTAdapter(applicationProperties());
+    return new FakeIdentifierSystem();// new HandleSystemRESTAdapter(applicationProperties());
   }
 
   @Bean

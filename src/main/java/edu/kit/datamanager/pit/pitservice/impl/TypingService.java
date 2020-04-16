@@ -13,6 +13,8 @@ import edu.kit.datamanager.pit.common.InconsistentRecordsException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import java.net.URISyntaxException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Core implementation class that offers the combined higher-level services
@@ -20,6 +22,8 @@ import java.net.URISyntaxException;
  *
  */
 public class TypingService implements ITypingService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TypingService.class);
 
     protected final IIdentifierSystem identifierSystem;
     protected final ITypeRegistry typeRegistry;
@@ -32,35 +36,42 @@ public class TypingService implements ITypingService {
 
     @Override
     public boolean isIdentifierRegistered(String pid) throws IOException {
+        LOG.trace("Performing isIdentifierRegistered({}).", pid);
         return identifierSystem.isIdentifierRegistered(pid);
     }
 
-    
     @Override
     public String queryProperty(String pid, TypeDefinition typeDefinition) throws IOException {
+        LOG.trace("Performing queryProperty({}, TypeDefinition#{}).", pid, typeDefinition.getIdentifier());
         return identifierSystem.queryProperty(pid, typeDefinition);
     }
-    
+
     @Override
     public String registerPID(Map<String, String> properties) throws IOException {
+        LOG.trace("Performing registerPID({}).", properties);
         return identifierSystem.registerPID(properties);
     }
 
     @Override
-    public PIDRecord queryByType(String pid, edu.kit.datamanager.pit.domain.TypeDefinition typeDefinition) throws IOException {
+    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws IOException {
+        LOG.trace("Performing queryByType({}, TypeDefinition#{}).", pid, typeDefinition.getIdentifier());
         return identifierSystem.queryByType(pid, typeDefinition);
     }
 
     @Override
     public boolean deletePID(String pid) {
+        LOG.trace("Performing deletePID({}).", pid);
         return identifierSystem.deletePID(pid);
     }
 
     @Override
-    public edu.kit.datamanager.pit.domain.TypeDefinition describeType(String typeIdentifier) throws IOException {
+    public TypeDefinition describeType(String typeIdentifier) throws IOException {
+        LOG.trace("Performing describeType({}).", typeIdentifier);
         try {
+            LOG.trace("Querying for type with identifier {}.", typeIdentifier);
             return typeRegistry.queryTypeDefinition(typeIdentifier);
         } catch (URISyntaxException ex) {
+            LOG.error("Failed to query for type with identifier " + typeIdentifier + ".", ex);
             throw new InvalidConfigException("Typing service misconfigured.");
         }
     }
@@ -68,17 +79,21 @@ public class TypingService implements ITypingService {
     @Override
     public boolean conformsToType(String pid, String typeIdentifier) throws IOException {
         // resolve type record
-        edu.kit.datamanager.pit.domain.TypeDefinition typeDef = null;
+        LOG.trace("Performing conformsToType({}, {}).", pid, typeIdentifier);
+        TypeDefinition typeDef = null;
         try {
+            LOG.trace("Query for type with identifier {}.", typeIdentifier);
             typeDef = typeRegistry.queryTypeDefinition(typeIdentifier);
         } catch (URISyntaxException ex) {
             throw new InvalidConfigException("Typing service misconfigured.");
         }
 
         if (typeDef == null) {
+            LOG.error("Unable to retrieve type for identifier {}.", typeIdentifier);
             throw new IllegalArgumentException("Unknown type: " + typeIdentifier);
         }
         // resolve PID
+        LOG.trace("Resolving PID {}.", pid);
         PIDRecord pidInfo = identifierSystem.queryAllProperties(pid);
         /*
      * Now go through all mandatory properties of the type and check whether
@@ -86,57 +101,34 @@ public class TypingService implements ITypingService {
      * and the type definition record properties are property identifiers
      * (not names)!
          */
-
+        LOG.trace("Validating {} record properties against type with identifier {}.", pidInfo.getEntries().size(), typeIdentifier);
         for (String prop : typeDef.getAllProperties()) {
-            if (!pidInfo.hasProperty(prop)) {
+            LOG.trace("Checking property {} from type definition.", prop);
+            if (!typeDef.isOptional(prop) && !pidInfo.hasProperty(prop)) {
+                LOG.error("Property {} is not optional and was not found in record. Record {} is not matching type {}.", prop, pid, typeIdentifier);
                 //property 'prop' is missing from type info
                 return false;
+            } else {
+                LOG.trace("Property {} found in record.", prop);
             }
         }
-
+        LOG.trace("All mandatory properties were found in record. Record {} is matching type {}.", pid, typeIdentifier);
         return true;
     }
 
-//    @Override
-//    public Object genericResolve(String pid) throws IOException {
-//        // ask identifier system whether this is a type registry record
-//        boolean istypereg = typeRegistry.isTypeRegistryPID(pid);
-//        if (istypereg) {
-//            Object obj = null;
-//            try {
-//                obj = typeRegistry.query(pid);
-//            } catch (URISyntaxException ex) {
-//                throw new InvalidConfigException("Typing service misconfigured.");
-//            }
-//
-//            if (obj == null) {
-//                throw new IOException(
-//                        "Conflicting records: Identifier registered in PID system and indicating a registry entry, but not in type registry / registered in an unknown type registry!");
-//            }
-//            if (obj instanceof PropertyDefinition) {
-//                return (PropertyDefinition) obj;
-//            } else if (obj instanceof TypeDefinition) {
-//                return (TypeDefinition) obj;
-//            } else if (obj instanceof ProfileDefinition) {
-//                return (ProfileDefinition) obj;
-//            } else {
-//                throw new IOException("Unknown kind of type registry entry!");
-//            }
-//        } else {
-//            // this is a generic PID record (or unresolvable)
-//            return queryAllProperties(pid);
-//        }
-//    }
-
     @Override
     public PIDRecord queryAllProperties(String pid) throws IOException {
+        LOG.trace("Performing queryAllProperties({}).", pid);
         return identifierSystem.queryAllProperties(pid);
     }
 
     @Override
     public PIDRecord queryAllProperties(String pid, boolean includePropertyNames)
             throws IOException, InconsistentRecordsException {
+        LOG.trace("Performing queryAllProperties({}, {}).", pid, includePropertyNames);
         PIDRecord pidInfo = identifierSystem.queryAllProperties(pid);
+        LOG.trace("PID record found. {}", (includePropertyNames) ? "Adding property names." : "Returning result.");
+
         if (includePropertyNames) {
             enrichPIDInformationRecord(pidInfo);
         }
@@ -145,12 +137,16 @@ public class TypingService implements ITypingService {
 
     @Override
     public PIDRecord queryProperty(String pid, String propertyIdentifier) throws IOException {
+        LOG.trace("Performing queryProperty({}, {}).", pid, propertyIdentifier);
         PIDRecord pidInfo = new PIDRecord();
         // query type registry
-        edu.kit.datamanager.pit.domain.TypeDefinition typeDef;
+        TypeDefinition typeDef;
         try {
+            LOG.trace("Querying for type with identifier {}.", propertyIdentifier);
             typeDef = typeRegistry.queryTypeDefinition(propertyIdentifier);
         } catch (URISyntaxException ex) {
+            LOG.error("Querying for type with identifier {}.", propertyIdentifier);
+
             throw new InvalidConfigException("Typing service misconfigured.");
         }
 
@@ -165,7 +161,7 @@ public class TypingService implements ITypingService {
         // enrich record by querying type registry for all property definitions
         // to get the property names
         for (String typeIdentifier : pidInfo.getPropertyIdentifiers()) {
-            edu.kit.datamanager.pit.domain.TypeDefinition typeDef;
+            TypeDefinition typeDef;
             try {
                 typeDef = typeRegistry.queryTypeDefinition(typeIdentifier);
             } catch (URISyntaxException ex) {
@@ -183,7 +179,7 @@ public class TypingService implements ITypingService {
     @Override
     public PIDRecord queryByType(String pid, String typeIdentifier, boolean includePropertyNames)
             throws IOException, InconsistentRecordsException {
-        edu.kit.datamanager.pit.domain.TypeDefinition typeDef;
+        TypeDefinition typeDef;
         try {
             typeDef = typeRegistry.queryTypeDefinition(typeIdentifier);
         } catch (URISyntaxException ex) {
@@ -204,7 +200,7 @@ public class TypingService implements ITypingService {
     @Override
     public PIDRecord queryByTypeWithConformance(String pid, String typeIdentifier, boolean includePropertyNames)
             throws IOException, InconsistentRecordsException {
-        edu.kit.datamanager.pit.domain.TypeDefinition typeDef;
+        TypeDefinition typeDef;
 
         try {
             typeDef = typeRegistry.queryTypeDefinition(typeIdentifier);
@@ -241,7 +237,7 @@ public class TypingService implements ITypingService {
         }
         HashSet<String> propertiesInTypes = new HashSet<>();
         for (String typeIdentifier : typeIdentifiers) {
-            edu.kit.datamanager.pit.domain.TypeDefinition typeDef = null;
+            TypeDefinition typeDef = null;
             try {
                 typeDef = typeRegistry.queryTypeDefinition(typeIdentifier);
             } catch (URISyntaxException ex) {
@@ -257,19 +253,6 @@ public class TypingService implements ITypingService {
         return pidInfo;
     }
 
-//    @Override
-//    public EntityClass determineEntityClass(String identifier) throws IOException {
-//        if (typeRegistry.isTypeRegistryPID(identifier)) {
-//            // need to ask type registry about it
-//            try {
-//                return typeRegistry.determineEntityClass(identifier);
-//            } catch (URISyntaxException ex) {
-//                throw new InvalidConfigException("Typing service misconfigured.");
-//            }
-//        } else {
-//            return EntityClass.OBJECT;
-//        }
-//    }
     public ITypeRegistry getTypeRegistry() {
         return typeRegistry;
     }

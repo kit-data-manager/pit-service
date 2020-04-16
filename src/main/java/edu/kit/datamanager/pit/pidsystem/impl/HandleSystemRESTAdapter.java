@@ -13,14 +13,12 @@ import java.util.UUID;
 
 import javax.net.ssl.X509TrustManager;
 
-import edu.kit.datamanager.pit.common.InvalidConfigException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
-import edu.kit.datamanager.pit.domain.old.PIDInformation;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import java.util.Base64;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -72,11 +70,7 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
-//	protected WebTarget rootTarget;
-//	protected WebTarget handlesTarget;
-//	protected WebTarget individualHandleTarget;
     public HandleSystemRESTAdapter(ApplicationProperties applicationProperties) {
-//String baseURI, String userName, String userPassword, String generatorPrefix, boolean unsafe_ssl){
         super();
         this.generatorPrefix = applicationProperties.getGeneratorPrefix();
         this.baseUri = applicationProperties.getHandleBaseUri().toString();//UriBuilder.fromUri(baseURI).path("api").build();
@@ -114,45 +108,8 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
         requestFactory.setHttpClient(httpClient);
 
         restTemplate = new RestTemplate(requestFactory);
-
-//    this.rootTarget = client.target(baseURI).path("api");
-//    this.handlesTarget = rootTarget.path("handles");
-//    this.individualHandleTarget = handlesTarget.path("{handle}");
     }
 
-//  public HandleSystemRESTAdapter(String baseURI, String userName, String userPassword, String generatorPrefix){
-//    this(baseURI, userName, userPassword, generatorPrefix, false);
-//  }
-    /**
-     * Factory method. Generates a new instance from a properties instance.
-     *
-     * @param properties
-     * @return a new HandleSystemRESTAdapter instance
-     * @throws InvalidConfigException
-     */
-//  public static HandleSystemRESTAdapter configFromProperties(Properties properties) throws InvalidConfigException{
-//    if(!properties.containsKey("pidsystem.handle.baseURI")){
-//      throw new InvalidConfigException("Property pidsystem.handle.baseURI missing - check configuration!");
-//    }
-//    String baseURI = properties.getProperty("pidsystem.handle.baseURI").trim();
-//    if(!properties.containsKey("pidsystem.handle.userName")){
-//      throw new InvalidConfigException("Property pidsystem.handle.userName missing - check configuration!");
-//    }
-//    String userName = properties.getProperty("pidsystem.handle.userName").trim();
-//    if(!properties.containsKey("pidsystem.handle.userPassword")){
-//      throw new InvalidConfigException("Property pidsystem.handle.userPassword missing - check configuration!");
-//    }
-//    String userPassword = properties.getProperty("pidsystem.handle.userPassword").trim();
-//    if(!properties.containsKey("pidsystem.handle.generatorPrefix")){
-//      throw new InvalidConfigException("Property pidsystem.handle.generatorPrefix missing - check configuration!");
-//    }
-//    String generatorPrefix = properties.getProperty("pidsystem.handle.generatorPrefix").trim();
-//    boolean unsafeSSL = false;
-//    if(properties.containsKey("pidsystem.handle.unsafeSSL")){
-//      unsafeSSL = Boolean.parseBoolean(properties.getProperty("pidsystem.handle.unsafeSSL").trim());
-//    }
-//    return new HandleSystemRESTAdapter(baseURI, userName, userPassword, generatorPrefix, unsafeSSL);
-//  }
     @Override
     public boolean isIdentifierRegistered(String pid) {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(baseUri).pathSegment("api", "handles", pid);
@@ -183,6 +140,7 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
         return value;
 
     }
+
     protected String generatePIDName() {
         String uuid = UUID.randomUUID().toString();
         return this.generatorPrefix + "/" + uuid;
@@ -194,11 +152,11 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
         String pid = generatePIDName();
         do {
             // PUT record to HS
-            Collection<Map<String, String>> record = new LinkedList<Map<String, String>>();
+            Collection<Map<String, String>> record = new LinkedList<>();
             int idx = 0;
             for (String key : properties.keySet()) {
                 idx += 1;
-                Map<String, String> handleValue = new HashMap<String, String>();
+                Map<String, String> handleValue = new HashMap<>();
                 handleValue.put("index", "" + idx);
                 handleValue.put("type", key);
                 handleValue.put("data", properties.get(key));
@@ -228,14 +186,14 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
     public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws IOException {
         PIDRecord allProps = queryAllProperties(pid);
         // only return properties listed in the type def
-        PIDInformation pidInfo = new PIDInformation();
         Set<String> typeProps = typeDefinition.getAllProperties();
+        PIDRecord result = new PIDRecord();
         for (String propID : allProps.getPropertyIdentifiers()) {
             if (typeProps.contains(propID)) {
-                pidInfo.addProperty(propID, "", allProps.getPropertyValue(propID));
+                result.addEntry(propID, "", allProps.getPropertyValue(propID));
             }
         }
-        return allProps;
+        return result;
     }
 
     @Override

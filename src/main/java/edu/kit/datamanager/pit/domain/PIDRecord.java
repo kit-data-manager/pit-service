@@ -6,21 +6,27 @@
 package edu.kit.datamanager.pit.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import edu.kit.datamanager.pit.domain.old.PIDInformation;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import lombok.Data;
 
 /**
  *
  * @author Torridity
  */
+@Data
 public class PIDRecord {
 
     private String pid;
 
     private Map<String, PIDRecordEntry> entries;
+
+    public PIDRecord() {
+        entries = new HashMap<>();
+    }
 
     public void addEntry(String propertyIdentifier, String propertyName, String propertyValue) {
         if (propertyIdentifier.isEmpty()) {
@@ -72,7 +78,7 @@ public class PIDRecord {
     public boolean checkTypeConformance(edu.kit.datamanager.pit.domain.TypeDefinition typeDef) {
         boolean conf = true;
         for (String p : typeDef.getAllProperties()) {
-            if (!entries.containsKey(p)) {
+            if (!typeDef.getSubTypes().get(p).isOptional() && !entries.containsKey(p)) {
                 conf = false;
                 break;
             }

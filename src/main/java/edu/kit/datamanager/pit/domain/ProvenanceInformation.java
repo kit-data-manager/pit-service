@@ -7,6 +7,8 @@ package edu.kit.datamanager.pit.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.Data;
 
 /**
@@ -17,7 +19,16 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ProvenanceInformation {
 
-    private Contributor[] contributors;
+    private Set<Contributor> contributors = new HashSet<>();
     private Date creationDate;
     private Date lastModificationDate;
+
+    public void addContributor(String identifiedBy, String name, String details) {
+        Contributor c = new Contributor();
+        c.setIdentifiedUsing(identifiedBy);
+        c.setName(name);
+        c.setDetails(details);
+        contributors.add(c);
+    }
+
 }
