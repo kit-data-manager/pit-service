@@ -90,6 +90,7 @@ public class TypeRegistry implements ITypeRegistry {
                     LOG.trace("No 'name' property found. Skipping property {}.", entryKV);
                     continue;
                 }
+                
                 String key = entryKV.get("name").asText();
 
                 if (!entryKV.has("identifier")) {

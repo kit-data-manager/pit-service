@@ -6,9 +6,11 @@
 package edu.kit.datamanager.pit.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.Data;
@@ -22,7 +24,7 @@ public class PIDRecord {
 
     private String pid;
 
-    private Map<String, PIDRecordEntry> entries;
+    private Map<String, List<PIDRecordEntry>> entries;
 
     public PIDRecord() {
         entries = new HashMap<>();
@@ -36,16 +38,23 @@ public class PIDRecord {
         entry.setKey(propertyIdentifier);
         entry.setName(propertyName);
         entry.setValue(propertyValue);
-        entries.put(propertyIdentifier, entry);
+        List<PIDRecordEntry> entryList = this.entries.get(propertyIdentifier);
+        if (entryList == null) {
+            entryList = new ArrayList<>();
+            entries.put(propertyIdentifier, entryList);
+        }
+        entryList.add(entry);
     }
 
     @JsonIgnore
     public void setPropertyName(String propertyIdentifier, String name) {
-        PIDRecordEntry pe = entries.get(propertyIdentifier);
+        List<PIDRecordEntry> pe = entries.get(propertyIdentifier);
         if (pe == null) {
             throw new IllegalArgumentException("Property identifier not listed in this record: " + propertyIdentifier);
         }
-        pe.setName(name);
+        for (PIDRecordEntry entry : pe) {
+            entry.setName(name);
+        }
     }
 
     public boolean hasProperty(String propertyIdentifier) {
@@ -91,12 +100,28 @@ public class PIDRecord {
         return entries.keySet();
     }
 
+    /**
+     * Get the value of the first element in case there are multiple elements
+     * for the provided propertyIndentifier.
+     */
     public String getPropertyValue(String propertyIdentifier) {
-        PIDRecordEntry entry = entries.get(propertyIdentifier);
+        List<PIDRecordEntry> entry = entries.get(propertyIdentifier);
         if (entry == null) {
             throw new IllegalArgumentException("Property identifier not listed in this record: " + propertyIdentifier);
         }
-        return entry.getValue();
+        return entry.get(0).getValue();
     }
 
+    public String[] getPropertyValues(String propertyIdentifier) {
+        List<PIDRecordEntry> entry = entries.get(propertyIdentifier);
+        if (entry == null) {
+            throw new IllegalArgumentException("Property identifier not listed in this record: " + propertyIdentifier);
+        }
+
+        List<String> values = new ArrayList<>();
+        for (PIDRecordEntry e : entry) {
+            values.add(e.getValue());
+        }
+        return values.toArray(new String[]{});
+    }
 }

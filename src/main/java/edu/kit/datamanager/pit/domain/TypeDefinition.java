@@ -19,6 +19,8 @@ import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
 import org.everit.json.schema.loader.SchemaLoader;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -27,6 +29,8 @@ import org.json.JSONObject;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TypeDefinition {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TypeDefinition.class);
 
     private String name;
     private String identifier;
@@ -62,27 +66,29 @@ public class TypeDefinition {
 
         JSONObject jsonSchema = new JSONObject(schema);
         this.jsonSchema = SchemaLoader.load(jsonSchema);
-        // schema.validate(jsonSubject);
     }
-//^([0-9]{4})-([0]?[1-9]|1[0-2])-([0-2][0-9]|3[0-1])(T([0-1][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9](.[0-9]*)?(Z|([+|-]([0-1][0-9]|2[0-3]):[0-5][0-9])){1}))$
-//^([0-9]{4})([-]){1,1}[0]?[1-9]|1[0-2])([-]){1,1}([0-2][0-9]|3[0-1])(T([0-1][0-9]|2[0-3])([:]){1,1}([0-5][0-9])([:]){1,1}([0-5][0-9](.[0-9]*)?(Z|([+|-]([0-1][0-9]|2[0-3]):[0-5][0-9])){1}))$"
 
     public boolean validate(String document) {
-        System.out.println("VALIDATE " + document);
+        LOG.trace("Performing validate({}).", document);
         if (jsonSchema != null) {
+            LOG.trace("Using schema-based validation.");
             Object toValidate = document;
             if (document.startsWith("{")) {
+                LOG.trace("Creating JSON object from provided value.");
                 toValidate = new JSONObject(document);
             }
             try {
+                LOG.trace("Validating provided value using type schema.");
                 jsonSchema.validate(toValidate);
-                System.out.println("Is Valid!");
+                LOG.trace("Validation successful.");
             } catch (ValidationException ex) {
-                ex.printStackTrace();
-                System.out.println("FAILED!");
+                LOG.error("Validation failed.", ex);
                 return false;
             }
+        } else {
+            LOG.trace("No schema available. Skipping validation.");
         }
+
         return true;
     }
 

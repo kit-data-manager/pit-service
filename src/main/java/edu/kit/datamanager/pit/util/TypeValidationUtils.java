@@ -31,21 +31,22 @@ public class TypeValidationUtils {
         for (String recordKey : record.getPropertyIdentifiers()) {
             LOG.trace("Checking PID record key {}.", recordKey);
             TypeDefinition type = profile.getSubTypes().get(recordKey);
-            String value = record.getPropertyValue(recordKey);
-
             if (type == null) {
                 LOG.error("No sub-type found for key {}.", recordKey);
                 return false;
             }
 
-            if (value == null) {
-                LOG.error("No record value found for key {}.", recordKey);
-                return false;
-            }
+            String[] values = record.getPropertyValues(recordKey);
+            for (String value : values) {
+                if (value == null) {
+                    LOG.error("'null' record value found for key {}.", recordKey);
+                    return false;
+                }
 
-            if (!type.validate(value)) {
-                LOG.error("Validation of value {} against type {} failed.", value, type.getIdentifier());
-                return false;
+                if (!type.validate(value)) {
+                    LOG.error("Validation of value {} against type {} failed.", value, type.getIdentifier());
+                    return false;
+                }
             }
         }
         LOG.trace("PID record is matching the provided type definition.");

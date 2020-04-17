@@ -13,7 +13,6 @@ import java.util.UUID;
 
 import javax.net.ssl.X509TrustManager;
 
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
@@ -21,6 +20,7 @@ import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import java.util.Base64;
+import java.util.List;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -190,7 +190,10 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
         PIDRecord result = new PIDRecord();
         for (String propID : allProps.getPropertyIdentifiers()) {
             if (typeProps.contains(propID)) {
-                result.addEntry(propID, "", allProps.getPropertyValue(propID));
+                String[] values = allProps.getPropertyValues(propID);
+                for (String value : values) {
+                    result.addEntry(propID, "", value);
+                }
             }
         }
         return result;

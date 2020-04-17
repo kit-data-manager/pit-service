@@ -33,7 +33,16 @@ public class FakeIdentifierSystem implements IIdentifierSystem {
         record.addEntry("21.T11148/397d831aa3a9d18eb52c", "dateModified", "2018-04-01T11:01:52.469Z");
         record.addEntry("21.T11148/29f92bd203dd3eaa5a1f", "dateCreated", "2019-04-01 11:01:52");
         record.addEntry("21.T11148/c692273deb2772da307f", "version", "1");
-        // record.addEntry("21.T11148/e0efd6b4c8e71c6d077b", "metadataDocuments", "None");
+        record.addEntry("21.T11148/e0efd6b4c8e71c6d077b", "metadataDocument", "{\n"
+                + "  \"metadataScheme\": \"http://hdl.handle.net/21.T11148/8bcd7b4a8a9c74402c71\",\n"
+                + "  \"@id\":\"http://hdl.handle.net/21.T11148/8bcd7b4a8a9c74402c71\",\n"
+                + "  \"@type\":\"http://hdl.handle.net/21.T11148/8bcd7b4a8a9c74402c71\"\n"
+                + "}");
+        record.addEntry("21.T11148/e0efd6b4c8e71c6d077b", "metadataDocument", "{\n"
+                + "  \"metadataScheme\": \"http://hdl.handle.net/21.T11148/8bcd7b4a8a9c74402c71\",\n"
+                + "  \"@id\":\"http://hdl.handle.net/21.T11148/8bcd7b4a8a9c74402c71\",\n"
+                + "  \"@type\":\"http://hdl.handle.net/21.T11148/8bcd7b4a8a9c74402c71\"\n"
+                + "}");
         record.addEntry("21.T11148/dc54ae4b6807f5887fda", "license", "CC-BY");
 
         records.put("123/456789", record);
@@ -59,9 +68,9 @@ public class FakeIdentifierSystem implements IIdentifierSystem {
         PIDRecord r = new PIDRecord();
         Set<Entry<String, String>> entries = properties.entrySet();
         r.setPid("123/456789" + records.size());
-        for (Entry<String, String> entry : entries) {
+        entries.forEach((entry) -> {
             r.addEntry(entry.getKey(), null, entry.getValue());
-        }
+        });
         records.put(r.getPid(), r);
         return r.getPid();
     }
@@ -74,7 +83,10 @@ public class FakeIdentifierSystem implements IIdentifierSystem {
         PIDRecord result = new PIDRecord();
         for (String propID : allProps.getPropertyIdentifiers()) {
             if (typeProps.contains(propID)) {
-                result.addEntry(propID, "", allProps.getPropertyValue(propID));
+                String[] values = allProps.getPropertyValues(propID);
+                for (String value : values) {
+                    result.addEntry(propID, "", value);
+                }
             }
         }
         return result;
