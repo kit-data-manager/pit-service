@@ -32,7 +32,7 @@ public interface ITypingService extends IIdentifierSystem {
      * record otherwise.
      * @throws IOException
      */
-    public edu.kit.datamanager.pit.domain.TypeDefinition describeType(String typeIdentifier) throws IOException;
+    public TypeDefinition describeType(String typeIdentifier) throws IOException;
 
     public boolean conformsToType(String pid, String typeIdentifier) throws IOException;
 

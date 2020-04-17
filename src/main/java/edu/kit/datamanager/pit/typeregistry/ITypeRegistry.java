@@ -2,7 +2,6 @@ package edu.kit.datamanager.pit.typeregistry;
 
 import java.io.IOException;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 
 import java.net.URISyntaxException;

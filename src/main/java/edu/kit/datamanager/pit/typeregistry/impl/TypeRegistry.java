@@ -7,6 +7,7 @@ import java.util.Map;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.cache.LoadingCache;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.ProvenanceInformation;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
@@ -15,6 +16,7 @@ import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Date;
+import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +38,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class TypeRegistry implements ITypeRegistry {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypeRegistry.class);
-
+    @Autowired
+    public LoadingCache<String, TypeDefinition> typeCache;
     @Autowired
     private ApplicationProperties applicationProperties;
 
@@ -90,7 +93,7 @@ public class TypeRegistry implements ITypeRegistry {
                     LOG.trace("No 'name' property found. Skipping property {}.", entryKV);
                     continue;
                 }
-                
+
                 String key = entryKV.get("name").asText();
 
                 if (!entryKV.has("identifier")) {
@@ -100,7 +103,15 @@ public class TypeRegistry implements ITypeRegistry {
 
                 String value = entryKV.get("identifier").asText();
                 LOG.trace("Creating type definition instance for identifier {}.", value);
-                TypeDefinition type_def = queryTypeDefinition(value);
+                TypeDefinition type_def;
+
+                try {
+                    type_def = typeCache.get(value);
+                } catch (ExecutionException ex) {
+                    LOG.error("Failed to obtain type definition via cache.", ex);
+                    throw new IOException("Failed to obtain type definition via cache.", ex);
+                }
+// queryTypeDefinition(value);
 
                 LOG.trace("Checking for sub-types in 'representationsAndSemantics' property.");
                 if (entryKV.has("representationsAndSemantics")) {
