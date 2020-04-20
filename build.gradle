@@ -65,6 +65,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-mail") 
     implementation("org.javers:javers-spring-boot-starter-sql:3.9.0")
    
+    
+    
+    
     implementation("edu.kit.datamanager:service-base:0.1")
     // implementation("edu.kit.datamanager:generic-message-consumer:0.1.0")
 
@@ -82,6 +85,7 @@ dependencies {
     implementation('org.javassist:javassist:3.23.1-GA')
     
     implementation('org.apache.httpcomponents:httpclient:4.5.6')
+    implementation('org.apache.httpcomponents:httpclient-cache:4.5.6')
 
     testImplementation("com.h2database:h2:1.4.194") 
     testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")

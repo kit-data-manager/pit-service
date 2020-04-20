@@ -34,7 +34,9 @@ import edu.kit.datamanager.pit.typeregistry.impl.TypeRegistry;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.concurrent.TimeUnit;
-import javax.xml.validation.Schema;
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.cache.CacheConfig;
+import org.apache.http.impl.client.cache.CachingHttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InjectionPoint;
@@ -45,9 +47,12 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Scope;
+import org.springframework.http.client.BufferingClientHttpRequestFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.xml.sax.SAXException;
+import org.springframework.web.client.RestTemplate;
 
 /**
  *
@@ -90,6 +95,34 @@ public class Application {
                 .serializationInclusion(JsonInclude.Include.NON_EMPTY) // Don’t include null values
                 .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) //ISODate
                 .modules(new JavaTimeModule())
+                .build();
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        RestTemplate restTemplate = new RestTemplate(requestFactory);
+        // BufferingClientHttpRequestFactory allows us to read the response more than once - Necessary for debugging.
+        restTemplate.setRequestFactory(new BufferingClientHttpRequestFactory(new HttpComponentsClientHttpRequestFactory(httpClient())));
+        return restTemplate;
+    }
+
+    @Bean
+    public HttpClient httpClient() {
+        return CachingHttpClientBuilder
+                .create()
+                .setCacheConfig(cacheConfig())
+                .build();
+    }
+
+    @Bean
+    public CacheConfig cacheConfig() {
+        return CacheConfig
+                .custom()
+                .setMaxObjectSize(500000) // 500KB
+                .setMaxCacheEntries(2000)
+                // Set this to false and a response with queryString
+                // will be cached when it is explicitly cacheable .setNeverCacheHTTP10ResponsesWithQueryString(false)
                 .build();
     }
 
