@@ -7,22 +7,25 @@
  * Afterwards, 'gradlew build install' is executed for the service-base dependency.
  */
 task buildServiceBase(type:Exec){
-   if (project.hasProperty('clean-release') || project.hasProperty('travis')) {
-      apply from: 'gradle/git_checkout.gradle'
-      if (!project.hasProperty('travis')) {
-         dependsOn checkoutProject, checkoutDependencies
-      }else{
-         dependsOn checkoutDependencies
-      }
-   }
-   workingDir 'libraries/service-base'
-   commandLine './gradlew', 'build', 'install'
+    if (project.hasProperty('clean-release') || project.hasProperty('travis')) {
+        apply from: 'gradle/git_checkout.gradle'
+        if (!project.hasProperty('travis')) {
+            dependsOn checkoutProject, checkoutDependencies
+        }else{
+            dependsOn checkoutDependencies
+        }
+    }
+    workingDir 'libraries/service-base'
+    if (System.properties['os.name'].toLowerCase().contains('windows')) {
+        commandLine 'gradlew.bat', 'build', 'install'
+    } else {
+        commandLine './gradlew', 'build', 'install'
+    }
+    standardOutput = new ByteArrayOutputStream()
 
-   standardOutput = new ByteArrayOutputStream()
-
-   ext.output = {
-      return standardOutput.toString()
-   }
+    ext.output = {
+        return standardOutput.toString()
+    }
 }
 
 /**Build the generic-message-consumer library. This dependeny is build after the service-base dependency has been built. Thus, it will also
@@ -31,16 +34,16 @@ task buildServiceBase(type:Exec){
  * Afterwards, 'gradlew build install' is executed for the generic-message-consumer dependency.
  */
 task buildGenericMessageConsumer(type:Exec){
-   dependsOn buildServiceBase
+    dependsOn buildServiceBase
  
-   workingDir 'libraries/generic-message-consumer'
-   commandLine './gradlew', 'build', 'install'
+    workingDir 'libraries/generic-message-consumer'
+    commandLine './gradlew', 'build', 'install'
 
-   standardOutput = new ByteArrayOutputStream()
+    standardOutput = new ByteArrayOutputStream()
 
-   ext.output = {
-      return standardOutput.toString()
-   }
+    ext.output = {
+        return standardOutput.toString()
+    }
 }
 
 /**The default task for compiling the project has to be overwritten in order to build first 
@@ -48,5 +51,5 @@ task buildGenericMessageConsumer(type:Exec){
  * task depends on task 'buildServiceBase', which has not to be called again.
  */
 compileJava {
-      dependsOn buildGenericMessageConsumer
+    dependsOn buildGenericMessageConsumer
 }
