@@ -27,6 +27,7 @@ import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import edu.kit.datamanager.pit.pidsystem.impl.FakeIdentifierSystem;
+import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.TypingService;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
@@ -81,7 +82,7 @@ public class Application {
 
     @Bean
     public IIdentifierSystem identifierSystem() {
-        return new FakeIdentifierSystem();// new HandleSystemRESTAdapter(applicationProperties());
+        return new InMemoryIdentifierSystem();// new HandleSystemRESTAdapter(applicationProperties());
     }
 
     @Bean
