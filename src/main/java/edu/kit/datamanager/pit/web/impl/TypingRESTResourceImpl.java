@@ -2,6 +2,9 @@ package edu.kit.datamanager.pit.web.impl;
 
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
@@ -364,11 +367,17 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
-    public ResponseEntity createPID(PIDRecord record,
+    public ResponseEntity createPID(
+            PIDRecord record,
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        LOG.info("Creating PID");
+        // TODO do profile checking.
+        Map<String, String> map = record.intoKeyValuePairs();
+        String pid = this.typingService.registerPID(map);
+        record.setPid(pid);
+        return ResponseEntity.status(200).body(record);
     }
 
     @Override
