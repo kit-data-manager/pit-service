@@ -2,7 +2,6 @@ package edu.kit.datamanager.pit.web.impl;
 
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 import edu.kit.datamanager.pit.domain.PIDRecord;
@@ -303,7 +302,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
-    public ResponseEntity isPidMatchingProfile(String identifier,
+    public ResponseEntity<String> isPidMatchingProfile(String identifier,
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
@@ -319,7 +318,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
-    public ResponseEntity isResourceMatchingType(String identifier,
+    public ResponseEntity<String> isResourceMatchingType(String identifier,
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
@@ -373,15 +372,35 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
         LOG.info("Creating PID");
-        // TODO do profile checking.
         Map<String, String> map = record.intoKeyValuePairs();
+        // TODO do profile checking.
+        String profileKey = "21.T11148/076759916209e5d62bd5";
+        if (map.containsKey(profileKey)) {
+            String typeID = map.get(profileKey);
+            TypeDefinition typeDef = typingService.describeType(typeID);
+
+            if (typeDef == null) {
+                LOG.error("No type definition found for identifier {}.", typeID);
+                return ResponseEntity.status(404).body("No type found for identifier " + typeID + ".");
+            }
+            boolean valid = TypeValidationUtils.isValid(record, typeDef);
+            if (valid) {
+                String pid = this.typingService.registerPID(map);
+                record.setPid(pid);
+                return ResponseEntity.status(200).body(record);  // TODO should be 201, but the interface says 200. Adjust interface?
+            } else {
+                return ResponseEntity.status(404).body("Given object does not meet the profiles specification.");
+            }
+        }
+        // Handle if no profile is set in the record.
+        // TODO Currently this is allowed for testing purposes. Later this should probably be disallowed.
         String pid = this.typingService.registerPID(map);
         record.setPid(pid);
         return ResponseEntity.status(200).body(record);
     }
 
     @Override
-    public ResponseEntity updatePID(PIDRecord record,
+    public ResponseEntity<String> updatePID(PIDRecord record,
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
