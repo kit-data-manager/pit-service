@@ -10,3 +10,6 @@ config
 .classpath
 .project
 org.eclipse.*
+
+# Ignore lombok gradle plugin configuration files
+lombok.config
