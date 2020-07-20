@@ -9,7 +9,7 @@ test {
 }
 
 dependencies {
-   compile("edu.kit.datamanager:generic-message-consumer:0.1.0")
+   //compile("edu.kit.datamanager:generic-message-consumer:0.1.0")
 }
    
 asciidoctor {
