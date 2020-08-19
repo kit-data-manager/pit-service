@@ -266,4 +266,9 @@ public class TypingService implements ITypingService {
         return identifierSystem;
     }
 
+    @Override
+    public String getResolvingUrl(String pid) {
+        return this.identifierSystem.getResolvingUrl(pid);
+    }
+
 }

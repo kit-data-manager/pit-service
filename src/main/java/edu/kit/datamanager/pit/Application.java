@@ -80,7 +80,6 @@ public class Application {
         return new TypeRegistry();
     }
 
-    @Bean
     public IIdentifierSystem identifierSystem() {
         return new InMemoryIdentifierSystem();// new HandleSystemRESTAdapter(applicationProperties());
     }

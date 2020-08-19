@@ -68,9 +68,9 @@ public class FakeIdentifierSystem implements IIdentifierSystem {
         PIDRecord r = new PIDRecord();
         Set<Entry<String, String>> entries = properties.entrySet();
         r.setPid("123/456789" + records.size());
-        entries.forEach((entry) -> {
-            r.addEntry(entry.getKey(), null, entry.getValue());
-        });
+        entries.forEach(
+            entry -> r.addEntry(entry.getKey(), null, entry.getValue())
+        );
         records.put(r.getPid(), r);
         return r.getPid();
     }
@@ -95,6 +95,12 @@ public class FakeIdentifierSystem implements IIdentifierSystem {
     @Override
     public boolean deletePID(String pid) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public String getResolvingUrl(String pid) {
+        // TODO Auto-generated method stub
+        return "";
     }
 
 }
