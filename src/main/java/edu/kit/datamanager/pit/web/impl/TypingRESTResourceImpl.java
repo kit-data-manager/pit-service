@@ -4,6 +4,7 @@ import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import java.io.IOException;
 import java.util.Map;
 
+import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
@@ -304,6 +305,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     @Autowired
     private IMessagingService messagingService;
 
+    @Autowired
+    private ApplicationProperties properties;
+
     public TypingRESTResourceImpl() {
         super();
     }
@@ -396,8 +400,10 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                 String pid = this.typingService.registerPID(map);
                 record.setPid(pid);
                 PidRecordMessage message = PidRecordMessage.recordCreationMessage(
+                    properties.getAppName(),
                     pid,
                     this.typingService.getResolvingUrl(pid),
+                    PidRecordMessage.SUB_CATEGORY.PROFILE_TESTBED4INF,
                     AuthenticationHelper.getPrincipal(),
                     ControllerUtils.getLocalHostname()
                 );
