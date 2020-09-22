@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.Map.Entry;
 
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
@@ -58,14 +57,11 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
     }
 
     @Override
-    public String registerPID(Map<String, String> properties) throws IOException {
-        PIDRecord newRecord = new PIDRecord();
-        newRecord.setPid("tmp/test/" + properties.hashCode());
-        Set<Entry<String, String>> entries = properties.entrySet();
-        entries.forEach(entry -> newRecord.addEntry(entry.getKey(), null, entry.getValue()));
-        InMemoryIdentifierSystem.RECORDS.put(newRecord.getPid(), newRecord);
-        LOG.debug("Registered record with PID: {}", newRecord.getPid());
-        return newRecord.getPid();
+    public String registerPID(PIDRecord record) throws IOException {
+        record.setPid("tmp/test/" + record.getEntries().hashCode());
+        InMemoryIdentifierSystem.RECORDS.put(record.getPid(), record);
+        LOG.debug("Registered record with PID: {}", record.getPid());
+        return record.getPid();
     }
 
     @Override

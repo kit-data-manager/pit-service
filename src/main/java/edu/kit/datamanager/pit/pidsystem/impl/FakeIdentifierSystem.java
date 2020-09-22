@@ -11,7 +11,6 @@ import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -64,15 +63,10 @@ public class FakeIdentifierSystem implements IIdentifierSystem {
     }
 
     @Override
-    public String registerPID(Map<String, String> properties) throws IOException {
-        PIDRecord r = new PIDRecord();
-        Set<Entry<String, String>> entries = properties.entrySet();
-        r.setPid("123/456789" + records.size());
-        entries.forEach(
-            entry -> r.addEntry(entry.getKey(), null, entry.getValue())
-        );
-        records.put(r.getPid(), r);
-        return r.getPid();
+    public String registerPID(PIDRecord record) throws IOException {
+        record.setPid("123/456789" + records.size());
+        records.put(record.getPid(), record);
+        return record.getPid();
     }
 
     @Override

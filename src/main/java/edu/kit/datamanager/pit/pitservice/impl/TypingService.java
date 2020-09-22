@@ -52,9 +52,9 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public String registerPID(Map<String, String> properties) throws IOException {
-        LOG.trace("Performing registerPID({}).", properties);
-        return identifierSystem.registerPID(properties);
+    public String registerPID(PIDRecord record) throws IOException {
+        LOG.trace("Performing registerPID({}).", record);
+        return identifierSystem.registerPID(record);
     }
 
     @Override

@@ -7,9 +7,11 @@ import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.net.ssl.X509TrustManager;
 
@@ -17,10 +19,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PIDRecordEntry;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import java.util.Base64;
-import java.util.List;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -147,7 +149,8 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public String registerPID(Map<String, String> properties) throws IOException {
+    public String registerPID(PIDRecord received_record) throws IOException {
+        Map<String, List<PIDRecordEntry>> properties = received_record.getEntries();
         ResponseEntity<String> response;
         String pid = generatePIDName();
         do {
@@ -159,7 +162,14 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
                 Map<String, String> handleValue = new HashMap<>();
                 handleValue.put("index", "" + idx);
                 handleValue.put("type", key);
-                handleValue.put("data", properties.get(key));
+                handleValue.put(
+                    "data",
+                    objectMapper.writeValueAsString(
+                        properties.get(key)
+                            .stream()
+                            .map( entry -> entry.getValue() )
+                            .collect( Collectors.toList() ))
+                );
                 record.add(handleValue);
             }
             String jsonText = objectMapper.writeValueAsString(record);

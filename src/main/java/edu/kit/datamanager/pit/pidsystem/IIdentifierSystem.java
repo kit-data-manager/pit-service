@@ -3,7 +3,6 @@ package edu.kit.datamanager.pit.pidsystem;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * Main abstraction interface towards the identifier system containing
@@ -49,12 +48,11 @@ public interface IIdentifierSystem {
      * PID name automatically, guaranteeing its uniqueness and preventing
      * failure due to potential overwrites.
      *
-     * @param properties A simple dictionary with string keys and string values
-     * that contains the initial PID record.
-     * @return the name of the registered PID
+     * @param record contains the initial PID record. Do not assume a valid PID in here.
+     * @return the PID that was assigned to the record.
      * @throws IOException
      */
-    public String registerPID(Map<String, String> properties) throws IOException;
+    public String registerPID(PIDRecord record) throws IOException;
 
     /**
      * Queries all properties of a given type available from the given PID. If

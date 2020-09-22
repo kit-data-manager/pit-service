@@ -383,10 +383,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
         LOG.info("Creating PID");
-        Map<String, String> map = record.intoKeyValuePairs();
         String profileKey = "21.T11148/076759916209e5d62bd5";
-        if (map.containsKey(profileKey)) {
-            String typeID = map.get(profileKey);
+        if (record.hasProperty(profileKey)) {
+            String typeID = record.getPropertyValue(profileKey);
             TypeDefinition typeDef = typingService.describeType(typeID);
 
             if (typeDef == null) {
@@ -397,7 +396,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             boolean valid = TypeValidationUtils.isValid(record, typeDef);
             LOG.debug("validation done");
             if (valid) {
-                String pid = this.typingService.registerPID(map);
+                String pid = this.typingService.registerPID(record);
                 record.setPid(pid);
                 PidRecordMessage message = PidRecordMessage.recordCreationMessage(
                     properties.getAppName(),
@@ -414,10 +413,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             }
         }
         // Handle if no profile is set in the record.
-        // TODO Currently this is allowed for testing purposes. Later this should probably be disallowed.
-        String pid = this.typingService.registerPID(map);
-        record.setPid(pid);
-        return ResponseEntity.status(200).body(record);
+        return ResponseEntity.status(404).body("No profile definition found. Expected PID with key 21.T11148/076759916209e5d62bd5 .");
     }
 
     @Override
