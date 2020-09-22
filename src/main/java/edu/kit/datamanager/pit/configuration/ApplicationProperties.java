@@ -32,9 +32,6 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @EqualsAndHashCode(callSuper = true)
 public class ApplicationProperties extends GenericApplicationProperties{
-  
-  @Value("${pit.applicationName}")
-  private String appName;
 
   @Value("${pit.pidsystem.handle.baseURI}")
   private URL handleBaseUri;

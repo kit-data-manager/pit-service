@@ -305,9 +305,6 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     @Autowired
     private IMessagingService messagingService;
 
-    @Autowired
-    private ApplicationProperties properties;
-
     public TypingRESTResourceImpl() {
         super();
     }
@@ -399,7 +396,6 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                 String pid = this.typingService.registerPID(record);
                 record.setPid(pid);
                 PidRecordMessage message = PidRecordMessage.recordCreationMessage(
-                    properties.getAppName(),
                     pid,
                     this.typingService.getResolvingUrl(pid),
                     PidRecordMessage.SUB_CATEGORY.PROFILE_TESTBED4INF,
