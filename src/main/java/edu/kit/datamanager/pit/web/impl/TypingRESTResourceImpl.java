@@ -395,10 +395,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             if (valid) {
                 String pid = this.typingService.registerPID(record);
                 record.setPid(pid);
-                PidRecordMessage message = PidRecordMessage.recordCreationMessage(
+                PidRecordMessage message = PidRecordMessage.creation(
                     pid,
                     this.typingService.getResolvingUrl(pid),
-                    PidRecordMessage.SUB_CATEGORY.PROFILE_TESTBED4INF,
                     AuthenticationHelper.getPrincipal(),
                     ControllerUtils.getLocalHostname()
                 );
