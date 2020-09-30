@@ -1,16 +1,17 @@
 package edu.kit.datamanager.pit.pidsystem.impl;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
@@ -20,6 +21,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,10 +37,17 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
     private static final Logger LOG = LoggerFactory.getLogger(InMemoryIdentifierSystem.class);
     private static Map<String, PIDRecord> RECORDS;
 
-    public InMemoryIdentifierSystem() {
+    private ApplicationProperties applicationProperties;
+
+    public InMemoryIdentifierSystem(ApplicationProperties appProperties) {
         if (InMemoryIdentifierSystem.RECORDS == null) {
             InMemoryIdentifierSystem.RECORDS = new HashMap<>();
         }
+        this.applicationProperties = appProperties;
+        // test if the settings are properly set. This will output an early error in
+        // case of problems:
+        this.getResolvingUrl("/some/test/pid");
+        LOG.warn("Using in-memory identifier system. REGISTERED PIDs ARE NOT STORED PERMANENTLY.");
     }
 
     @Override
@@ -103,7 +112,9 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
         try {
             LOG.debug("Try to get record with PID {}", pid);
             PIDRecord record = this.queryAllProperties(pid);
-            if (record == null) { LOG.debug("record is null!"); }
+            if (record == null) {
+                LOG.debug("record is null!");
+            }
             return ResponseEntity.status(200).body(record);
         } catch (IOException e) {
             LOG.debug("Got exception.");
@@ -113,10 +124,29 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
 
     @Override
     public String getResolvingUrl(String pid) {
-        String locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).resolve(pid)).toUri()
-                .toString();
+        String basePath = this.getClass().getAnnotation(RequestMapping.class).value()[0];
+        String methodPath = "";
+        String locationUri = "";
+        try {
+            methodPath = this.getClass().getMethod("resolve", String.class)
+                    .getAnnotation(RequestMapping.class).path()[0];
+        } catch (NoSuchMethodException | SecurityException e) {
+            LOG.error("An internal issue occurred. Please report this error.", e);
+            e.printStackTrace();
+            return "";
+        }
+        try {
+            locationUri = new URIBuilder(this.applicationProperties.getInMemoryBaseUri().get().toURI())
+                    .setPath(basePath + methodPath).build().toString();
+        } catch (URISyntaxException e) {
+            LOG.error("Could not convert handle base URI from application.properties into hostname URI.", e);
+            e.printStackTrace();
+            return "";
+        }
+
         locationUri = String.format("%s?pid=%s", locationUri, pid);
-        LOG.debug("Returning resolving URL {}", locationUri);
+
+        LOG.info("Returning resolving URL {}", locationUri);
         return locationUri;
     }
 }
