@@ -193,6 +193,11 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
     }
 
     @Override
+    public boolean updatePID(PIDRecord record) throws IOException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
     public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws IOException {
         PIDRecord allProps = queryAllProperties(pid);
         // only return properties listed in the type def

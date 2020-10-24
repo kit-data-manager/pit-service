@@ -74,6 +74,15 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
     }
 
     @Override
+    public boolean updatePID(PIDRecord record) throws IOException {
+        if (InMemoryIdentifierSystem.RECORDS.containsKey(record.getPid())) {
+            InMemoryIdentifierSystem.RECORDS.put(record.getPid(), record);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws IOException {
         PIDRecord allProps = this.queryAllProperties(pid);
         // only return properties listed in the type def

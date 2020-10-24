@@ -97,4 +97,8 @@ public class FakeIdentifierSystem implements IIdentifierSystem {
         return "";
     }
 
+    @Override
+    public boolean updatePID(PIDRecord record) throws IOException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

@@ -55,6 +55,16 @@ public interface IIdentifierSystem {
     public String registerPID(PIDRecord record) throws IOException;
 
     /**
+     * Updates an existing record with the new given values.
+     * If the PID in the given record is not valid, it will return false.
+     * 
+     * @param record Assumes an existing, valid PID inside this record.
+     * @return false if there was no existing, valid PID in this record.
+     * @throws IOException
+     */
+    public boolean updatePID(PIDRecord record) throws IOException;
+
+    /**
      * Queries all properties of a given type available from the given PID. If
      * optional properties are present, they will be returned as well. If there
      * are mandatory properties missing (i.e. the record of the given PID does

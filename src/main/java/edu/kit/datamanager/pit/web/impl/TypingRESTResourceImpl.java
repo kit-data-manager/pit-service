@@ -2,9 +2,7 @@ package edu.kit.datamanager.pit.web.impl;
 
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import java.io.IOException;
-import java.util.Map;
 
-import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
@@ -412,20 +410,29 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
-    public ResponseEntity<String> updatePID(PIDRecord record,
+    public ResponseEntity updatePID(PIDRecord record,
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
-        String pid = getContentPathFromRequest("pid", request);
-        //
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        // When implementing this method, do not forget to notify the messaging service:
-        //PidRecordMessage message = PidRecordMessage.recordUpdateMessage(
-        //    pid,
-        //    AuthenticationHelper.getPrincipal(),
-        //    ControllerUtils.getLocalHostname()
-        //);
-        //this.messagingService.send(message);
+        //String pid = getContentPathFromRequest("pid", request);
+        String pid = record.getPid();
+        // TODO make inmemory system handle same pids due to same content by modifying generated pids.
+        if (!this.typingService.isIdentifierRegistered(pid)) {
+            return ResponseEntity.status(404).body("Can not update object because it does not exist.");
+        }
+        
+        if (this.typingService.updatePID(record)) {
+            PidRecordMessage message = PidRecordMessage.update(
+                pid,
+                this.typingService.getResolvingUrl(pid),
+                AuthenticationHelper.getPrincipal(),
+                ControllerUtils.getLocalHostname()
+            );
+            this.messagingService.send(message);
+            return ResponseEntity.status(200).body(record);
+        } else {
+            return ResponseEntity.status(404).body("The given PID was not valid or not found in the registry.");
+        }
     }
 
     @Override

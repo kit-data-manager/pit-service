@@ -5,7 +5,6 @@ import edu.kit.datamanager.pit.common.InvalidConfigException;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
@@ -13,11 +12,9 @@ import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.common.InconsistentRecordsException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
-import java.net.URISyntaxException;
 import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Core implementation class that offers the combined higher-level services
@@ -269,6 +266,11 @@ public class TypingService implements ITypingService {
     @Override
     public String getResolvingUrl(String pid) {
         return this.identifierSystem.getResolvingUrl(pid);
+    }
+
+    @Override
+    public boolean updatePID(PIDRecord record) throws IOException {
+        return this.identifierSystem.updatePID(record);
     }
 
 }
