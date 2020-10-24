@@ -67,7 +67,12 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
 
     @Override
     public String registerPID(PIDRecord record) throws IOException {
-        record.setPid("tmp/test/" + record.getEntries().hashCode());
+        int counter = 0;
+        do {
+            int hash = record.getEntries().hashCode() + counter;
+            record.setPid("tmp/test/" + hash);
+            counter++;
+        } while (InMemoryIdentifierSystem.RECORDS.containsKey(record.getPid()));
         InMemoryIdentifierSystem.RECORDS.put(record.getPid(), record);
         LOG.debug("Registered record with PID: {}", record.getPid());
         return record.getPid();
