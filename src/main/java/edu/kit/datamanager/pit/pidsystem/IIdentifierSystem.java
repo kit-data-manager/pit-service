@@ -3,7 +3,6 @@ package edu.kit.datamanager.pit.pidsystem;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * Main abstraction interface towards the identifier system containing
@@ -49,12 +48,21 @@ public interface IIdentifierSystem {
      * PID name automatically, guaranteeing its uniqueness and preventing
      * failure due to potential overwrites.
      *
-     * @param properties A simple dictionary with string keys and string values
-     * that contains the initial PID record.
-     * @return the name of the registered PID
+     * @param record contains the initial PID record. Do not assume a valid PID in here.
+     * @return the PID that was assigned to the record.
      * @throws IOException
      */
-    public String registerPID(Map<String, String> properties) throws IOException;
+    public String registerPID(PIDRecord record) throws IOException;
+
+    /**
+     * Updates an existing record with the new given values.
+     * If the PID in the given record is not valid, it will return false.
+     * 
+     * @param record Assumes an existing, valid PID inside this record.
+     * @return false if there was no existing, valid PID in this record.
+     * @throws IOException
+     */
+    public boolean updatePID(PIDRecord record) throws IOException;
 
     /**
      * Queries all properties of a given type available from the given PID. If
@@ -82,5 +90,13 @@ public interface IIdentifierSystem {
      * @return true if the identifier was deleted, false if it did not exist
      */
     public boolean deletePID(String pid);
+
+    /**
+     * Return a URL that, if invoked using http GET, will contain
+     * a json body with the record which belongs to the given PID.
+     * @param pid
+     * @return a resolving URL.
+     */
+    public String getResolvingUrl(String pid);
 
 }

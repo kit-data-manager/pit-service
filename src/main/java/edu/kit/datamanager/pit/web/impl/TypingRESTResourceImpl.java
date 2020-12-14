@@ -2,11 +2,16 @@ package edu.kit.datamanager.pit.web.impl;
 
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import java.io.IOException;
+
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.util.TypeValidationUtils;
 import edu.kit.datamanager.pit.web.ITypingRestResource;
+import edu.kit.datamanager.service.IMessagingService;
+import edu.kit.datamanager.entities.messaging.PidRecordMessage;
+import edu.kit.datamanager.util.AuthenticationHelper;
+import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -295,12 +300,15 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     @Autowired
     protected ITypingService typingService;
 
+    @Autowired
+    private IMessagingService messagingService;
+
     public TypingRESTResourceImpl() {
         super();
     }
 
     @Override
-    public ResponseEntity isPidMatchingProfile(String identifier,
+    public ResponseEntity<String> isPidMatchingProfile(String identifier,
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
@@ -316,7 +324,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
-    public ResponseEntity isResourceMatchingType(String identifier,
+    public ResponseEntity<String> isResourceMatchingType(String identifier,
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
@@ -364,11 +372,41 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
-    public ResponseEntity createPID(PIDRecord record,
+    public ResponseEntity createPID(
+            PIDRecord record,
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        LOG.info("Creating PID");
+        String profileKey = "21.T11148/076759916209e5d62bd5";
+        if (record.hasProperty(profileKey)) {
+            String typeID = record.getPropertyValue(profileKey);
+            TypeDefinition typeDef = typingService.describeType(typeID);
+
+            if (typeDef == null) {
+                LOG.error("No type definition found for identifier {}.", typeID);
+                return ResponseEntity.status(404).body("No type found for identifier " + typeID + ".");
+            }
+            LOG.debug("validate profile");
+            boolean valid = TypeValidationUtils.isValid(record, typeDef);
+            LOG.debug("validation done");
+            if (valid) {
+                String pid = this.typingService.registerPID(record);
+                record.setPid(pid);
+                PidRecordMessage message = PidRecordMessage.creation(
+                    pid,
+                    this.typingService.getResolvingUrl(pid),
+                    AuthenticationHelper.getPrincipal(),
+                    ControllerUtils.getLocalHostname()
+                );
+                this.messagingService.send(message);
+                return ResponseEntity.status(200).body(record);  // TODO should be 201, but the interface says 200. Adjust interface?
+            } else {
+                return ResponseEntity.status(404).body("Given object does not meet the profiles specification.");
+            }
+        }
+        // Handle if no profile is set in the record.
+        return ResponseEntity.status(404).body("No profile definition found. Expected PID with key 21.T11148/076759916209e5d62bd5 .");
     }
 
     @Override
@@ -376,9 +414,25 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
-        String pid = getContentPathFromRequest("pid", request);
-        //
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        //String pid = getContentPathFromRequest("pid", request);
+        String pid = record.getPid();
+        // TODO make inmemory system handle same pids due to same content by modifying generated pids.
+        if (!this.typingService.isIdentifierRegistered(pid)) {
+            return ResponseEntity.status(404).body("Can not update object because it does not exist.");
+        }
+        
+        if (this.typingService.updatePID(record)) {
+            PidRecordMessage message = PidRecordMessage.update(
+                pid,
+                this.typingService.getResolvingUrl(pid),
+                AuthenticationHelper.getPrincipal(),
+                ControllerUtils.getLocalHostname()
+            );
+            this.messagingService.send(message);
+            return ResponseEntity.status(200).body(record);
+        } else {
+            return ResponseEntity.status(404).body("The given PID was not valid or not found in the registry.");
+        }
     }
 
     @Override

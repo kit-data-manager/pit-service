@@ -17,6 +17,8 @@ package edu.kit.datamanager.pit.configuration;
 
 import edu.kit.datamanager.configuration.GenericApplicationProperties;
 import java.net.URL;
+import java.util.Optional;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,15 +35,21 @@ import org.springframework.validation.annotation.Validated;
 @EqualsAndHashCode(callSuper = true)
 public class ApplicationProperties extends GenericApplicationProperties{
 
+  @Value("${pit.pidsystem.inmemory.baseURI:#{null}}")
+  private Optional<URL> inMemoryBaseUri;
+
   @Value("${pit.pidsystem.handle.baseURI}")
   private URL handleBaseUri;
+
   @Value("${pit.pidsystem.handle.userName}")
   private String handleUser;
+
   @Value("${pit.pidsystem.handle.userPassword}")
   private String handlePassword;
+
   @Value("${pit.pidsystem.handle.generatorPrefix}")
   private String generatorPrefix;
+
   @Value("${pit.typeregistry.baseURI}")
   private URL typeRegistryUri;
-
 }

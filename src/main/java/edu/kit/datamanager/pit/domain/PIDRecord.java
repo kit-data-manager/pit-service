@@ -124,4 +124,12 @@ public class PIDRecord {
         }
         return values.toArray(new String[]{});
     }
+
+	public Map<String, String> intoKeyValuePairs() {
+        Map<String, String> map = new HashMap<>();
+        for (String key : this.getPropertyIdentifiers()) {
+            map.put(key, this.getPropertyValue(key));
+        }
+		return map;
+	}
 }

@@ -4,3 +4,13 @@
 # Ignore Gradle build output directory
 build
 config
+
+# Ignore IDE specific content
+/bin/
+.classpath
+.project
+org.eclipse.*
+.vscode
+
+# Ignore lombok gradle plugin configuration files
+lombok.config

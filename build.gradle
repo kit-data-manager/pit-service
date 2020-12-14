@@ -12,7 +12,7 @@ buildscript {
 }
 
 plugins { 
-    id 'io.franzbecker.gradle-lombok' version '1.14'
+    id "io.freefair.lombok" version "5.1.0"
     id "io.spring.dependency-management" version "1.0.8.RELEASE" 
     id "com.github.kt3k.coveralls" version "2.8.1" 
     id "org.owasp.dependencycheck" version "3.1.2"
@@ -27,7 +27,7 @@ apply plugin: 'io.spring.dependency-management'
 
 jar {
     baseName = 'pit-service'
-    version =  '0.1'
+    version =  '0.2'
 }
 
 repositories {
@@ -46,8 +46,7 @@ configurations {
 }
 
 lombok {
-    version = '1.18.10'
-    sha256 = ""
+    version = '1.18.12'
 }
 
 if (project.hasProperty('travis')) {
@@ -68,7 +67,7 @@ dependencies {
     
     
     
-    implementation("edu.kit.datamanager:service-base:0.1")
+    implementation("edu.kit.datamanager:service-base:0.1.3")
     // implementation("edu.kit.datamanager:generic-message-consumer:0.1.0")
 
     implementation("com.monitorjbl:spring-json-view:0.16")
@@ -78,9 +77,9 @@ dependencies {
     implementation ("com.github.everit-org.json-schema:org.everit.json.schema:1.3.0")
     
     //Java 11 Support 
-    implementation('javax.xml.bind:jaxb-api:2.2.11')
-    implementation('com.sun.xml.bind:jaxb-core:2.2.11')
-    implementation('com.sun.xml.bind:jaxb-impl:2.2.11')
+    implementation('javax.xml.bind:jaxb-api:2.3.0')
+    implementation('com.sun.xml.bind:jaxb-core:2.3.0')
+    implementation('com.sun.xml.bind:jaxb-impl:2.3.0')
     implementation('javax.activation:activation:1.1.1')
     implementation('org.javassist:javassist:3.23.1-GA')
     
@@ -126,7 +125,7 @@ test {
 
 
 jacoco {
-    toolVersion = "0.8.2"
+    toolVersion = "0.8.5"
 }
 
 jacocoTestReport {

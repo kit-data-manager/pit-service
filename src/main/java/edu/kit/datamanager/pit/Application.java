@@ -26,7 +26,8 @@ import com.google.common.cache.RemovalNotification;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
-import edu.kit.datamanager.pit.pidsystem.impl.FakeIdentifierSystem;
+import edu.kit.datamanager.pit.pidsystem.impl.HandleSystemRESTAdapter;
+import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.TypingService;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
@@ -79,9 +80,15 @@ public class Application {
         return new TypeRegistry();
     }
 
-    @Bean
     public IIdentifierSystem identifierSystem() {
-        return new FakeIdentifierSystem();// new HandleSystemRESTAdapter(applicationProperties());
+        ApplicationProperties properties = this.applicationProperties();
+        if (properties.getInMemoryBaseUri().isPresent()) {
+            LOG.warn("Starting in-memory identifier service, because a baseURI for it was found in application.properties.");
+            return new InMemoryIdentifierSystem(properties);
+        } else {
+            LOG.info("Starting handle system REST adapter.");
+            return new HandleSystemRESTAdapter(properties);
+        }
     }
 
     @Bean
