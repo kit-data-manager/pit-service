@@ -10,6 +10,7 @@ config
 .classpath
 .project
 org.eclipse.*
+.vscode
 
 # Ignore lombok gradle plugin configuration files
 lombok.config
