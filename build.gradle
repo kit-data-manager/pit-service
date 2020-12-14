@@ -67,7 +67,7 @@ dependencies {
     
     
     
-    implementation("edu.kit.datamanager:service-base:0.1.2")
+    implementation("edu.kit.datamanager:service-base:0.1.3")
     // implementation("edu.kit.datamanager:generic-message-consumer:0.1.0")
 
     implementation("com.monitorjbl:spring-json-view:0.16")
