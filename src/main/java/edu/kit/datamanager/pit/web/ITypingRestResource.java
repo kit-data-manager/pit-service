@@ -172,6 +172,25 @@ public interface ITypingRestResource {
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException;
 
+    /**
+     * Check if a certain PID provided as path segment(s) exist.
+     *
+     * @return either 200 or 404, indicating whether the PID is registered or
+     * not registered
+     *
+     * @throws IOException
+     */
+    @RequestMapping(path = "/pid/**", method = RequestMethod.GET)
+    @Operation(summary = "Get the record of the given PID.", description = "Get the record to the given PID, if it exists.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Found"),
+        @ApiResponse(responseCode = "404", description = "Not found")
+    })
+    public ResponseEntity getRecord(
+            final WebRequest request,
+            final HttpServletResponse response,
+            final UriComponentsBuilder uriBuilder) throws IOException;
+
     ////////////////
     ////////////////
     ////////////////

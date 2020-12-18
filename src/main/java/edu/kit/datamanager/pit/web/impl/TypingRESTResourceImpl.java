@@ -461,6 +461,20 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return requestedUri.substring(requestedUri.indexOf(lastPathElement + "/") + (lastPathElement + "/").length());
     }
 
+    @Override
+    public ResponseEntity getRecord(
+            final WebRequest request,
+            final HttpServletResponse response,
+            final UriComponentsBuilder uriBuilder) throws IOException {
+                String pid = getContentPathFromRequest("pid", request);
+                try {
+                    PIDRecord record = this.typingService.queryAllProperties(pid);
+                    return ResponseEntity.status(200).body(record);
+                } catch (Exception e) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Identifier with value " + pid + " not found.");
+                }
+            }
+
 //  /**
 //   * Simple ping method for testing (check whether the API is running etc.). Not
 //   * part of the official interface description.
