@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
@@ -37,7 +38,11 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
 
     @Override
     public PIDRecord queryAllProperties(String pid) throws IOException {
-        return this.records.get(pid);
+        PIDRecord record = this.records.get(pid);
+        if (record == null) {
+            throw new PidNotFoundException(pid);
+        }
+        return record;
     }
 
     @Override

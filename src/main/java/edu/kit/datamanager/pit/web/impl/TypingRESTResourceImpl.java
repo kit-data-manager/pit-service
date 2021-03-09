@@ -4,6 +4,10 @@ import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import java.io.IOException;
 
 import edu.kit.datamanager.pit.common.DataTypeException;
+import edu.kit.datamanager.pit.common.InconsistentRecordsException;
+import edu.kit.datamanager.pit.common.TypeNotFoundException;
+import edu.kit.datamanager.pit.common.PidNotFoundException;
+import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
@@ -14,7 +18,11 @@ import edu.kit.datamanager.entities.messaging.PidRecordMessage;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import javax.servlet.http.HttpServletResponse;
+
+import com.google.common.base.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -323,7 +331,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             return ResponseEntity.status(200).build();
         }
         LOG.error("PID record with identifier {} is NOT matching profile with identifier {}.", identifier, profileId);
-        return ResponseEntity.status(HttpStatus.CONFLICT.value()).body("Record with identifier " + identifier + " not matching profile with identifier " + profileId + ".");
+        throw new RecordValidationException(identifier, "Record with identifier " + identifier + " not matching profile with identifier " + profileId + ".");
     }
 
     @Override
@@ -338,8 +346,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         TypeDefinition typeDef = typingService.describeType(typeId);
 
         if (typeDef == null) {
-            LOG.error("No type definition found for identifier {}.", typeId);
-            return ResponseEntity.status(404).body("No type found for identifier " + typeId + ".");
+            LOG.error("No definition found for identifier {}.", typeId);
+            throw new TypeNotFoundException(typeId);
         }
 
         LOG.trace("Reading PID record for identifier {}.", identifier);
@@ -351,31 +359,27 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
 
         LOG.error("PID record with identifier {} is NOT matching type with identifier {}.", identifier, typeId);
-        return ResponseEntity.status(HttpStatus.CONFLICT).body("Record with identifier " + identifier + " not matching type with identifier " + typeId + ".");
+        throw new RecordValidationException(identifier, "Record with identifier " + identifier + " not matching type with identifier " + typeId + ".");
     }
 
     @Override
-    public ResponseEntity getProfile(
+    public ResponseEntity<TypeDefinition> getProfile(
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
-        LOG.trace("Performing getProfile().");
-
         String profileId = getContentPathFromRequest("profile", request);
-        LOG.trace("Obtained profile identifier {} from request. Loading profile definition.", profileId);
 
         //read profile from type registry
         TypeDefinition profileDef = typingService.describeType(profileId);
         if (profileDef == null) {
-            LOG.error("No profile definition found for identifier {}.", profileId);
-            return ResponseEntity.status(404).body("No profile found for identifier " + profileId + ".");
+            LOG.error("No definition found for identifier {}.", profileId);
+            throw new TypeNotFoundException(profileId);
         }
-        LOG.trace("Returning profile definition for identifier {}.", profileId);
-        return ResponseEntity.status(200).body(profileDef);
+        return ResponseEntity.status(HttpStatus.FOUND.value()).body(profileDef);
     }
 
     @Override
-    public ResponseEntity createPID(
+    public ResponseEntity<PIDRecord> createPID(
             PIDRecord record,
             final WebRequest request,
             final HttpServletResponse response,
@@ -386,7 +390,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         try {
             valid = this.validateRecord(record);
         } catch (DataTypeException e) {
-            return ResponseEntity.status(404).body(e.getMessage());
+            throw new RecordValidationException("(no PID registered yet)", e.getMessage());
         }
         boolean missingProfile = !record.hasProperty(PROFILE_KEY) || record.getPropertyValues(PROFILE_KEY).length < 1;
         if (valid) {
@@ -398,29 +402,30 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                 ControllerUtils.getLocalHostname()
             );
             this.messagingService.send(message);
-            return ResponseEntity.status(200).body(record);
+            return ResponseEntity.status(HttpStatus.CREATED.value()).body(record);
         } else if (missingProfile) {
-            return ResponseEntity.status(404).body(String.format("No profiles are specified in this record. Profile Key is {}", PROFILE_KEY));
+            // validation failed and profile is missing (this must therefore be the reason)
+            throw new RecordValidationException("(no PID registered yet)", "No profiles are specified in this record. Profile Key is " + PROFILE_KEY);
         } else {
             // if validation failed
-            return ResponseEntity.status(404).body("Given object does not meet all profiles specifications.");
+            throw new RecordValidationException("(no PID registered yet)");
         }
     }
 
     @Override
-    public ResponseEntity updatePID(
+    public ResponseEntity<PIDRecord> updatePID(
             PIDRecord record,
             final WebRequest request,
             final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder) throws IOException {
+            final UriComponentsBuilder uriBuilder) throws IOException, InconsistentRecordsException {
         // PID validation
         String pid = getContentPathFromRequest("pid", request);
         String pid_internal = record.getPid();
         if (!pid_internal.isEmpty() && pid == pid_internal) {
-            return ResponseEntity.status(404).body("PID in record was given, but not the same as the PID in the URL.");
+            throw new InconsistentRecordsException("PID in record was given, but it was not the same as the PID in the URL.");
         }
         if (!this.typingService.isIdentifierRegistered(pid)) {
-            return ResponseEntity.status(404).body("Can not update object because it does not exist.");
+            throw new PidNotFoundException(pid);
         }
 
         // record validation
@@ -429,10 +434,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         try {
             valid = this.validateRecord(record);
         } catch (DataTypeException e) {
-            return ResponseEntity.status(404).body(e.getMessage());
+            throw new RecordValidationException(pid, e.getMessage());
         }
         if (!valid) {
-            return ResponseEntity.status(404).body("The given record is not valid.");
+            // TODO give the user a reason why this failed.
+            throw new RecordValidationException(pid);
         }
         
         // update and send message
@@ -443,27 +449,26 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                 ControllerUtils.getLocalHostname()
             );
             this.messagingService.send(message);
-            return ResponseEntity.status(200).body(record);
+            return ResponseEntity.ok().body(record);
         } else {
-            return ResponseEntity.status(404).body("The given PID was not valid or not found in the registry.");
+            throw new PidNotFoundException(pid);
         }
     }
 
     @Override
-    public ResponseEntity isPidRegistered(
+    public ResponseEntity<String> isPidRegistered(
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
-        LOG.trace("Performing isPidRegistered().");
         String pid = getContentPathFromRequest("pid", request);
         LOG.trace("Obtained PID {} from request.", pid);
 
         if (typingService.isIdentifierRegistered(pid)) {
             LOG.trace("PID successfully checked.");
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok().body("PID is registered.");
         } else {
             LOG.error("PID {} not found at configured identifier system.", pid);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Identifier with value " + pid + " not found.");
+            throw new PidNotFoundException("Identifier with value " + pid + " not found.");
         }
     }
 
@@ -476,18 +481,14 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
-    public ResponseEntity getRecord(
+    public ResponseEntity<PIDRecord> getRecord(
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder
     ) throws IOException {
         String pid = getContentPathFromRequest("pid", request);
-        try {
-            PIDRecord record = this.typingService.queryAllProperties(pid);
-            return ResponseEntity.status(200).body(record);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Identifier with value " + pid + " not found.");
-        }
+        PIDRecord record = this.typingService.queryAllProperties(pid);
+        return ResponseEntity.ok().body(record);
     }
 
     private boolean validateRecord(PIDRecord record) throws DataTypeException, IOException {

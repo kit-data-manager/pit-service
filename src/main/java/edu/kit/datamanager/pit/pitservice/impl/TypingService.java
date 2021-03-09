@@ -2,6 +2,9 @@ package edu.kit.datamanager.pit.pitservice.impl;
 
 import com.google.common.cache.LoadingCache;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
+import edu.kit.datamanager.pit.common.PidNotFoundException;
+import edu.kit.datamanager.pit.common.TypeNotFoundException;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -92,16 +95,16 @@ public class TypingService implements ITypingService {
 
         if (typeDef == null) {
             LOG.error("Unable to retrieve type for identifier {}.", typeIdentifier);
-            throw new IllegalArgumentException("Unknown type: " + typeIdentifier);
+            throw new TypeNotFoundException(typeIdentifier);
         }
         // resolve PID
         LOG.trace("Resolving PID {}.", pid);
         PIDRecord pidInfo = identifierSystem.queryAllProperties(pid);
         /*
-     * Now go through all mandatory properties of the type and check whether
-     * they are in the pid data. Remember: both the keys of the pid data map
-     * and the type definition record properties are property identifiers
-     * (not names)!
+         * Now go through all mandatory properties of the type and check whether
+         * they are in the pid data. Remember: both the keys of the pid data map
+         * and the type definition record properties are property identifiers
+         * (not names)!
          */
         LOG.trace("Validating {} record properties against type with identifier {}.", pidInfo.getEntries().size(), typeIdentifier);
         for (String prop : typeDef.getAllProperties()) {
@@ -121,7 +124,11 @@ public class TypingService implements ITypingService {
     @Override
     public PIDRecord queryAllProperties(String pid) throws IOException {
         LOG.trace("Performing queryAllProperties({}).", pid);
-        return identifierSystem.queryAllProperties(pid);
+        PIDRecord record = identifierSystem.queryAllProperties(pid);
+        if (record == null) {
+            throw new PidNotFoundException(pid);
+        }
+        return record;
     }
 
     @Override

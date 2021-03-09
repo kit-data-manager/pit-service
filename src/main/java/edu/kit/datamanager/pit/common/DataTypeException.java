@@ -8,8 +8,9 @@ package edu.kit.datamanager.pit.common;
  */
 public class DataTypeException extends Exception {
 
+	private static final long serialVersionUID = 1L;
+
 	public DataTypeException(String message) {
 		super(message);
 	}
-
 }

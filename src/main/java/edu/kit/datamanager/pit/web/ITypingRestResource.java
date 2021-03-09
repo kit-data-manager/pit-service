@@ -15,8 +15,13 @@
  */
 package edu.kit.datamanager.pit.web;
 
+import edu.kit.datamanager.pit.domain.TypeDefinition;
+import edu.kit.datamanager.pit.common.InconsistentRecordsException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
+
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.io.IOException;
@@ -52,10 +57,12 @@ public interface ITypingRestResource {
             + "as the last path segment(s). The check only includes the test for mandatory fields according to the profile. For "
             + "in-depth tests endpoint /type/{identifier} should be used.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Found"),
-        @ApiResponse(responseCode = "404", description = "Not found")
+        @ApiResponse(responseCode = "200", description = "Resource is matching the type.", content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "404", description = "Some resource (usually the given PID) could not be resolved.", content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "409", description = "Resource is NOT matching the type.", content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
     })
-    public ResponseEntity isPidMatchingProfile(@RequestParam("identifier") String identifier,
+    public ResponseEntity<String> isPidMatchingProfile(@RequestParam("identifier") String identifier,
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder
@@ -78,16 +85,18 @@ public interface ITypingRestResource {
             + "type provided as the last path segment(s). The check includes the test if all mandatory properties are in the record as well as "
             + "an in-depth tests of the single elements for matching the sub-type's schema.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Found"),
-        @ApiResponse(responseCode = "404", description = "Not found")
+        @ApiResponse(responseCode = "200", description = "Resource is matching the type.", content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "404", description = "Some resource (usually the given PID) could not be resolved.", content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "409", description = "Resource is NOT matching the type.", content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
     })
-    public ResponseEntity isResourceMatchingType(@RequestParam("identifier") String identifier,
+    public ResponseEntity<String> isResourceMatchingType(@RequestParam("identifier") String identifier,
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException;
 
     /**
-     * Get a profile by its identifier presented by the last path segment(s).
+     * Get a profile or type by its identifier presented by the last path segment(s).
      *
      * @return either 200 or 404, indicating whether the profile is registered
      * or not registered
@@ -97,10 +106,11 @@ public interface ITypingRestResource {
     @RequestMapping(path = "/profile/**", method = RequestMethod.GET)
     @Operation(summary = "Get a profile", description = "Obtain the profile identified by the PID provided as the last path segment(s).")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Found"),
-        @ApiResponse(responseCode = "404", description = "Not found")
+        @ApiResponse(responseCode = "200", description = "Found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TypeDefinition.class))),
+        @ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
     })
-    public ResponseEntity getProfile(
+    public ResponseEntity<TypeDefinition> getProfile(
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException;
@@ -121,37 +131,37 @@ public interface ITypingRestResource {
     @RequestMapping(path = "/pid/", method = RequestMethod.POST)
     @Operation(summary = "Create a new PID record", description = "Create a new PID record using the record information from the request body.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Found"),
-        @ApiResponse(responseCode = "404", description = "Not found")
+        @ApiResponse(responseCode = "201", description = "Created", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PIDRecord.class))),
+        @ApiResponse(responseCode = "409", description = "Validation failed (conflict). See body for details.", content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
     })
-    public ResponseEntity createPID(@RequestBody final PIDRecord record,
+    public ResponseEntity<PIDRecord> createPID(@RequestBody final PIDRecord record,
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException;
 
     /**
-     * Create a new PID using the record information provided in the request
+     * Update the given PIDs record using the information provided in the request
      * body. The record is expected to contain the identifier of the matching
-     * profile. Before creating the record, the record information will be
-     * validated against the profile.
+     * profile. Conditions for a valid record are the same as for creation.
      *
      * @param record The PID record.
      *
-     * @return either 200 or 404, indicating whether the profile is registered
-     * or not registered
+     * @return the record (on success).
      *
      * @throws IOException
      */
     @RequestMapping(path = "/pid/**", method = RequestMethod.PUT)
     @Operation(summary = "Update an existing PID record", description = "Update an existing PID record using the record information from the request body.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Found"),
-        @ApiResponse(responseCode = "404", description = "Not found")
+        @ApiResponse(responseCode = "200", description = "Success.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PIDRecord.class))),
+        @ApiResponse(responseCode = "409", description = "Validation failed (conflict). See body for details.", content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
     })
-    public ResponseEntity updatePID(@RequestBody final PIDRecord record,
+    public ResponseEntity<PIDRecord> updatePID(@RequestBody final PIDRecord record,
             final WebRequest request,
             final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder) throws IOException;
+            final UriComponentsBuilder uriBuilder) throws IOException, InconsistentRecordsException;
 
     /**
      * Check if a certain PID provided as path segment(s) exist.
@@ -162,31 +172,34 @@ public interface ITypingRestResource {
      * @throws IOException
      */
     @RequestMapping(path = "/pid/**", method = RequestMethod.HEAD)
-    @Operation(summary = "Check if PID exists.", description = "Check if the PID with the idenfifier provided as the last path segment(s) exists.")
+    @Operation(
+        summary = "Check if the given PID exists.",
+        description = "Check if the PID with the idenfifier provided as the last path segment(s) is registered and resolvable."
+                + "The body will contain a short human readable string, notifying about the result."
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Found"),
-        @ApiResponse(responseCode = "404", description = "Not found")
+        @ApiResponse(responseCode = "200", description = "Found", content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = "text/plain"))
     })
-    public ResponseEntity isPidRegistered(
+    public ResponseEntity<String> isPidRegistered(
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException;
 
     /**
-     * Check if a certain PID provided as path segment(s) exist.
+     * Get the record of the given PID.
      *
-     * @return either 200 or 404, indicating whether the PID is registered or
-     * not registered
+     * @return the record.
      *
      * @throws IOException
      */
     @RequestMapping(path = "/pid/**", method = RequestMethod.GET)
     @Operation(summary = "Get the record of the given PID.", description = "Get the record to the given PID, if it exists.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Found"),
-        @ApiResponse(responseCode = "404", description = "Not found")
+        @ApiResponse(responseCode = "200", description = "Found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PIDRecord.class))),
+        @ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = "text/plain"))
     })
-    public ResponseEntity getRecord(
+    public ResponseEntity<PIDRecord> getRecord (
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException;

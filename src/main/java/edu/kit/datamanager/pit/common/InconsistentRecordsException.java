@@ -8,6 +8,8 @@ package edu.kit.datamanager.pit.common;
  */
 public class InconsistentRecordsException extends Exception {
 
+	private static final long serialVersionUID = 1L;
+
 	public InconsistentRecordsException(String message) {
 		super(message);
 	}
