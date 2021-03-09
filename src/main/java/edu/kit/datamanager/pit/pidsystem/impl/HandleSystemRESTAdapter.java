@@ -253,10 +253,4 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
     public String getGeneratorPrefix() {
         return generatorPrefix;
     }
-
-    @Override
-    public String getResolvingUrl(String pid) {
-        return UriComponentsBuilder.fromHttpUrl(baseUri).pathSegment("api", "handles", pid).build().toUriString();
-    }
-
 }

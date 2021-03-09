@@ -90,13 +90,4 @@ public interface IIdentifierSystem {
      * @return true if the identifier was deleted, false if it did not exist
      */
     public boolean deletePID(String pid);
-
-    /**
-     * Return a URL that, if invoked using http GET, will contain
-     * a json body with the record which belongs to the given PID.
-     * @param pid
-     * @return a resolving URL.
-     */
-    public String getResolvingUrl(String pid);
-
 }

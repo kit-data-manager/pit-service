@@ -27,7 +27,7 @@ apply plugin: 'io.spring.dependency-management'
 
 jar {
     baseName = 'pit-service'
-    version =  '0.2'
+    version =  '0.3'
 }
 
 repositories {
@@ -62,7 +62,7 @@ if (project.hasProperty('travis')) {
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-mail") 
 
-    implementation("edu.kit.datamanager:service-base:0.2.1")
+    implementation("edu.kit.datamanager:service-base:0.3.0")
 
     implementation("com.monitorjbl:spring-json-view:0.16")
     implementation("org.apache.tika:tika-core:1.18") 

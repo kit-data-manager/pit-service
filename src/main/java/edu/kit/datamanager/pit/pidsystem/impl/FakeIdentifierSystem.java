@@ -92,12 +92,6 @@ public class FakeIdentifierSystem implements IIdentifierSystem {
     }
 
     @Override
-    public String getResolvingUrl(String pid) {
-        // TODO Auto-generated method stub
-        return "";
-    }
-
-    @Override
     public boolean updatePID(PIDRecord record) throws IOException {
         throw new UnsupportedOperationException("Not supported yet.");
     }

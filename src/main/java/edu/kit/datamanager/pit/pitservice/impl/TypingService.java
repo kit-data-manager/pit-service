@@ -264,11 +264,6 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public String getResolvingUrl(String pid) {
-        return this.identifierSystem.getResolvingUrl(pid);
-    }
-
-    @Override
     public boolean updatePID(PIDRecord record) throws IOException {
         return this.identifierSystem.updatePID(record);
     }

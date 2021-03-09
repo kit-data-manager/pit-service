@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -37,6 +36,7 @@ import edu.kit.datamanager.pit.typeregistry.impl.TypeRegistry;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.http.client.HttpClient;
@@ -98,7 +98,9 @@ public class Application {
 
     public IIdentifierSystem identifierSystem() {
         ApplicationProperties properties = this.applicationProperties();
-        if (properties.getInMemoryBaseUri().isPresent()) {
+        Optional<Boolean> inMemory = properties.getInMemoryPidService();
+        boolean useInMemory = inMemory.isPresent() && inMemory.get();
+        if (useInMemory) {
             LOG.warn("Starting in-memory identifier service, because a baseURI for it was found in application.properties.");
             return new InMemoryIdentifierSystem(properties);
         } else {

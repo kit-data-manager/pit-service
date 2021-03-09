@@ -388,19 +388,18 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         } catch (DataTypeException e) {
             return ResponseEntity.status(404).body(e.getMessage());
         }
+        boolean missingProfile = !record.hasProperty(PROFILE_KEY) || record.getPropertyValues(PROFILE_KEY).length < 1;
         if (valid) {
             String pid = this.typingService.registerPID(record);
             record.setPid(pid);
             PidRecordMessage message = PidRecordMessage.creation(
                 pid,
-                this.typingService.getResolvingUrl(pid),
                 AuthenticationHelper.getPrincipal(),
                 ControllerUtils.getLocalHostname()
             );
             this.messagingService.send(message);
             return ResponseEntity.status(200).body(record);
-        } else if (!record.hasProperty(PROFILE_KEY) || record.getPropertyValues(PROFILE_KEY).length < 1) {
-            // if no profile was found
+        } else if (missingProfile) {
             return ResponseEntity.status(404).body(String.format("No profiles are specified in this record. Profile Key is {}", PROFILE_KEY));
         } else {
             // if validation failed
@@ -440,7 +439,6 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         if (this.typingService.updatePID(record)) {
             PidRecordMessage message = PidRecordMessage.update(
                 pid,
-                this.typingService.getResolvingUrl(pid),
                 AuthenticationHelper.getPrincipal(),
                 ControllerUtils.getLocalHostname()
             );

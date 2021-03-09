@@ -35,8 +35,8 @@ import org.springframework.validation.annotation.Validated;
 @EqualsAndHashCode(callSuper = true)
 public class ApplicationProperties extends GenericApplicationProperties{
 
-  @Value("${pit.pidsystem.inmemory.baseURI:#{null}}")
-  private Optional<URL> inMemoryBaseUri;
+  @Value("${pit.pidsystem.inmemory.active:#{null}}")
+  private Optional<Boolean> inMemoryPidService;
 
   @Value("${pit.pidsystem.handle.baseURI}")
   private URL handleBaseUri;
