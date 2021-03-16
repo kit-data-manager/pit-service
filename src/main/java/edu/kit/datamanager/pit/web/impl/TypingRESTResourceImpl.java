@@ -21,8 +21,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import javax.servlet.http.HttpServletResponse;
 
-import com.google.common.base.Optional;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -398,6 +396,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             record.setPid(pid);
             PidRecordMessage message = PidRecordMessage.creation(
                 pid,
+                "",  // TODO parameter is depricated and will be removed soon.
                 AuthenticationHelper.getPrincipal(),
                 ControllerUtils.getLocalHostname()
             );
@@ -445,6 +444,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         if (this.typingService.updatePID(record)) {
             PidRecordMessage message = PidRecordMessage.update(
                 pid,
+                "",  // TODO parameter is depricated and will be removed soon.
                 AuthenticationHelper.getPrincipal(),
                 ControllerUtils.getLocalHostname()
             );
