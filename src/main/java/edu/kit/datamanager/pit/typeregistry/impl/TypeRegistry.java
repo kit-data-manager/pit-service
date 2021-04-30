@@ -52,7 +52,7 @@ public class TypeRegistry implements ITypeRegistry {
     public TypeDefinition queryTypeDefinition(String typeIdentifier) throws IOException, URISyntaxException {
         LOG.trace("Performing queryTypeDefinition({}).", typeIdentifier);
         String[] segments = typeIdentifier.split("/");
-        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUri(applicationProperties.getHandleBaseUri().toURI()).pathSegment(segments);
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUri(applicationProperties.getHandleResolverBaseURI().toURI()).pathSegment(segments);
         LOG.trace("Querying for type definition at URI {}.", uriBuilder.toString());
         ResponseEntity<String> response = restTemplate.exchange(uriBuilder.build().toUri(), HttpMethod.GET, HttpEntity.EMPTY, String.class);
         ObjectMapper mapper = new ObjectMapper();

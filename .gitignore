@@ -14,3 +14,13 @@ org.eclipse.*
 
 # Ignore lombok gradle plugin configuration files
 lombok.config
+
+# Operating system specifics
+.DS_STORE
+
+# General
+*.tar.gz
+
+# Keys/Certificates
+*.bin
+*.pem

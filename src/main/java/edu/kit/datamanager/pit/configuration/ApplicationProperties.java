@@ -17,6 +17,7 @@ package edu.kit.datamanager.pit.configuration;
 
 import edu.kit.datamanager.configuration.GenericApplicationProperties;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Optional;
 
 import lombok.Data;
@@ -38,14 +39,24 @@ public class ApplicationProperties extends GenericApplicationProperties{
   @Value("${pit.pidsystem.inmemory.active:#{null}}")
   private Optional<Boolean> inMemoryPidService;
 
-  @Value("${pit.pidsystem.handle.baseURI}")
-  private URL handleBaseUri;
+  @Value("${pit.pidsystem.handle.resolverBaseURI}")
+  private URL handleResolverBaseURI;
 
   @Value("${pit.pidsystem.handle.userName}")
   private String handleUser;
 
+  // TODO delete this one? At least make it optional.
   @Value("${pit.pidsystem.handle.userPassword}")
   private String handlePassword;
+
+  @Value("${pit.pidsystem.handle.usersPublicKeyIndex:300}")
+  private int handlePublicKeyIndex;
+
+  @Value("${pit.pidsystem.handle.userPrivateKeyPath}")
+  private Path handlePrivateKeyPath;
+
+  @Value("${pit.pidsystem.handle.userPrivateKeyCypherPath:#{null}}")
+  private Optional<Path> handlePrivateKeyCypherPath;
 
   @Value("${pit.pidsystem.handle.generatorPrefix}")
   private String generatorPrefix;
