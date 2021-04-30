@@ -3,7 +3,6 @@ package edu.kit.datamanager.pit.pidsystem.impl;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -13,7 +12,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.HostnameVerifier;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,7 +24,7 @@ import edu.kit.datamanager.pit.domain.PIDRecordEntry;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import java.util.Base64;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.springframework.http.HttpEntity;
@@ -39,85 +38,52 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Concrete adapter of an identifier system that connects to the Handle System
- * through its native REST interface available from HS v8 on.
- *
+ * through its native REST interface available from Handle System v8 on.
  */
 public class HandleSystemRESTAdapter implements IIdentifierSystem {
-
-    public static final boolean UNSAFE_SSL = true;
-
-    private final static class TrustAllX509TrustManager implements X509TrustManager {
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
-        }
-
-        @Override
-        public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) {
-        }
-
-        @Override
-        public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) {
-        }
-
-    }
-
-//  @Autowired
-//  private ApplicationProperties applicationProperties;
-    protected String baseUri;
-    protected String authInfo;
-    //protected Client client;
-    protected RestTemplate restTemplate = new RestTemplate();
-
+    /** The Handle prefix */
     protected String generatorPrefix;
-
+    /** Handle base URI */
+    protected String baseUri;
+    /** Base64 encoded credentials (username + password) */
+    protected String authInfo;
+    
+    /** HTTP Client with REST functionality */
+    protected RestTemplate restTemplate = new RestTemplate();
+    /** JSON (De-)Serializer */
     private ObjectMapper objectMapper = new ObjectMapper();
 
     public HandleSystemRESTAdapter(ApplicationProperties applicationProperties) {
         super();
         this.generatorPrefix = applicationProperties.getGeneratorPrefix();
-        this.baseUri = applicationProperties.getHandleBaseUri().toString();//UriBuilder.fromUri(baseURI).path("api").build();
+        this.baseUri = applicationProperties.getHandleBaseUri().toString();
         try {
-            this.authInfo = Base64.
-                    getEncoder().
-                    encodeToString((URLEncoder.encode(applicationProperties.getHandleUser(), "UTF-8") + ":" + URLEncoder.encode(applicationProperties.getHandlePassword(), "UTF-8")).getBytes());
+            String encodedUserName = URLEncoder.encode(applicationProperties.getHandleUser(), "UTF-8");
+            String encodedPassword = URLEncoder.encode(applicationProperties.getHandlePassword(), "UTF-8");
+            String encodedCredentials = encodedUserName + ":" + encodedPassword;
+            this.authInfo = Base64.getEncoder().encodeToString(encodedCredentials.getBytes());
         } catch (UnsupportedEncodingException e) {
             throw new IllegalArgumentException("Error while encoding the user name in UTF-8", e);
         }
 
-//    if(UNSAFE_SSL){
-//      /* TODO: REMOVE THIS IN PRODUCTION VERSION! */
-//      try{
-//        SSLContext sslContext;
-//        sslContext = SSLContext.getInstance("TLS");
-//        sslContext.init(null, new TrustManager[]{new TrustAllX509TrustManager()}, new java.security.SecureRandom());
-//        HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
-//        HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier(){
-//          public boolean verify(String string, SSLSession ssls){
-//            return true;
-//          }
-//        });
-//        
-//        this.client = ClientBuilder.newBuilder().sslContext(sslContext).build();
-//      } catch(NoSuchAlgorithmException | KeyManagementException e){
-//        throw new IllegalStateException("Could not initialize unsafe SSL constructs", e);
-//      }
-//    } else{
-//      this.client = ClientBuilder.newBuilder().build();
-//    }
-        CloseableHttpClient httpClient = HttpClients.custom().setSSLHostnameVerifier(new NoopHostnameVerifier()).build();
+        // TODO test if this works fine
+        HostnameVerifier sslVerifier = new DefaultHostnameVerifier();
 
+        CloseableHttpClient httpClient = HttpClients.custom().setSSLHostnameVerifier(sslVerifier).build();
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
         requestFactory.setHttpClient(httpClient);
-
         restTemplate = new RestTemplate(requestFactory);
     }
 
     @Override
     public boolean isIdentifierRegistered(String pid) {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(baseUri).pathSegment("api", "handles", pid);
-        ResponseEntity<String> response = restTemplate.exchange(uriBuilder.build().toUri(), HttpMethod.GET, HttpEntity.EMPTY, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(
+            uriBuilder.build().toUri(),
+            HttpMethod.GET,
+            HttpEntity.EMPTY,
+            String.class
+        );
         return response.getStatusCodeValue() == 200;
     }
 
@@ -125,7 +91,12 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
     public String queryProperty(String pid, TypeDefinition typeDefinition) throws IOException {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(baseUri).pathSegment("api", "handles", pid);
         uriBuilder = uriBuilder.queryParam("type", typeDefinition.getIdentifier());
-        ResponseEntity<String> response = restTemplate.exchange(uriBuilder.build().toUri(), HttpMethod.GET, HttpEntity.EMPTY, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(
+            uriBuilder.build().toUri(),
+            HttpMethod.GET,
+            HttpEntity.EMPTY,
+            String.class
+        );
 
         // extract the Handle value data entry from the json response
         JsonNode rootNode = objectMapper.readTree(response.getBody());
@@ -138,7 +109,8 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
         }
         if (values.size() > 1) {
             // More than one property stored at this record
-            throw new IllegalStateException("PID records with more than one property of same type are not supported yet");
+            throw new IllegalStateException(
+                    "PID records with more than one property of same type are not supported yet");
         }
         String value = values.get(0).get("data").get("value").asText();
         return value;
@@ -154,9 +126,11 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
     public String registerPID(PIDRecord received_record) throws IOException {
         Map<String, List<PIDRecordEntry>> properties = received_record.getEntries();
         ResponseEntity<String> response;
-        String pid = generatePIDName();
+        String pid;
         do {
-            // PUT record to HS
+            pid = generatePIDName();
+
+            // PUT record to Handle System
             Collection<Map<String, String>> record = new LinkedList<>();
             int idx = 0;
             for (String key : properties.keySet()) {
@@ -164,28 +138,36 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
                 Map<String, String> handleValue = new HashMap<>();
                 handleValue.put("index", "" + idx);
                 handleValue.put("type", key);
-                handleValue.put(
-                    "data",
+                handleValue.put("data",
                     objectMapper.writeValueAsString(
-                        properties.get(key)
+                        properties
+                            .get(key)
                             .stream()
-                            .map( entry -> entry.getValue() )
-                            .collect( Collectors.toList() ))
+                            .map(entry -> entry.getValue())
+                            .collect(Collectors.toList())
+                    )
                 );
                 record.add(handleValue);
             }
-            String jsonText = objectMapper.writeValueAsString(record);
+            // String jsonText = objectMapper.writeValueAsString(record);
             UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(baseUri).pathSegment("api", "handles", pid);
             uriBuilder = uriBuilder.queryParam("overwrite", false);
             HttpHeaders headers = new HttpHeaders();
             headers.add("Authorization", "Basic " + authInfo);
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(headers);
-            response = restTemplate.exchange(uriBuilder.build().toUri(), HttpMethod.GET, requestEntity, String.class);
+            response = restTemplate.exchange(
+                uriBuilder.build().toUri(),
+                HttpMethod.GET,
+                requestEntity,
+                String.class
+            );
+            // response = individualHandleTarget.resolveTemplate("handle",
+            // pid).queryParam("overwrite", false).request(MediaType.APPLICATION_JSON)
+            // .header("Authorization", "Basic " + authInfo).put(Entity.json(jsonText));
 
-//      response = individualHandleTarget.resolveTemplate("handle", pid).queryParam("overwrite", false).request(MediaType.APPLICATION_JSON)
-//              .header("Authorization", "Basic " + authInfo).put(Entity.json(jsonText));
-//      // status 409 is sent in case the Handle already exists
+            // status 409 is sent in case the Handle already exists, so retry with another PID.
         } while (response.getStatusCodeValue() == 409);
+
         // Evaluate response
         if (response.getStatusCodeValue() == 201) {
             return pid;
@@ -196,6 +178,7 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
 
     @Override
     public boolean updatePID(PIDRecord record) throws IOException {
+        // TODO implement PID update
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -222,7 +205,8 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", "Basic " + authInfo);
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(headers);
-        ResponseEntity<String> response = restTemplate.exchange(uriBuilder.build().toUri(), HttpMethod.DELETE, requestEntity, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(uriBuilder.build().toUri(), HttpMethod.DELETE,
+                requestEntity, String.class);
 
         return response.getStatusCodeValue() == 200;
     }
@@ -233,7 +217,8 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", "Basic " + authInfo);
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(headers);
-        ResponseEntity<String> response = restTemplate.exchange(uriBuilder.build().toUri(), HttpMethod.GET, requestEntity, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(uriBuilder.build().toUri(), HttpMethod.GET,
+                requestEntity, String.class);
 
         if (response.getStatusCodeValue() != 200) {
             throw new PidNotFoundException(pid);
@@ -242,8 +227,9 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
         JsonNode root = mapper.readTree(response.getBody());
         PIDRecord result = new PIDRecord();
         for (JsonNode valueNode : root.get("values")) {
-            if (!(valueNode.get("data").get("format").asText().equals("string") || valueNode.get("data").get("format").asText().equals("base64") || valueNode
-                    .get("data").get("format").asText().equals("hex"))) {
+            if (!(valueNode.get("data").get("format").asText().equals("string")
+                    || valueNode.get("data").get("format").asText().equals("base64")
+                    || valueNode.get("data").get("format").asText().equals("hex"))) {
                 continue;
             }
             // index is ignored..
