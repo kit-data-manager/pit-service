@@ -55,7 +55,7 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
         int counter = 0;
         do {
             int hash = record.getEntries().hashCode() + counter;
-            record.setPid("tmp/test/" + hash);
+            record.setPid("sandboxed/" + hash);
             counter++;
         } while (this.records.containsKey(record.getPid()));
         this.records.put(record.getPid(), record);
