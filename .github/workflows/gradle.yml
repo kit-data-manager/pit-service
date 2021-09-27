@@ -12,14 +12,15 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
+        operating-system: [ubuntu-latest, macOS-latest, windows-latest]
         jdk: [ 8, 11 ]  # (open)JDK releases
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up openJDK 11
+    - name: Set up openJDK version
       uses: actions/setup-java@v2
       with:
         java-version: ${{ matrix.jdk }}
@@ -28,4 +29,15 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Build with Gradle
-      run: ./gradlew clean build jacocoTestReport
+      run:   |
+        if [ "$RUNNER_OS" == "Linux" ]; then
+              ./gradlew clean build jacocoTestReport
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+              ./gradlew clean build jacocoTestReport
+        elif [ "$RUNNER_OS" == "Windows" ]; then
+              ./gradlew.bat clean build jacocoTestReport
+        else
+              echo "$RUNNER_OS not supported"
+              exit 1
+        fi
+      shell: bash
