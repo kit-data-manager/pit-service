@@ -55,7 +55,7 @@ if (project.hasProperty('travis')) {
     apply from: 'gradle/profile-travis.gradle'
 } else if (project.hasProperty('release') || project.hasProperty('clean-release')) {
     println 'Using release profile for building ' + project.getName()
-    apply from: 'gradle/build_dependencies.gradle'
+    //apply from: 'gradle/build_dependencies.gradle'
     apply from: 'gradle/profile-release.gradle'   
 }
 
