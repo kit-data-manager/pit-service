@@ -2,11 +2,17 @@ plugins {
     // Spring boot & dependency management:
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
     id 'org.springframework.boot' version '2.2.2.RELEASE'
-
-    id "io.freefair.lombok" version "5.1.0"
+    // Lombok generates getter and setter and more. https://projectlombok.org/
+    // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
+    id "io.freefair.lombok" version "6.3.0"
     id "com.github.kt3k.coveralls" version "2.8.1" 
     id "org.owasp.dependencycheck" version "3.1.2"
     id "org.asciidoctor.convert" version "1.5.3"
+}
+
+lombok {
+    // check here for new versions: https://projectlombok.org/download
+    version = '1.18.22'
 }
 
 apply plugin: 'java'
@@ -30,10 +36,6 @@ targetCompatibility = 1.8
  
 configurations {
     all*.exclude module : 'spring-boot-starter-logging'
-}
-
-lombok {
-    version = '1.18.12'
 }
 
 if (project.hasProperty('release') || project.hasProperty('clean-release')) {
