@@ -1,13 +1,18 @@
-plugins { 
+plugins {
     // Spring boot & dependency management:
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
     id 'org.springframework.boot' version '2.2.2.RELEASE'
+    id "io.spring.dependency-management" version "1.0.11.RELEASE"
     // Lombok generates getter and setter and more. https://projectlombok.org/
     // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
     id "io.freefair.lombok" version "6.3.0"
-    id "com.github.kt3k.coveralls" version "2.8.1" 
-    id "org.owasp.dependencycheck" version "3.1.2"
-    id "org.asciidoctor.convert" version "1.5.3"
+    id 'java'
+
+    // test and docs dependencies
+    id 'jacoco'
+    //id "com.github.kt3k.coveralls" version "2.12.0" 
+    id "org.owasp.dependencycheck" version "6.5.0.1"
+    id 'org.asciidoctor.jvm.convert' version '3.3.2'
 }
 
 lombok {
@@ -15,11 +20,10 @@ lombok {
     version = '1.18.22'
 }
 
-apply plugin: 'java'
-apply plugin: 'jacoco'
-// Spring boot plugin offers some spring plugins by default.
-apply plugin: 'io.spring.dependency-management'
-
+jacoco {
+    // check here for new versions: https://www.jacoco.org/jacoco/
+    toolVersion = "0.8.7"
+}
 
 archivesBaseName = 'pit-service'
 version = '0.3'
@@ -27,7 +31,6 @@ version = '0.3'
 repositories {
     mavenLocal()
     mavenCentral()
-    maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }
     maven { url 'https://jitpack.io' }
 }
 
@@ -75,11 +78,6 @@ dependencies {
     testImplementation("org.mockito:mockito-core:2.18.0")
     testImplementation("org.powermock:powermock-module-junit4:2.0.0-beta.5")
     testImplementation("org.powermock:powermock-api-mockito2:2.0.0-beta.5")
-
-    testImplementation('org.springframework.restdocs:spring-restdocs-mockmvc:2.0.2.RELEASE')
-    testImplementation('org.asciidoctor:asciidoctor-gradle-plugin:1.5.9.2')
-    asciidoctor('org.springframework.restdocs:spring-restdocs-asciidoctor:2.0.2.RELEASE')
-    asciidoctor('com.github.allati.asciidoctor.monotree:asciidoctor-extension-monotree:0.0.1')
 }
 
 // Makes executable jar file.
@@ -115,11 +113,6 @@ test {
         outputs.upToDateWhen {false}
         showStandardStreams = true
     }
-}
-
-
-jacoco {
-    toolVersion = "0.8.5"
 }
 
 jacocoTestReport {
