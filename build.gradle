@@ -26,7 +26,11 @@ jacoco {
 }
 
 archivesBaseName = 'pit-service'
+description = "A gateway to manage PIDs containing profiles and typed attributes."
 version = '0.3'
+group = 'edu.kit.datamanager'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 repositories {
     mavenLocal()
@@ -34,8 +38,6 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
  
 configurations {
     all*.exclude module : 'spring-boot-starter-logging'
