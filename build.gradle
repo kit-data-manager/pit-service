@@ -56,10 +56,10 @@ dependencies {
     // More flexibility when (de-)serializing json:
     //implementation("com.monitorjbl:spring-json-view:1.1.0")
 	implementation("com.github.everit-org.json-schema:org.everit.json.schema:1.14.0")
-
+    
     implementation('org.apache.httpcomponents:httpclient:4.5.13')
     implementation('org.apache.httpcomponents:httpclient-cache:4.5.13')
-    
+
     testImplementation("org.springframework:spring-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
@@ -91,6 +91,11 @@ bootJar {
     // Works only on unix platforms.
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/#packaging-executable.configuring.launch-script
     launchScript()
+}
+
+compileJava {
+    // Display more warnings when compiling.
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
 
 test {
