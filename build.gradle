@@ -99,10 +99,13 @@ compileJava {
 }
 
 test {
+    finalizedBy jacocoTestReport
     environment "spring.config.location", "classpath:/test/"
 
     testLogging {
+        // tests are never "up-to-date", always print everything
         outputs.upToDateWhen {false}
+        // show stdio when tests are running
         showStandardStreams = true
     }
 }
