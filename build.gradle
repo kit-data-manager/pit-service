@@ -29,8 +29,6 @@ archivesBaseName = 'pit-service'
 description = "A gateway to manage PIDs containing profiles and typed attributes."
 version = '0.3'
 group = 'edu.kit.datamanager'
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
 
 repositories {
     mavenLocal()
@@ -94,8 +92,21 @@ bootJar {
 }
 
 compileJava {
+    // specify java version for compiling
+    // https://docs.gradle.org/current/userguide/building_java_projects.html#sec:compile
+    options.release = 11
     // Display more warnings when compiling.
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
+
+java {
+    toolchain {
+        // "By default, Gradle uses the same Java version for running
+        // Gradle itself and building JVM projects." So let's make sure
+        // we use the right thing here.
+        // https://docs.gradle.org/current/userguide/toolchains.html#toolchains
+        languageVersion = JavaLanguageVersion.of(11)
+    }
 }
 
 test {
