@@ -1,6 +1,6 @@
 # PIT Service
 
-![License](https://img.shields.io/github/license/kit-data-manager/pit-service.svg)
+![License](https://img.shields.io/github/license/kit-data-manager/pit-service.svg) [![Java CI with Gradle](https://github.com/kit-data-manager/pit-service/actions/workflows/gradle.yml/badge.svg)](https://github.com/kit-data-manager/pit-service/actions/workflows/gradle.yml)
 
 This project provides a service for dealing with PID Information Types and Kernel Information Profiles according to the recommendations of the Research Data Alliance.
 Depending on the configuration it allows to mint PIDs from different services, to lookup PIDs with a specific record entry and to validate PIDs according to profile information
