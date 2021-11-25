@@ -1,130 +1,134 @@
-buildscript {
-    repositories { 
-        mavenLocal()
-        jcenter()
-        mavenCentral()
-    }
-    dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.2.2.RELEASE")
-        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.9.2'
-        //classpath 'org.kordamp.gradle:stats-gradle-plugin:0.2.2'
-    }
+plugins {
+    // Spring boot & dependency management:
+    // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
+    id 'org.springframework.boot' version '2.2.2.RELEASE'
+    id "io.spring.dependency-management" version "1.0.11.RELEASE"
+    // Lombok generates getter and setter and more. https://projectlombok.org/
+    // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
+    id "io.freefair.lombok" version "6.3.0"
+    id 'java'
+
+    // test and docs dependencies
+    id 'jacoco'
+    //id "com.github.kt3k.coveralls" version "2.12.0" 
+    id "org.owasp.dependencycheck" version "6.5.0.1"
+    id 'org.asciidoctor.jvm.convert' version '3.3.2'
 }
 
-plugins { 
-    id "io.freefair.lombok" version "5.1.0"
-    id "io.spring.dependency-management" version "1.0.8.RELEASE" 
-    id "com.github.kt3k.coveralls" version "2.8.1" 
-    id "org.owasp.dependencycheck" version "3.1.2"
-    id "org.asciidoctor.convert" version "1.5.3"
+lombok {
+    // check here for new versions: https://projectlombok.org/download
+    version = '1.18.22'
 }
 
-apply plugin: 'java'
-apply plugin: 'jacoco'
-apply plugin: 'org.springframework.boot'
-apply plugin: 'io.spring.dependency-management'
-
-
-jar {
-    baseName = 'pit-service'
-    version =  '0.3'
+jacoco {
+    // check here for new versions: https://www.jacoco.org/jacoco/
+    toolVersion = "0.8.7"
 }
+
+archivesBaseName = 'pit-service'
+description = "A gateway to manage PIDs containing profiles and typed attributes."
+version = '0.3'
+group = 'edu.kit.datamanager'
 
 repositories {
-    mavenLocal() 
-    jcenter()
+    mavenLocal()
     mavenCentral()
-    maven { url 'http://oss.jfrog.org/artifactory/oss-snapshot-local/' }
     maven { url 'https://jitpack.io' }
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
  
 configurations {
     all*.exclude module : 'spring-boot-starter-logging'
 }
 
-lombok {
-    version = '1.18.12'
-}
-
-if (project.hasProperty('travis')) {
-    println 'Using travis profile for building ' + project.getName()
-    apply from: 'gradle/build_dependencies.gradle'
-    apply from: 'gradle/profile-travis.gradle'
-} else if (project.hasProperty('release') || project.hasProperty('clean-release')) {
-    println 'Using release profile for building ' + project.getName()
-    //apply from: 'gradle/build_dependencies.gradle'
-    apply from: 'gradle/profile-release.gradle'   
+if (System.getProperty("profile") == "release") {
+    // In some cases we might do some very extensive testing etc only when releasing.
+    println "Using release profile for building " + project.getName()
+    apply from: 'gradle/profile-release.gradle'
+} else {
+    // By default we only do stuff that does not take too long.
+    println "Using default profile for " + project.getName()
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-mail") 
-
+    // Due to the spring boot gradle plugin, we can omit versions in spring
+    // dependencies. It will automatically choose the fitting ones.
     implementation("edu.kit.datamanager:service-base:0.2.1")
 
-    implementation("com.monitorjbl:spring-json-view:0.16")
-    implementation("org.apache.tika:tika-core:1.18") 
-    implementation ("org.javers:javers-core:5.3.2")
-    implementation ("com.github.everit-org.json-schema:org.everit.json.schema:1.3.0")
+    // More flexibility when (de-)serializing json:
+    //implementation("com.monitorjbl:spring-json-view:1.1.0")
+	implementation("com.github.everit-org.json-schema:org.everit.json.schema:1.14.0")
     
-    //Java 11 Support 
-    implementation('javax.xml.bind:jaxb-api:2.3.0')
-    implementation('com.sun.xml.bind:jaxb-core:2.3.0')
-    implementation('com.sun.xml.bind:jaxb-impl:2.3.0')
-    implementation('javax.activation:activation:1.1.1')
-    implementation('org.javassist:javassist:3.23.1-GA')
-    
-    implementation('org.apache.httpcomponents:httpclient:4.5.6')
-    implementation('org.apache.httpcomponents:httpclient-cache:4.5.6')
+    implementation('org.apache.httpcomponents:httpclient:4.5.13')
+    implementation('org.apache.httpcomponents:httpclient-cache:4.5.13')
 
-    testImplementation("com.h2database:h2:1.4.194") 
-    testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework:spring-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
+    testImplementation("org.mockito:mockito-core:4.0.0")
     testImplementation("org.springframework.security:spring-security-test")
-   
-    //Java 11 Support 
-    testImplementation("org.mockito:mockito-core:2.18.0")
-    testImplementation("org.powermock:powermock-module-junit4:2.0.0-beta.5")
-    testImplementation("org.powermock:powermock-api-mockito2:2.0.0-beta.5")
-
-    testImplementation('org.springframework.restdocs:spring-restdocs-mockmvc:2.0.2.RELEASE')
-    testImplementation('org.asciidoctor:asciidoctor-gradle-plugin:1.5.9.2')
-    asciidoctor('org.springframework.restdocs:spring-restdocs-asciidoctor:2.0.2.RELEASE')
-    asciidoctor('com.github.allati.asciidoctor.monotree:asciidoctor-extension-monotree:0.0.1')
 }
 
+// Makes executable jar file.
+// Available function available through Spring Boot Gradle Plugin.
 bootJar {
     manifest {
+        // "Looks in various places for a properties file to extract loader settings,
+        // defaulting to loader.properties either on the current classpath or in the
+        // current working directory."
+        // Docs:
+        // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/#packaging-executable.configuring.main-class
+        // https://docs.spring.io/spring-boot/docs/current/api/org/springframework/boot/loader/PropertiesLauncher.html
         attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'
     }
+
+    // Include documentation to be available on runtime.
     dependsOn asciidoctor
     from ("${asciidoctor.outputDir}/html5") {
         into 'static/docs'
     }
+
+    // Make pit executable without `java -jar`
+    // by adding a launch script into the jar file.
+    // Works only on unix platforms.
+    // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/#packaging-executable.configuring.launch-script
     launchScript()
 }
 
+compileJava {
+    // specify java version for compiling
+    // https://docs.gradle.org/current/userguide/building_java_projects.html#sec:compile
+    options.release = 11
+    // Display more warnings when compiling.
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
+
+java {
+    toolchain {
+        // "By default, Gradle uses the same Java version for running
+        // Gradle itself and building JVM projects." So let's make sure
+        // we use the right thing here.
+        // https://docs.gradle.org/current/userguide/toolchains.html#toolchains
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
 test {
+    finalizedBy jacocoTestReport
     environment "spring.config.location", "classpath:/test/"
 
     testLogging {
+        // tests are never "up-to-date", always print everything
         outputs.upToDateWhen {false}
+        // show stdio when tests are running
         showStandardStreams = true
     }
 }
 
-
-jacoco {
-    toolVersion = "0.8.5"
-}
-
 jacocoTestReport {
     reports {
-        xml.enabled true
-        html.enabled true
+        xml.required = true
+        html.required = true
     }
     afterEvaluate {
         //exclude some classes/package from code coverage report
