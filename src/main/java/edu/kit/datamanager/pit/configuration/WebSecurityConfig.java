@@ -54,12 +54,21 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
   @Autowired
   private Logger logger;
 
+  @Autowired
+  private ApplicationProperties config;
+
   public WebSecurityConfig(){
   }
 
   @Override
   public void configure(AuthenticationManagerBuilder auth) throws Exception{
-    auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new JwtAuthenticationProvider("test123", logger));
+    auth
+      // we do not act on success or failure in any special way.
+      .authenticationEventPublisher(new NoopAuthenticationEventPublisher())
+      // we use JWT to authenticate users.
+      .authenticationProvider(
+        new JwtAuthenticationProvider(config.getJwtSecret(), logger)
+      );
   }
 
   @Override
@@ -70,12 +79,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
             .csrf().disable()
             .addFilterAfter(new JwtAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class);
 
-    // if(!applicationProperties.isAuthEnabled()){
-    //   logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
-    httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter("test123", authenticationManager()), JwtAuthenticationFilter.class);
-    // } else{
-    //   logger.info("Authentication is ENABLED.");
-    //}
+    if (!config.isAuthEnabled()) {
+      logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
+      httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter(config.getJwtSecret(), authenticationManager()), JwtAuthenticationFilter.class);
+    } else {
+      logger.info("Authentication is ENABLED.");
+    }
 
     httpSecurity.
             authorizeRequests().
