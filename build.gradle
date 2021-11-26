@@ -1,7 +1,7 @@
 plugins {
     // Spring boot & dependency management:
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
-    id 'org.springframework.boot' version '2.2.2.RELEASE'
+    id 'org.springframework.boot' version '2.5.7'
     id "io.spring.dependency-management" version "1.0.11.RELEASE"
     // Lombok generates getter and setter and more. https://projectlombok.org/
     // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
@@ -54,6 +54,8 @@ dependencies {
     // Due to the spring boot gradle plugin, we can omit versions in spring
     // dependencies. It will automatically choose the fitting ones.
     implementation("edu.kit.datamanager:service-base:0.2.1")
+    // needed by spring boot to start tomcat
+    implementation "org.springframework.boot:spring-boot-starter-validation"
 
     // More flexibility when (de-)serializing json:
     //implementation("com.monitorjbl:spring-json-view:1.1.0")
@@ -93,6 +95,11 @@ bootJar {
     // Works only on unix platforms.
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/#packaging-executable.configuring.launch-script
     launchScript()
+}
+
+// we do not need the normal "plain" jar, as we use bootjar.
+jar {
+    enabled = false
 }
 
 compileJava {
