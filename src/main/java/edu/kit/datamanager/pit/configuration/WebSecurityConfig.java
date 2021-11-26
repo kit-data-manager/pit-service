@@ -19,6 +19,9 @@ import edu.kit.datamanager.security.filter.JwtAuthenticationFilter;
 import edu.kit.datamanager.security.filter.JwtAuthenticationProvider;
 import edu.kit.datamanager.security.filter.NoAuthenticationFilter;
 import edu.kit.datamanager.security.filter.NoopAuthenticationEventPublisher;
+
+import javax.servlet.Filter;
+
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -51,39 +54,54 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
   @Autowired
   private Logger logger;
 
+  @Autowired
+  private ApplicationProperties config;
+
   public WebSecurityConfig(){
   }
 
   @Override
   public void configure(AuthenticationManagerBuilder auth) throws Exception{
-    auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new JwtAuthenticationProvider("test123", logger));
+    auth
+      // we do not act on success or failure in any special way.
+      .authenticationEventPublisher(new NoopAuthenticationEventPublisher())
+      // we use JWT to authenticate users.
+      .authenticationProvider(
+        new JwtAuthenticationProvider(config.getJwtSecret(), logger)
+      );
   }
 
   @Override
   protected void configure(HttpSecurity http) throws Exception{
-    HttpSecurity httpSecurity = http.authorizeRequests()
-            .antMatchers(HttpMethod.OPTIONS, "/**").permitAll().and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and()
-            .csrf().disable()
-            .addFilterAfter(new JwtAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class);
+    HttpSecurity httpSecurity = http
+      // everyone, even unauthenticated users may do HTTP OPTIONS on urls.
+      .authorizeRequests()
+      .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+      .antMatchers("/api/v1").authenticated()
+      .and()
+      // do not store sessions (use stateless "sessions")
+      .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+      .and()
+      // TODO disables csrf. Should be evaluated before releasing this service. https://developer.mozilla.org/en-US/docs/Glossary/CSRF
+      .csrf().disable()
+      // insert the AuthenticationManager which was configured in the method above as a filter, right after HTTP Basic auth.
+      .addFilterAfter(new JwtAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class);
 
-    // if(!applicationProperties.isAuthEnabled()){
-    //   logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
-    httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter("test123", authenticationManager()), JwtAuthenticationFilter.class);
-    // } else{
-    //   logger.info("Authentication is ENABLED.");
-    //}
+    if (!config.isAuthEnabled()) {
+      logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
+      httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter(config.getJwtSecret(), authenticationManager()), JwtAuthenticationFilter.class);
+    } else {
+      logger.info("Authentication is ENABLED.");
+    }
 
-    httpSecurity.
-            authorizeRequests().
-            antMatchers("/api/v1").authenticated();
-
+    // TODO why?
     http.headers().cacheControl().disable();
   }
 
   @Bean
   public HttpFirewall allowUrlEncodedSlashHttpFirewall(){
     DefaultHttpFirewall firewall = new DefaultHttpFirewall();
+    // might be necessary for certain identifier types.
     firewall.setAllowUrlEncodedSlash(true);
     return firewall;
   }
@@ -93,58 +111,20 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
     web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
   }
 
-//  @Bean
-//  CorsConfigurationSource corsConfigurationSource(){
-//    final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//    CorsConfiguration config = new CorsConfiguration();
-//    config.addAllowedOrigin("http://localhost:3000");
-//
-//    source.registerCorsConfiguration("/**", config);
-//    return source;
-//  }
   @Bean
-  public FilterRegistrationBean corsFilter(){
-    final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+  public FilterRegistrationBean<Filter> corsFilter(){
     CorsConfiguration config = new CorsConfiguration();
-    config.setAllowCredentials(true);
+    config.setAllowCredentials(false);
     config.addAllowedOrigin("*"); // @Value: http://localhost:8080
     config.addAllowedHeader("*");
     config.addAllowedMethod("*");
     config.addExposedHeader("Content-Range");
     config.addExposedHeader("ETag");
-
+    
+    final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", config);
-    FilterRegistrationBean bean = new FilterRegistrationBean(new CorsFilter(source));
+    FilterRegistrationBean<Filter> bean = new FilterRegistrationBean<>(new CorsFilter(source));
     bean.setOrder(0);
     return bean;
   }
-
-//  @Bean
-//  CorsConfigurationSource corsConfigurationSource(){
-//    CorsConfiguration configuration = new CorsConfiguration();
-//    configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
-//    configuration.setAllowedMethods(Arrays.asList("GET", "POST, PATCH, DELETE, OPTIONS, HEAD"));
-//    configuration.setAllowedHeaders(Arrays.asList("content-range", "authorization", "location"));
-//    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//    source.registerCorsConfiguration("/**", configuration);
-//    return source;
-//  }
-//  @Bean
-//  CorsFilter corsFilter(){
-//    CorsFilter filter = new CorsFilter();
-//    return filter;
-//  }
-//  @Bean
-//    public WebMvcConfigurer corsConfigurer() {
-//        return new WebMvcConfigurerAdapter() {
-//            @Override
-//            public void addCorsMappings(CorsRegistry registry) {
-//                registry.addMapping("/greeting-javaconfig").allowedOrigins("http://localhost:9000");
-//            }
-//        };
-//    }
-//  @Bean
-//  public UserRepositoryImpl userRepositoryImpl(){
-//    return new UserRepositoryImpl();
-//  }
 }
