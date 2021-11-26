@@ -73,11 +73,19 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
 
   @Override
   protected void configure(HttpSecurity http) throws Exception{
-    HttpSecurity httpSecurity = http.authorizeRequests()
-            .antMatchers(HttpMethod.OPTIONS, "/**").permitAll().and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and()
-            .csrf().disable()
-            .addFilterAfter(new JwtAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class);
+    HttpSecurity httpSecurity = http
+      // everyone, even unauthenticated users may do HTTP OPTIONS on urls.
+      .authorizeRequests()
+      .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+      .antMatchers("/api/v1").authenticated()
+      .and()
+      // do not store sessions (use stateless "sessions")
+      .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+      .and()
+      // TODO disables csrf. Should be evaluated before releasing this service. https://developer.mozilla.org/en-US/docs/Glossary/CSRF
+      .csrf().disable()
+      // insert the AuthenticationManager which was configured in the method above as a filter, right after HTTP Basic auth.
+      .addFilterAfter(new JwtAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class);
 
     if (!config.isAuthEnabled()) {
       logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
@@ -86,16 +94,14 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
       logger.info("Authentication is ENABLED.");
     }
 
-    httpSecurity.
-            authorizeRequests().
-            antMatchers("/api/v1").authenticated();
-
+    // TODO why?
     http.headers().cacheControl().disable();
   }
 
   @Bean
   public HttpFirewall allowUrlEncodedSlashHttpFirewall(){
     DefaultHttpFirewall firewall = new DefaultHttpFirewall();
+    // might be necessary for certain identifier types.
     firewall.setAllowUrlEncodedSlash(true);
     return firewall;
   }
@@ -105,15 +111,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
     web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
   }
 
-//  @Bean
-//  CorsConfigurationSource corsConfigurationSource(){
-//    final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//    CorsConfiguration config = new CorsConfiguration();
-//    config.addAllowedOrigin("http://localhost:3000");
-//
-//    source.registerCorsConfiguration("/**", config);
-//    return source;
-//  }
   @Bean
   public FilterRegistrationBean<Filter> corsFilter(){
     CorsConfiguration config = new CorsConfiguration();
@@ -130,33 +127,4 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
     bean.setOrder(0);
     return bean;
   }
-
-//  @Bean
-//  CorsConfigurationSource corsConfigurationSource(){
-//    CorsConfiguration configuration = new CorsConfiguration();
-//    configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
-//    configuration.setAllowedMethods(Arrays.asList("GET", "POST, PATCH, DELETE, OPTIONS, HEAD"));
-//    configuration.setAllowedHeaders(Arrays.asList("content-range", "authorization", "location"));
-//    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//    source.registerCorsConfiguration("/**", configuration);
-//    return source;
-//  }
-//  @Bean
-//  CorsFilter corsFilter(){
-//    CorsFilter filter = new CorsFilter();
-//    return filter;
-//  }
-//  @Bean
-//    public WebMvcConfigurer corsConfigurer() {
-//        return new WebMvcConfigurerAdapter() {
-//            @Override
-//            public void addCorsMappings(CorsRegistry registry) {
-//                registry.addMapping("/greeting-javaconfig").allowedOrigins("http://localhost:9000");
-//            }
-//        };
-//    }
-//  @Bean
-//  public UserRepositoryImpl userRepositoryImpl(){
-//    return new UserRepositoryImpl();
-//  }
 }
