@@ -15,7 +15,7 @@ In order to build the PIT Service you'll need:
 After obtaining the sources change to the folder where the sources are located perform the following steps:
 
 ```
-user@localhost:/home/user/pit-service$ ./gradlew -Pclean-release build
+user@localhost:/home/user/pit-service$ ./gradlew build
 > Configure project :
 Using release profile for building notification-service
 <-------------> 0% EXECUTING [0s]
@@ -23,8 +23,7 @@ Using release profile for building notification-service
 user@localhost:/home/user/pit-service$
 ```
 
-The Gradle wrapper will now take care of downloading the configured version of Gradle, checking out all required libraries, build these
-libraries and finally build the pit-service microservice itself. As a result, a fat jar containing the entire service is created at 'build/jars/pit-service.jar'.
+The Gradle wrapper will now take care of downloading the configured version of Gradle and finally build the pit-service microservice. As a result, a jar file containing the entire service is created at 'build/libs/pit-service-$(version).jar'.
 
 ## How to start
 
