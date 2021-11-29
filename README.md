@@ -28,11 +28,6 @@ libraries and finally build the pit-service microservice itself. As a result, a 
 
 ## How to start
 
-### Prerequisites
-
-* PostgreSQL 9.1 or higher
-
-### Setup
 Before you are able to start the microservice, you have to modify the file 'application.properties' according to your local setup. 
 Therefor, copy the file 'conf/application.properties' to your project folder and customize it. For the Collection API you just have to adapt the properties of 
 spring.datasource and you may change the server.port property. All other properties can be ignored for the time being.
