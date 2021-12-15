@@ -33,10 +33,15 @@ import org.springframework.validation.annotation.Validated;
 @Data
 @Validated
 @EqualsAndHashCode(callSuper = true)
-public class ApplicationProperties extends GenericApplicationProperties{
+public class ApplicationProperties extends GenericApplicationProperties {
 
-  @Value("${pit.pidsystem.inmemory.active:#{null}}")
-  private Optional<Boolean> inMemoryPidService;
+  public enum IdentifierSystemImpl {
+    IN_MEMORY,
+    HANDLE_REST;
+  }
+
+  @Value("${pit.pidsystem.implementation:IN_MEMORY}")
+  private IdentifierSystemImpl identifierSystemImplementation;
 
   @Value("${pit.pidsystem.handle.baseURI}")
   private URL handleBaseUri;
