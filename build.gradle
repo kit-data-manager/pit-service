@@ -64,6 +64,9 @@ dependencies {
     implementation('org.apache.httpcomponents:httpclient:4.5.13')
     implementation('org.apache.httpcomponents:httpclient-cache:4.5.13')
 
+    testImplementation(platform('org.junit:junit-bom:5.8.2'))
+	testImplementation('org.junit.jupiter:junit-jupiter')
+
     testImplementation("org.springframework:spring-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
@@ -104,7 +107,7 @@ jar {
 
 compileJava {
     // specify java version for compiling
-    // https://docs.gradle.org/current/userguide/building_java_projects.html#sec:compile
+    // https://docs.gradle.org/current/userguide/building_java_projects.html#sec:java_cross_compilation
     options.release = 11
     // Display more warnings when compiling.
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
@@ -123,12 +126,16 @@ java {
 test {
     finalizedBy jacocoTestReport
     environment "spring.config.location", "classpath:/test/"
+    // for junit5
+    useJUnitPlatform()
 
     testLogging {
         // tests are never "up-to-date", always print everything
         outputs.upToDateWhen {false}
         // show stdio when tests are running
         showStandardStreams = true
+        // for junit5
+        events "passed", "skipped", "failed"
     }
 }
 
