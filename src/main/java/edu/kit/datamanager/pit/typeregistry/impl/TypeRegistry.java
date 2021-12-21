@@ -61,17 +61,6 @@ public class TypeRegistry implements ITypeRegistry {
         return constructTypeDefinition(rootNode);
     }
 
-    @Override
-    public boolean isTypeRegistryPID(String pid) {
-        LOG.trace("Performing isTypeRegistryPID({}).", pid);
-        return pid.startsWith(applicationProperties.getGeneratorPrefix());
-    }
-
-    public String getIdentifierPrefix() {
-        LOG.trace("Performing getIdentifierPrefix().");
-        return applicationProperties.getGeneratorPrefix();
-    }
-
     /**
      * Helper method to construct a type definition from a JSON response
      * received from the TypeRegistry.

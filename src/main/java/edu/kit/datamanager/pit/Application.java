@@ -37,7 +37,6 @@ import edu.kit.datamanager.pit.typeregistry.impl.TypeRegistry;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.http.client.HttpClient;
@@ -97,22 +96,9 @@ public class Application {
         return new TypeRegistry();
     }
 
-    public IIdentifierSystem identifierSystem() {
-        ApplicationProperties properties = this.applicationProperties();
-        IdentifierSystemImpl identifierSystem = properties.getIdentifierSystemImplementation();
-        LOG.info("PID System configured: " + identifierSystem.name());
-        if (identifierSystem == IdentifierSystemImpl.HANDLE_REST) {
-            LOG.info("Starting handle system REST adapter.");
-            return new HandleSystemRESTAdapter(properties);
-        } else  {
-            LOG.warn("Starting in-memory identifier service.");
-            return new InMemoryIdentifierSystem(properties);
-        }
-    }
-
     @Bean
-    public ITypingService typingService() throws IOException {
-        return new TypingService(identifierSystem(), typeRegistry(), typeCache());
+    public ITypingService typingService(IIdentifierSystem identifierSystem) throws IOException {
+        return new TypingService(identifierSystem, typeRegistry(), typeCache());
     }
 
     @Bean(name = "OBJECT_MAPPER_BEAN")

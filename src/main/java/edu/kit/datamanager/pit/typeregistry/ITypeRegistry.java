@@ -21,16 +21,4 @@ public interface ITypeRegistry {
      * @throws IOException on communication errors with a remote registry
      */
     public TypeDefinition queryTypeDefinition(String typeIdentifier) throws IOException, URISyntaxException;
-
-    /**
-     * Determines whether the given PID is an identifier in the type registry.
-     * Note that a positive answer does not necessarily mean the identifier is
-     * registered and resolvable.
-     *
-     * @param pid
-     * @return true if the PID is generally acceptable for the type registry,
-     * but may still be unregistered.
-     */
-    public boolean isTypeRegistryPID(String pid);
-
 }

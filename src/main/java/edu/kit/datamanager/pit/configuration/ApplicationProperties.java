@@ -40,20 +40,11 @@ public class ApplicationProperties extends GenericApplicationProperties {
     HANDLE_REST;
   }
 
-  @Value("${pit.pidsystem.implementation:IN_MEMORY}")
+  @Value("${pit.pidsystem.implementation}")
   private IdentifierSystemImpl identifierSystemImplementation;
 
   @Value("${pit.pidsystem.handle.baseURI}")
   private URL handleBaseUri;
-
-  @Value("${pit.pidsystem.handle.userName}")
-  private String handleUser;
-
-  @Value("${pit.pidsystem.handle.userPassword}")
-  private String handlePassword;
-
-  @Value("${pit.pidsystem.handle.generatorPrefix}")
-  private String generatorPrefix;
 
   @Value("${pit.typeregistry.baseURI}")
   private URL typeRegistryUri;

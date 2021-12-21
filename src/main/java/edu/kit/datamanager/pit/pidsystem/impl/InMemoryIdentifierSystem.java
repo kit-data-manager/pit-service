@@ -13,21 +13,25 @@ import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.stereotype.Component;
 
 /**
  * A simple basis for demonstrations or tests of the service. PIDs will be
  * stored in a HashMap and not stored anywhere else.
  */
+@Component
+@AutoConfigureAfter(value = ApplicationProperties.class)
+@ConditionalOnExpression(
+    "#{ '${pit.pidsystem.implementation}' eq T(edu.kit.datamanager.pit.configuration.ApplicationProperties.IdentifierSystemImpl).IN_MEMORY.name() }"
+)
 public class InMemoryIdentifierSystem implements IIdentifierSystem {
 
     private static final Logger LOG = LoggerFactory.getLogger(InMemoryIdentifierSystem.class);
-    private Map<String, PIDRecord> records;
+    private Map<String, PIDRecord> records = new HashMap<>();
 
-    private ApplicationProperties applicationProperties;
-
-    public InMemoryIdentifierSystem(ApplicationProperties appProperties) {
-        this.records = new HashMap<>();
-        this.applicationProperties = appProperties;
+    public InMemoryIdentifierSystem() {
         LOG.warn("Using in-memory identifier system. REGISTERED PIDs ARE NOT STORED PERMANENTLY.");
     }
 
