@@ -37,7 +37,8 @@ public class ApplicationProperties extends GenericApplicationProperties {
 
   public enum IdentifierSystemImpl {
     IN_MEMORY,
-    HANDLE_REST;
+    HANDLE_REST,
+    HANDLE_PROTOCOL;
   }
 
   @Value("${pit.pidsystem.implementation}")

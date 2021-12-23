@@ -14,6 +14,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import edu.kit.datamanager.pit.SpringTestHelper;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties.IdentifierSystemImpl;
+import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.HandleSystemRESTAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 
@@ -44,5 +45,7 @@ public class InMemorySetupTest {
         helper.assertSingleBeanInstanceOf(InMemoryIdentifierSystem.class);
         helper.assertNoBeanInstanceOf(HandleSystemRESTAdapter.class);
         helper.assertNoBeanInstanceOf(HandleSystemRESTProperties.class);
+        helper.assertNoBeanInstanceOf(HandleProtocolProperties.class);
+        helper.assertNoBeanInstanceOf(HandleProtocolAdapter.class);
     }
 }
