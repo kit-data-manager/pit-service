@@ -64,7 +64,7 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public boolean deletePID(String pid) {
+    public boolean deletePID(String pid) throws IOException {
         LOG.trace("Performing deletePID({}).", pid);
         return identifierSystem.deletePID(pid);
     }

@@ -68,11 +68,11 @@ dependencies {
 
     testImplementation(platform('org.junit:junit-bom:5.8.2'))
 	testImplementation('org.junit.jupiter:junit-jupiter')
+    testImplementation('org.junit.jupiter:junit-jupiter-params')
 
     testImplementation("org.springframework:spring-test")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
-    testImplementation("org.mockito:mockito-core:4.0.0")
     testImplementation("org.springframework.security:spring-security-test")
 }
 

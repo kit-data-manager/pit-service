@@ -43,15 +43,16 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
     @Override
     public PIDRecord queryAllProperties(String pid) throws IOException {
         PIDRecord record = this.records.get(pid);
-        if (record == null) {
-            throw new PidNotFoundException(pid);
-        }
+        if (record == null) { return null; }
         return record;
     }
 
     @Override
     public String queryProperty(String pid, TypeDefinition typeDefinition) throws IOException {
-        return this.records.get(pid).getPropertyValue(typeDefinition.getIdentifier());
+        PIDRecord record = this.records.get(pid);
+        if (record == null) { throw new PidNotFoundException(pid); }
+        if (!record.hasProperty(typeDefinition.getIdentifier())) { return null; }
+        return record.getPropertyValue(typeDefinition.getIdentifier());
     }
     
     @Override

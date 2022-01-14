@@ -27,7 +27,13 @@ public class PIDRecord {
     private Map<String, List<PIDRecordEntry>> entries;
 
     public PIDRecord() {
-        entries = new HashMap<>();
+        this.entries = new HashMap<>();
+    }
+
+    // Convenience setter / builder method.
+    public PIDRecord withPID(String pid) {
+        this.setPid(pid);
+        return this;
     }
 
     public void addEntry(String propertyIdentifier, String propertyName, String propertyValue) {

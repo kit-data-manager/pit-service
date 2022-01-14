@@ -31,6 +31,7 @@ public class HandleProtocolProperties {
         LOG.info("Parse HANDLE_PROTOCOL configuration details.");
     }
 
+    // Without given credentials, PIDs can only be resolved.
     // Someone decided not to support Optional in the case of nested properties.
     // See: https://github.com/spring-projects/spring-boot/issues/15999
     // A bad decision is also a decision, I guess.

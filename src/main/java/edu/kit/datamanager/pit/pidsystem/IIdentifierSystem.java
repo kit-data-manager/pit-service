@@ -89,5 +89,5 @@ public interface IIdentifierSystem {
      * @param pid
      * @return true if the identifier was deleted, false if it did not exist
      */
-    public boolean deletePID(String pid);
+    public boolean deletePID(String pid) throws IOException;
 }

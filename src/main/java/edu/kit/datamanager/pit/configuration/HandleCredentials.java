@@ -22,6 +22,9 @@ public class HandleCredentials {
     @NotBlank
     private String userHandle;
 
+    @NotBlank
+    private String generatorPrefix;
+
     @Min(1)
     private int privateKeyIndex = 300;
     
@@ -30,6 +33,7 @@ public class HandleCredentials {
     
     // We get the passphrase out of an environment variable
     // instead of a path to a file containing the passphrase in a properties file.
+    // Optional, as key might be unencrypted.
     @Value("#{environment.handleProtocolPrivateKeyPassphrase}")
     private String privateKeyPassphrase;
 }
