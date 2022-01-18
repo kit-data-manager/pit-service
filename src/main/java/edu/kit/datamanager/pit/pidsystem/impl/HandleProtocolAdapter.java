@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Map.Entry;
 
 import javax.annotation.PostConstruct;
 
@@ -232,12 +233,12 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         Map<String, List<PIDRecordEntry>> entries = record.getEntries();
         ArrayList<HandleValue> result = new ArrayList<HandleValue>();
 
-        for (String key : entries.keySet()) {
-            List<PIDRecordEntry> values = entries.get(key);
-            for (PIDRecordEntry val : values) {
+        for (Entry<String, List<PIDRecordEntry>> entry : entries.entrySet()) {
+            for (PIDRecordEntry val : entry.getValue()) {
+                String key = val.getKey();
                 HandleValue hv = new HandleValue();
-                hv.setType(key.getBytes());
-                hv.setData(val.getValue().getBytes());
+                hv.setType(key.getBytes(StandardCharsets.UTF_8));
+                hv.setData(val.getValue().getBytes(StandardCharsets.UTF_8));
                 result.add(hv);
             }
         }
