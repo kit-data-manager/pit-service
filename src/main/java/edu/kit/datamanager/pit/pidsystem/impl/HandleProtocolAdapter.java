@@ -51,10 +51,17 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         this.props = props;
     }
 
-    // We use post construct instead of using the constructor
-    // to make sure that all properties are already autowired.
+    /**
+     * Initializes internal classes.
+     * We use this methos with the @PostConstruct annotation to run it
+     * after the constructor and after springs autowiring is done properly
+     * to make sure that all properties are already autowired.
+     * @throws HandleException if a handle system error occurs.
+     * @throws InvalidConfigException if the configuration is invalid, e.g. a path does not lead to a file.
+     * @throws IOException if the private key file can not be read.
+     */
     @PostConstruct
-    public void init() throws HandleException, IOException {
+    public void init() throws InvalidConfigException, HandleException, IOException {
         LOG.info("Using PID System 'Handle'");
         this.isAdminMode = props.getCredentials() != null;
         
@@ -227,8 +234,9 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     /**
      * Convert a `PIDRecord` instance to an array of `HandleValue`s
      * It is the inverse method to `pidRecordFrom`.
-     * @param record
-     * @return
+     * @param record the record containing values to convert / extract.
+     * @return HandleValues containing the same key-value pairs as the given record,
+     * but e.g. without the name.
      */
     protected HandleValue[] handleValuesFrom(PIDRecord record) {
         Map<String, List<PIDRecordEntry>> entries = record.getEntries();
@@ -246,6 +254,10 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         return result.toArray(new HandleValue[]{});
     }
 
+    /**
+     * Generates a random PID. NOTE: Expects handleIdentifierPrefix in props to be set.
+     * @return A random PID with the generator prefix from the preferences.
+     */
     protected String generateRandomPID() {
         String uuid = UUID.randomUUID().toString();
         return this.props
@@ -255,6 +267,13 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             .concat(uuid);
     }
 
+    /**
+     * Returns true if the PID is valid according to the following criteria:
+     * - PID is valid according to isIdentifierRegistered
+     * - If a generator prefix is set, the PID is expedted to have this prefix.
+     * @param pid the identifier / PID to check.
+     * @return true if PID is registered (and if has the generatorPrefix, if it exists).
+     */
     private boolean isValidPID(String pid) {
         boolean isAuthMode = this.props.getCredentials() != null;
         if (isAuthMode && !pid.startsWith(this.props.getCredentials().getHandleIdentifierPrefix())) {
