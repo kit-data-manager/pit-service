@@ -241,17 +241,36 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     protected HandleValue[] handleValuesFrom(PIDRecord record) {
         Map<String, List<PIDRecordEntry>> entries = record.getEntries();
         ArrayList<HandleValue> result = new ArrayList<HandleValue>();
+        HandleIndex index = new HandleIndex();
 
         for (Entry<String, List<PIDRecordEntry>> entry : entries.entrySet()) {
             for (PIDRecordEntry val : entry.getValue()) {
                 String key = val.getKey();
                 HandleValue hv = new HandleValue();
+                hv.setIndex(index.nextIndex());
                 hv.setType(key.getBytes(StandardCharsets.UTF_8));
                 hv.setData(val.getValue().getBytes(StandardCharsets.UTF_8));
                 result.add(hv);
             }
         }
         return result.toArray(new HandleValue[]{});
+    }
+
+
+    protected class HandleIndex {
+        // handle record indices start at 1
+        private int index = 1;
+
+        public final int nextIndex() {
+            int result = index;
+            index += 1;
+            if (index == this.getHsAdminIndex()) { index += 1; }
+            return result;
+        }
+
+        public final int getHsAdminIndex() {
+            return 100;
+        }
     }
 
     /**
