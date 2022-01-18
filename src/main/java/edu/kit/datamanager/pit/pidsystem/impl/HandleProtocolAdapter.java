@@ -2,6 +2,7 @@ package edu.kit.datamanager.pit.pidsystem.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,7 +83,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             {
                 String given = credentials.getPrivateKeyPassphrase();
                 if (given != null && !given.isEmpty()) {
-                    passphrase = given.getBytes();
+                    passphrase = given.getBytes(StandardCharsets.UTF_8);
                     if (passphrase.length < 1) {
                         throw new InvalidConfigException("Passphrase for key file is set but empty!");
                     }

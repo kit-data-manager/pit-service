@@ -3,6 +3,7 @@ package edu.kit.datamanager.pit.pidsystem.impl;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.HashMap;
@@ -95,9 +96,12 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
         this.generatorPrefix = handleProperties.getGeneratorPrefix();
         this.baseUri = applicationProperties.getHandleBaseUri().toString();//UriBuilder.fromUri(baseURI).path("api").build();
         try {
-            this.authInfo = Base64.
-                    getEncoder().
-                    encodeToString((URLEncoder.encode(handleProperties.getHandleUser(), "UTF-8") + ":" + URLEncoder.encode(handleProperties.getHandlePassword(), "UTF-8")).getBytes());
+            this.authInfo = Base64.getEncoder().encodeToString(
+                URLEncoder.encode(handleProperties.getHandleUser(), "UTF-8")
+                    .concat(":")
+                    .concat(URLEncoder.encode(handleProperties.getHandlePassword(), "UTF-8"))
+                    .getBytes(StandardCharsets.UTF_8)
+            );
         } catch (UnsupportedEncodingException e) {
             throw new IllegalArgumentException("Error while encoding the user name in UTF-8", e);
         }
