@@ -10,9 +10,6 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 @Component
 @ConfigurationProperties("pit.pidsystem.handle-protocol")
 @Validated
@@ -21,8 +18,6 @@ import lombok.EqualsAndHashCode;
 @ConditionalOnExpression(
     "#{ '${pit.pidsystem.implementation}' eq T(edu.kit.datamanager.pit.configuration.ApplicationProperties.IdentifierSystemImpl).HANDLE_PROTOCOL.name() }"
 )
-@Data
-@EqualsAndHashCode
 public class HandleProtocolProperties {
 
     private static final Logger LOG = LoggerFactory.getLogger(HandleSystemRESTProperties.class);
@@ -38,4 +33,11 @@ public class HandleProtocolProperties {
     @NestedConfigurationProperty
     private HandleCredentials credentials;
 
+    public HandleCredentials getCredentials() {
+        return credentials;
+    }
+
+    public void setCredentials(HandleCredentials credentials) {
+        this.credentials = credentials;
+    }
 }

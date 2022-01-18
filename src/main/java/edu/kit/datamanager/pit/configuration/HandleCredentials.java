@@ -11,19 +11,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.validation.annotation.Validated;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Validated
-@Data
-@EqualsAndHashCode
 @Configuration
 public class HandleCredentials {
     @NotBlank
     private String userHandle;
 
     @NotBlank
-    private String generatorPrefix;
+    private String handleIdentifierPrefix;
 
     @Min(1)
     private int privateKeyIndex = 300;
@@ -36,4 +32,44 @@ public class HandleCredentials {
     // Optional, as key might be unencrypted.
     @Value("#{environment.handleProtocolPrivateKeyPassphrase}")
     private String privateKeyPassphrase;
+
+    public String getUserHandle() {
+        return userHandle;
+    }
+
+    public void setUserHandle(String userHandle) {
+        this.userHandle = userHandle;
+    }
+
+    public String getHandleIdentifierPrefix() {
+        return handleIdentifierPrefix;
+    }
+
+    public void setHandleIdentifierPrefix(String handleIdentifierPrefix) {
+        this.handleIdentifierPrefix = handleIdentifierPrefix;
+    }
+
+    public int getPrivateKeyIndex() {
+        return privateKeyIndex;
+    }
+
+    public void setPrivateKeyIndex(int privateKeyIndex) {
+        this.privateKeyIndex = privateKeyIndex;
+    }
+
+    public Path getPrivateKeyPath() {
+        return privateKeyPath;
+    }
+
+    public void setPrivateKeyPath(Path privateKeyPath) {
+        this.privateKeyPath = privateKeyPath;
+    }
+
+    public String getPrivateKeyPassphrase() {
+        return privateKeyPassphrase;
+    }
+
+    public void setPrivateKeyPassphrase(String privateKeyPassphrase) {
+        this.privateKeyPassphrase = privateKeyPassphrase;
+    }
 }

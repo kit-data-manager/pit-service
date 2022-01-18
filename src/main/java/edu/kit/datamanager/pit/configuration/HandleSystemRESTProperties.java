@@ -10,14 +10,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 @Component
 @ConfigurationProperties("pit.pidsystem.handle")
-@Data
 @Validated
-@EqualsAndHashCode
 @AutoConfigureAfter(value = ApplicationProperties.class)
 @ConditionalOnBean(value = ApplicationProperties.class)
 @ConditionalOnExpression(
@@ -39,4 +34,28 @@ public class HandleSystemRESTProperties {
   
     @Value("${pit.pidsystem.handle.generatorPrefix}")
     private String generatorPrefix;
+
+    public String getHandleUser() {
+        return handleUser;
+    }
+
+    public void setHandleUser(String handleUser) {
+        this.handleUser = handleUser;
+    }
+
+    public String getHandlePassword() {
+        return handlePassword;
+    }
+
+    public void setHandlePassword(String handlePassword) {
+        this.handlePassword = handlePassword;
+    }
+
+    public String getGeneratorPrefix() {
+        return generatorPrefix;
+    }
+
+    public void setGeneratorPrefix(String generatorPrefix) {
+        this.generatorPrefix = generatorPrefix;
+    }
 }

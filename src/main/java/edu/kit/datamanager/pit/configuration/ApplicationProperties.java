@@ -17,10 +17,7 @@ package edu.kit.datamanager.pit.configuration;
 
 import edu.kit.datamanager.configuration.GenericApplicationProperties;
 import java.net.URL;
-import java.util.Optional;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
@@ -30,9 +27,7 @@ import org.springframework.validation.annotation.Validated;
  * @author jejkal
  */
 @Component
-@Data
 @Validated
-@EqualsAndHashCode(callSuper = true)
 public class ApplicationProperties extends GenericApplicationProperties {
 
   public enum IdentifierSystemImpl {
@@ -49,4 +44,28 @@ public class ApplicationProperties extends GenericApplicationProperties {
 
   @Value("${pit.typeregistry.baseURI}")
   private URL typeRegistryUri;
+
+  public IdentifierSystemImpl getIdentifierSystemImplementation() {
+    return identifierSystemImplementation;
+  }
+
+  public void setIdentifierSystemImplementation(IdentifierSystemImpl identifierSystemImplementation) {
+    this.identifierSystemImplementation = identifierSystemImplementation;
+  }
+
+  public URL getHandleBaseUri() {
+    return handleBaseUri;
+  }
+
+  public void setHandleBaseUri(URL handleBaseUri) {
+    this.handleBaseUri = handleBaseUri;
+  }
+
+  public URL getTypeRegistryUri() {
+    return typeRegistryUri;
+  }
+
+  public void setTypeRegistryUri(URL typeRegistryUri) {
+    this.typeRegistryUri = typeRegistryUri;
+  }
 }

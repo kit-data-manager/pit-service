@@ -248,12 +248,16 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
 
     protected String generateRandomPID() {
         String uuid = UUID.randomUUID().toString();
-        return this.props.getCredentials().getGeneratorPrefix() + "/" + uuid;
+        return this.props
+            .getCredentials()
+            .getHandleIdentifierPrefix()
+            .concat("/")
+            .concat(uuid);
     }
 
     private boolean isValidPID(String pid) {
         boolean isAuthMode = this.props.getCredentials() != null;
-        if (isAuthMode && !pid.startsWith(this.props.getCredentials().getGeneratorPrefix())) {
+        if (isAuthMode && !pid.startsWith(this.props.getCredentials().getHandleIdentifierPrefix())) {
             return false;
         }
         try {
