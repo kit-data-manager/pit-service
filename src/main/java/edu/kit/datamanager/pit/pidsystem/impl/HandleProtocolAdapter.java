@@ -256,8 +256,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         return result.toArray(new HandleValue[]{});
     }
 
-
-    protected class HandleIndex {
+    protected static class HandleIndex {
         // handle record indices start at 1
         private int index = 1;
 
