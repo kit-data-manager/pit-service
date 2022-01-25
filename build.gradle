@@ -25,7 +25,7 @@ jacoco {
     toolVersion = "0.8.7"
 }
 
-archivesBaseName = 'pit-service'
+archivesBaseName = 'TypedPIDMaker'
 description = "A gateway to manage PIDs containing profiles and typed attributes."
 version = '0.3'
 group = 'edu.kit.datamanager'
@@ -95,7 +95,7 @@ bootJar {
         into 'static/docs'
     }
 
-    // Make pit executable without `java -jar`
+    // Make the Typed PID Maker executable without `java -jar`
     // by adding a launch script into the jar file.
     // Works only on unix platforms.
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/#packaging-executable.configuring.launch-script
