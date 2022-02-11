@@ -44,11 +44,6 @@ public class IIdentifierSystemTest {
                 + "<location href=\"http://dtr-test.pidconsortium.eu/#objects/21.T11148/076759916209e5d62bd5\" weight=\"0\" view=\"ui\" />\n"
                 + "</locations>"
         );
-        inMemoryPidRecord.addEntry(
-            "HS_ADMIN",
-            "",
-            "something"
-        );
         String inMemoryPID = inMemory.registerPID(inMemoryPidRecord);
 
         // TODO initiate REST impl
@@ -77,7 +72,7 @@ public class IIdentifierSystemTest {
         PIDRecord result = impl.queryAllProperties(pid);
         assertEquals(result.getPid(), pid);
         assertTrue(result.getPropertyIdentifiers().contains("10320/loc"));
-        assertTrue(result.getPropertyIdentifiers().contains("HS_ADMIN"));
+        assertFalse(result.getPropertyIdentifiers().contains("HS_ADMIN"));
     }
 
     @ParameterizedTest
