@@ -400,7 +400,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                 AuthenticationHelper.getPrincipal(),
                 ControllerUtils.getLocalHostname()
             );
-            this.messagingService.send(message);
+            try {
+                this.messagingService.send(message);
+            } catch (Exception e) {
+                LOG.error("Could not notify messaging service about the following message: {}", message.toString());
+            }
             return ResponseEntity.status(HttpStatus.CREATED.value()).body(record);
         } else if (missingProfile) {
             // validation failed and profile is missing (this must therefore be the reason)
