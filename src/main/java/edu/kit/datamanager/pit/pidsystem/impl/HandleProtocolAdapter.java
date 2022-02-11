@@ -438,22 +438,23 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     
         HandleDiff(final Map<Integer, HandleValue> recordOld, final Map<Integer, HandleValue> recordNew) throws Exception {
             // old_indexes should only contain indexes we do not override/update anyway, so we can delete them afterwards.
-            for (Integer oldIndex : recordOld.keySet()) {
-                boolean wasRemoved = !recordNew.containsKey(oldIndex);
+            for (Entry<Integer, HandleValue> old : recordOld.entrySet()) {
+                boolean wasRemoved = !recordNew.containsKey(old.getKey());
                 if (wasRemoved) {
-                    toRemove.add(recordOld.get(oldIndex));
+                    toRemove.add(old.getValue());
                 } else {
-                    toUpdate.add(recordNew.get(oldIndex));
+                    toUpdate.add(recordNew.get(old.getKey()));
                 }
             }
-            for (Integer newIndex : recordNew.keySet()) {
-                boolean isNew = !recordOld.containsKey(newIndex);
+            for (Entry<Integer, HandleValue> e : recordNew.entrySet()) {
+                boolean isNew = !recordOld.containsKey(e.getKey());
                 if (isNew) {
-                    toAdd.add(recordNew.get(newIndex));
+                    toAdd.add(e.getValue());
                 }
             }
     
             // runtime testing to avoid messing up record states.
+            // TODO throw more meaningful exceptions and return a message to the API user, if possible, so he/she knows the developer has to be contacted.
             for (HandleValue v : toRemove) {
                 boolean valid = recordOld.containsValue(v) && !recordNew.containsKey(v.getIndex());
                 if (!valid) {
