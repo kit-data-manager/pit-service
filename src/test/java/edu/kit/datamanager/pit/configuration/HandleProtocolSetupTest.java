@@ -25,7 +25,7 @@ import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
         //"pit.pidsystem.handle-protocol.credentials.user-handle = fakeUserHandle/forTesting",
         //"pit.pidsystem.handle-protocol.credentials.private-key-path = key.file",
         //"pit.pidsystem.handle-protocol.credentials.private-key-index = 123",
-        "pit.pidsystem.handle-protocol.generator-prefix = testing",
+        //"pit.pidsystem.handle-protocol.credentials.handle-identifier-prefix = testing",
     }
 )
 @TestPropertySource(

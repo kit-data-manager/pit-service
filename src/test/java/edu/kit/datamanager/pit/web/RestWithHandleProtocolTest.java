@@ -39,9 +39,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 // @WebAppConfiguration
 // Default preparation foo for mockMVC
 @AutoConfigureMockMvc
-// Set the in-memory implementation
 @SpringBootTest(properties = {
-        "pit.pidsystem.implementation = HANDLE_PROTOCOL"
+    // Set the Handle Protocol implementation
+    "pit.pidsystem.implementation = HANDLE_PROTOCOL"
 })
 @TestPropertySource("/test/application-test.properties")
 // TODO why a testing profile?

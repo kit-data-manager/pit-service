@@ -20,7 +20,12 @@ import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 
 @ExtendWith(SpringExtension.class)
 // override pid system implementation
-@SpringBootTest( properties = "pit.pidsystem.implementation = HANDLE_REST" )
+@SpringBootTest( properties = {
+    "pit.pidsystem.implementation = HANDLE_REST",
+    "pit.pidsystem.handle.userName = 300:11043.4/admin",
+    "pit.pidsystem.handle.userPassword = password",
+    "pit.pidsystem.handle.generatorPrefix = 11043.4"
+})
 @TestPropertySource("/test/application-test.properties")
 @ActiveProfiles("test")
 public class HandleRESTSetupTest {

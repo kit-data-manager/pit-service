@@ -22,8 +22,8 @@ import net.handle.hdllib.HandleException;
 
 /**
  * This test ensures the interface is implemented correctly, with the following limits:
- * - TODO no write tests (update, register, delete PIDs), as this requires authentication or mocking
- * - TODO no queryByType tests (required PID with registered type as property)
+ * - TODO do write tests (update, register, delete PIDs), as this requires authentication or mocking
+ * - TODO do queryByType tests (requires PID with registered type as property)
  */
 public class IIdentifierSystemTest {
 
@@ -37,6 +37,7 @@ public class IIdentifierSystemTest {
         IIdentifierSystem inMemory = new InMemoryIdentifierSystem();
         PIDRecord inMemoryPidRecord = new PIDRecord();
         inMemoryPidRecord.addEntry(
+            // this is actually a registered type, but not in a data type registry, but inline in the PID record.
             "10320/loc",
             "",
             "<locations>\n<location href=\"http://dtr-test.pidconsortium.eu/objects/21.T11148/076759916209e5d62bd5\" weight=\"1\" view=\"json\" />\n"
