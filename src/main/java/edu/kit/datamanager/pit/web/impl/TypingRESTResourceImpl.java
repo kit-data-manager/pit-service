@@ -424,7 +424,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         // PID validation
         String pid = getContentPathFromRequest("pid", request);
         String pid_internal = record.getPid();
-        if (!pid_internal.isEmpty() && pid == pid_internal) {
+        if (pid_internal != null && !pid_internal.isEmpty() && pid == pid_internal) {
             throw new InconsistentRecordsException("PID in record was given, but it was not the same as the PID in the URL.");
         }
         if (!this.typingService.isIdentifierRegistered(pid)) {
