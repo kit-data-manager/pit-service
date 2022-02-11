@@ -40,13 +40,17 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
 
     private static final Logger LOG = LoggerFactory.getLogger(HandleProtocolProperties.class);
 
+    // Properties specific to this adapter.
     @Autowired
     private HandleProtocolProperties props;
-
+    // Handle Protocol implementation
     private HSAdapter client;
-
+    // indicates if the adapter can modify and create PIDs or just resolve them.
     private boolean isAdminMode = false;
+    // the value that is appended to every new record.
+    private HandleValue adminValue;
 
+    // For testing
     public HandleProtocolAdapter(HandleProtocolProperties props) {
         this.props = props;
     }
@@ -75,10 +79,10 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             {
                 File maybeKeyFile = credentials.getPrivateKeyPath().toFile();
                 if (!maybeKeyFile.exists()) {
-                    throw new InvalidConfigException("PrivateKeyFilePath does not lead to a file.");
+                    throw new InvalidConfigException(String.format("PrivateKeyFilePath does not lead to a file: %s", maybeKeyFile.toString()));
                 }
                 if (!maybeKeyFile.isFile()) {
-                    throw new InvalidConfigException("File to private key not a regular file.");
+                    throw new InvalidConfigException(String.format("File to private key not a regular file: %s", maybeKeyFile.toString()));
                 }
             }
             // NOTE We can still fail later if the private key file contains garbage.
