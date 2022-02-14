@@ -16,6 +16,8 @@
 # Java language server (e.g. by vscode)
 .project
 .classpath
+/bin/
+.vscode
 
 # the following lists are mostly taken from
 # https://github.com/github/gitignore (CC0 1.0)
