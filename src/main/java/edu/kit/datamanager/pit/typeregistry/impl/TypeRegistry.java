@@ -70,6 +70,8 @@ public class TypeRegistry implements ITypeRegistry {
      * @return The TypeDefinition as object.
      */
     private TypeDefinition constructTypeDefinition(JsonNode rootNode) throws JsonProcessingException, IOException, URISyntaxException {
+        // TODO We are doing things too complicated here. Deserialization should be easy.
+        // But before we change the domain model to do so, we need a lot of tests to make sure things work as before after the changes.
         LOG.trace("Performing constructTypeDefinition(<rootNode>).");
         JsonNode entry = rootNode;
         Map<String, TypeDefinition> properties = new HashMap<>();
