@@ -27,7 +27,7 @@ jacoco {
 
 archivesBaseName = 'TypedPIDMaker'
 description = "A gateway to manage PIDs containing profiles and typed attributes."
-version = '0.3'
+version = '0.4'
 group = 'edu.kit.datamanager'
 
 repositories {
