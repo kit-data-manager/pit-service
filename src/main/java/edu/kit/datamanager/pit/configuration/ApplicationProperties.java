@@ -17,39 +17,63 @@ package edu.kit.datamanager.pit.configuration;
 
 import edu.kit.datamanager.configuration.GenericApplicationProperties;
 import java.net.URL;
-import java.util.Optional;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 /**
- *
- * @author jejkal
+ * The main properties a user can give to this service using a application.properties file.
+ * 
+ * Depending on the configuration, further configuration classes might be loaded,
+ * to give the user mode operions.
+ * 
+ * Example: If "pit.pidsystem.implementation" is "HANDLE_PROTOCOL" is set,
+ *          `HandleProtocolProperties` will be active.
+ * 
+ * @author Andreas Pfeil
  */
 @Component
-@Data
 @Validated
-@EqualsAndHashCode(callSuper = true)
-public class ApplicationProperties extends GenericApplicationProperties{
+public class ApplicationProperties extends GenericApplicationProperties {
 
-  @Value("${pit.pidsystem.inmemory.active:#{null}}")
-  private Optional<Boolean> inMemoryPidService;
+  public enum IdentifierSystemImpl {
+    IN_MEMORY,
+    HANDLE_REST,
+    HANDLE_PROTOCOL;
+  }
 
+  @Value("${pit.pidsystem.implementation}")
+  private IdentifierSystemImpl identifierSystemImplementation;
+
+  // TODO Used by DTR implementation for resolving. Too unflexible in mid-term.
   @Value("${pit.pidsystem.handle.baseURI}")
   private URL handleBaseUri;
 
-  @Value("${pit.pidsystem.handle.userName}")
-  private String handleUser;
-
-  @Value("${pit.pidsystem.handle.userPassword}")
-  private String handlePassword;
-
-  @Value("${pit.pidsystem.handle.generatorPrefix}")
-  private String generatorPrefix;
-
   @Value("${pit.typeregistry.baseURI}")
   private URL typeRegistryUri;
+
+  public IdentifierSystemImpl getIdentifierSystemImplementation() {
+    return identifierSystemImplementation;
+  }
+
+  public void setIdentifierSystemImplementation(IdentifierSystemImpl identifierSystemImplementation) {
+    this.identifierSystemImplementation = identifierSystemImplementation;
+  }
+
+  public URL getHandleBaseUri() {
+    return handleBaseUri;
+  }
+
+  public void setHandleBaseUri(URL handleBaseUri) {
+    this.handleBaseUri = handleBaseUri;
+  }
+
+  public URL getTypeRegistryUri() {
+    return typeRegistryUri;
+  }
+
+  public void setTypeRegistryUri(URL typeRegistryUri) {
+    this.typeRegistryUri = typeRegistryUri;
+  }
 }

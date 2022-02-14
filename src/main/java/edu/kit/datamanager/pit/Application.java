@@ -25,6 +25,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalNotification;
 
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
+import edu.kit.datamanager.pit.configuration.ApplicationProperties.IdentifierSystemImpl;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import edu.kit.datamanager.pit.pidsystem.impl.HandleSystemRESTAdapter;
@@ -36,7 +37,6 @@ import edu.kit.datamanager.pit.typeregistry.impl.TypeRegistry;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.http.client.HttpClient;
@@ -96,22 +96,9 @@ public class Application {
         return new TypeRegistry();
     }
 
-    public IIdentifierSystem identifierSystem() {
-        ApplicationProperties properties = this.applicationProperties();
-        Optional<Boolean> inMemory = properties.getInMemoryPidService();
-        boolean useInMemory = inMemory.isPresent() && inMemory.get();
-        if (useInMemory) {
-            LOG.warn("Starting in-memory identifier service, because a baseURI for it was found in application.properties.");
-            return new InMemoryIdentifierSystem(properties);
-        } else {
-            LOG.info("Starting handle system REST adapter.");
-            return new HandleSystemRESTAdapter(properties);
-        }
-    }
-
     @Bean
-    public ITypingService typingService() throws IOException {
-        return new TypingService(identifierSystem(), typeRegistry(), typeCache());
+    public ITypingService typingService(IIdentifierSystem identifierSystem) throws IOException {
+        return new TypingService(identifierSystem, typeRegistry(), typeCache());
     }
 
     @Bean(name = "OBJECT_MAPPER_BEAN")

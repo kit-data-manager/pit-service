@@ -3,6 +3,7 @@ package edu.kit.datamanager.pit.pidsystem.impl;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.HashMap;
@@ -13,6 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import javax.annotation.PostConstruct;
 import javax.net.ssl.X509TrustManager;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
+import edu.kit.datamanager.pit.configuration.HandleSystemRESTProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.PIDRecordEntry;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
@@ -28,11 +31,16 @@ import java.util.Base64;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -42,7 +50,11 @@ import org.springframework.web.util.UriComponentsBuilder;
  * through its native REST interface available from HS v8 on.
  *
  */
+@Component
+@ConditionalOnBean(HandleSystemRESTProperties.class)
 public class HandleSystemRESTAdapter implements IIdentifierSystem {
+
+    private static final Logger LOG = LoggerFactory.getLogger(HandleSystemRESTAdapter.class);
 
     public static final boolean UNSAFE_SSL = true;
 
@@ -63,8 +75,12 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
 
     }
 
-//  @Autowired
-//  private ApplicationProperties applicationProperties;
+    @Autowired
+    private ApplicationProperties applicationProperties;
+
+    @Autowired
+    HandleSystemRESTProperties handleProperties;
+
     protected String baseUri;
     protected String authInfo;
     //protected Client client;
@@ -74,14 +90,18 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
-    public HandleSystemRESTAdapter(ApplicationProperties applicationProperties) {
-        super();
-        this.generatorPrefix = applicationProperties.getGeneratorPrefix();
+    @PostConstruct
+    public void init() {
+        LOG.trace("Set up HANDLE_REST implementation.");
+        this.generatorPrefix = handleProperties.getGeneratorPrefix();
         this.baseUri = applicationProperties.getHandleBaseUri().toString();//UriBuilder.fromUri(baseURI).path("api").build();
         try {
-            this.authInfo = Base64.
-                    getEncoder().
-                    encodeToString((URLEncoder.encode(applicationProperties.getHandleUser(), "UTF-8") + ":" + URLEncoder.encode(applicationProperties.getHandlePassword(), "UTF-8")).getBytes());
+            this.authInfo = Base64.getEncoder().encodeToString(
+                URLEncoder.encode(handleProperties.getHandleUser(), "UTF-8")
+                    .concat(":")
+                    .concat(URLEncoder.encode(handleProperties.getHandlePassword(), "UTF-8"))
+                    .getBytes(StandardCharsets.UTF_8)
+            );
         } catch (UnsupportedEncodingException e) {
             throw new IllegalArgumentException("Error while encoding the user name in UTF-8", e);
         }

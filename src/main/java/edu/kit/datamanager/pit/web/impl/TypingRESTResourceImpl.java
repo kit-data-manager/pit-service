@@ -400,7 +400,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                 AuthenticationHelper.getPrincipal(),
                 ControllerUtils.getLocalHostname()
             );
-            this.messagingService.send(message);
+            try {
+                this.messagingService.send(message);
+            } catch (Exception e) {
+                LOG.error("Could not notify messaging service about the following message: {}", message.toString());
+            }
             return ResponseEntity.status(HttpStatus.CREATED.value()).body(record);
         } else if (missingProfile) {
             // validation failed and profile is missing (this must therefore be the reason)
@@ -420,7 +424,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         // PID validation
         String pid = getContentPathFromRequest("pid", request);
         String pid_internal = record.getPid();
-        if (!pid_internal.isEmpty() && pid == pid_internal) {
+        if (pid_internal != null && !pid_internal.isEmpty() && pid == pid_internal) {
             throw new InconsistentRecordsException("PID in record was given, but it was not the same as the PID in the URL.");
         }
         if (!this.typingService.isIdentifierRegistered(pid)) {
