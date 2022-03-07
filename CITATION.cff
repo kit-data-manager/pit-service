@@ -13,7 +13,7 @@ authors:
   orcid: "https://orcid.org/0000-0003-2804-688X"
 title: "Typed PID Maker"
 type: software
-abstract: The Typed PID Maker is a server application that gives access to PID services using a simple REST interface, enforcing the creation of enriched PID records by requiring the use of registered profiles.
+abstract: The PIT service is the entry point to integrate digital resources into the FAIR DO ecosystem. It allows to create PIDs for resources and to provide them with the necessary metadata to ensure that the resources can be found.
 version: 0.4.0
 date-released: 2020-12-01
 url: "https://github.com/kit-data-manager/pit-service"
