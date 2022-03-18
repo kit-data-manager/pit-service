@@ -25,11 +25,8 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalNotification;
 
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
-import edu.kit.datamanager.pit.configuration.ApplicationProperties.IdentifierSystemImpl;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
-import edu.kit.datamanager.pit.pidsystem.impl.HandleSystemRESTAdapter;
-import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.TypingService;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
@@ -42,22 +39,18 @@ import java.util.concurrent.TimeUnit;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.cache.CacheConfig;
 import org.apache.http.impl.client.cache.CachingHttpClientBuilder;
-import org.javers.spring.boot.sql.JaversSqlAutoConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.InjectionPoint;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Scope;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -71,13 +64,11 @@ import org.springframework.web.client.RestTemplate;
  */
 @SpringBootApplication
 @EnableScheduling
-@ComponentScan({"edu.kit.datamanager", "edu.kit.datamanager.messaging.client"})
-@EnableAutoConfiguration(exclude = {
-    DataSourceAutoConfiguration.class,
-    DataSourceTransactionManagerAutoConfiguration.class,
-    HibernateJpaAutoConfiguration.class,
-    JaversSqlAutoConfiguration.class
-})
+@EntityScan({"edu.kit.datamanager"})
+// Required for "DAO" objects to work, needed for messaging service and database mappings
+@EnableJpaRepositories("edu.kit.datamanager")
+// Detects services and components in datamanager dependencies (service-base and repo-core)
+@ComponentScan({"edu.kit.datamanager"})
 public class Application {
 
     private static final Logger LOG = LoggerFactory.getLogger(Application.class);
@@ -155,33 +146,15 @@ public class Application {
                 });
     }
 
-//  @Bean
-//  public WebMvcConfigurer corsConfigurer(){
-//    return new WebMvcConfigurer(){
-//      @Override
-//      public void addCorsMappings(CorsRegistry registry){
-//        registry.addMapping("/**").allowedOrigins("http://localhost:8090").exposedHeaders("Content-Length").allowedHeaders("Accept");
-//      }
-//    };
-//  }
-//  @Bean
-//  @Primary
-//  public RequestMappingHandlerAdapter adapter(){
-//    return requestMappingHandlerAdapter;
-//  }
-//  @Bean
-//  public JsonViewSupportFactoryBean views(){
-//    return new JsonViewSupportFactoryBean();
-//  }
-//  @Bean
-//  @ConfigurationProperties("repo")
-//  public ApplicationProperties applicationProperties(){
-//    return new ApplicationProperties();
-//  }
-//  @Bean
-//  public IMessagingService messagingService(){
-//    return new RabbitMQMessagingService();
-//  }
+    /*
+    TODO there is an unsoundness in repo-core that, if it is removed, something like this might be required.
+    @Bean
+    @ConditionalOnProperty(name = "repo.messaging.enabled", havingValue = "true")
+    public IMessagingService messagingService(){
+        return new RabbitMQMessagingService();
+    }
+    */
+    
     @Bean
     @ConfigurationProperties("pit")
     public ApplicationProperties applicationProperties() {
@@ -189,7 +162,7 @@ public class Application {
     }
 
     public static void main(String[] args) {
-        ApplicationContext ctx = SpringApplication.run(Application.class, args);
+        SpringApplication.run(Application.class, args);
         System.out.println("Spring is running!");
     }
 

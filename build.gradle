@@ -50,12 +50,36 @@ if (System.getProperty("profile") == "release") {
     println "Using default profile for " + project.getName()
 }
 
+ext {
+    springDocVersion  = '1.5.13'
+}
+
 dependencies {
-    // Due to the spring boot gradle plugin, we can omit versions in spring
+    // Due to the spring boot gradle plugin, we can omit versions in org.springframework.*
     // dependencies. It will automatically choose the fitting ones.
-    implementation("edu.kit.datamanager:service-base:0.2.1")
-    // needed by spring boot to start tomcat
+    implementation("edu.kit.datamanager:service-base:1.0.0")
+    implementation("edu.kit.datamanager:repo-core:1.0.0")
+    // com.google.common, LoadingCache
+    implementation "com.github.google.guava:guava:v31.1"
+
+    // spring core, e.g. @EnableJpaRepositories
+    implementation "org.springframework:spring-core"
+    // spring security: required for security filters, firewall, ...
+    implementation "org.springframework.security:spring-security-web"
+    implementation "org.springframework.security:spring-security-config"
+    // spring boot
+    // needed by spring boot to start tomcat web server
+    implementation "org.springframework.boot:spring-boot-starter-web"
+    // ??? (builds without it, but does not work without it)
     implementation "org.springframework.boot:spring-boot-starter-validation"
+    // required for messaging
+    implementation "org.springframework.boot:spring-boot-starter-actuator"
+    // @EnableJPARepositories
+    implementation "org.springframework.boot:spring-boot-starter-data-jpa"
+    // springdoc / openapi / swagger
+    implementation "org.springdoc:springdoc-openapi-ui:${springDocVersion}"
+    implementation "org.springdoc:springdoc-openapi-data-rest:${springDocVersion}"
+    implementation "org.springdoc:springdoc-openapi-webmvc-core:${springDocVersion}"
 
     // More flexibility when (de-)serializing json:
     //implementation("com.monitorjbl:spring-json-view:1.1.0")
