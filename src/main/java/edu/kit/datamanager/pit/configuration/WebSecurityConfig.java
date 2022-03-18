@@ -60,9 +60,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
   @Autowired
   private ApplicationProperties config;
 
-  @Value("${metastore.security.enable-csrf:true}")
+  @Value("${pit.security.enable-csrf:true}")
   private boolean enableCsrf;
-  @Value("${metastore.security.allowedOriginPattern:http[*]://localhost:[*]}")
+  @Value("${pit.security.allowedOriginPattern:http[*]://localhost:[*]}")
   private String allowedOriginPattern;
 
   public WebSecurityConfig() {
