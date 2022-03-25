@@ -1,8 +1,5 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+/* SPDX-License-Identifier: Apache-2.0 */
+
 package edu.kit.datamanager.pit.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -22,8 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author Torridity
+ * Representation of a type or profile definition in a data type registry.
+ * 
+ * @author Thomas Jejkal
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -67,7 +65,15 @@ public class TypeDefinition {
         this.jsonSchema = SchemaLoader.load(jsonSchema);
     }
 
+    /**
+     * Takes a value and validates it using this types JSON schema.
+     * 
+     * @param document the value, usually taken from a PID record to be validated.
+     * @return true if the given value is valid accodting to this type.
+     */
     public boolean validate(String document) {
+        // TODO Validation should be externalized, so validation strategies can be exchanged.
+        // TODO Validation should be kept in one place, e.g. a special module.
         LOG.trace("Performing validate({}).", document);
         if (jsonSchema != null) {
             LOG.trace("Using schema-based validation.");

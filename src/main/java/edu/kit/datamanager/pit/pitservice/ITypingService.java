@@ -53,7 +53,7 @@ public interface ITypingService extends IIdentifierSystem {
      *
      * @param pid
      * @param propertyIdentifier must be registered in the type registry
-     * @return a PIDInformation object containing the single property name and
+     * @return a PIDRecord object containing the single property name and
      * value or null if the property is undefined.
      * @throws IOException
      * @throws IllegalArgumentException if the property is defined but ambiguous

@@ -83,14 +83,15 @@ public class PIDRecord {
     }
 
     /**
-     * Checks whether the stored property values conform to the given type and
-     * stores the result of the conformance checks in the local information
-     * record.
+     * Checks if all mandatory properties of a type (or profile) are available in
+     * this PID record.
      *
-     * @param typeDef
-     * @return true if all mandatory properties of the type are present
+     * @param typeDef the given type or profile definition.
+     * @return true if all mandatory properties of the type are present.
      */
     public boolean checkTypeConformance(edu.kit.datamanager.pit.domain.TypeDefinition typeDef) {
+        // TODO Validation should be externalized, so validation strategies can be exchanged.
+        // TODO Validation should be kept in one place, e.g. a special module.
         boolean conf = true;
         for (String p : typeDef.getAllProperties()) {
             if (!typeDef.getSubTypes().get(p).isOptional() && !entries.containsKey(p)) {
@@ -128,14 +129,6 @@ public class PIDRecord {
         for (PIDRecordEntry e : entry) {
             values.add(e.getValue());
         }
-        return values.toArray(new String[]{});
+        return values.toArray(new String[] {});
     }
-
-	public Map<String, String> intoKeyValuePairs() {
-        Map<String, String> map = new HashMap<>();
-        for (String key : this.getPropertyIdentifiers()) {
-            map.put(key, this.getPropertyValue(key));
-        }
-		return map;
-	}
 }

@@ -496,6 +496,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     private boolean validateRecord(PIDRecord record) throws DataTypeException, IOException {
+        // TODO should be part of TypeValidationUtils / typing service or wherever typing strategies will be in future.
         if (record.hasProperty(PROFILE_KEY)) {
             String[] typeIDs = record.getPropertyValues(PROFILE_KEY);
             boolean valid = typeIDs.length > 0;

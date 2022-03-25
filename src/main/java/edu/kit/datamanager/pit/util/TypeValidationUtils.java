@@ -11,21 +11,32 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author Torridity
+ * Utility class with static functions to validate PID records.
+ * 
+ * @author Thomas Jejkal
  */
 public class TypeValidationUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypeValidationUtils.class);
 
-    TypeValidationUtils() {
-    }
-
+    /**
+     * Validates a PID record against a given profile.
+     * 
+     * - All mandatory properties of the profile must be available in the PID
+     * record.
+     * - All properties of the record must be successfully validated according to
+     * the profile subtypes (properties).
+     * 
+     * @param record  the record to validate.
+     * @param profile the profile to validate against, defining the rules for the
+     *                record.
+     * @return true if all validations were successful, false otherwise.
+     */
     public static boolean isValid(PIDRecord record, TypeDefinition profile) {
         LOG.trace("Validating PID record against type definition.");
         if (!record.checkTypeConformance(profile)) {
             LOG.warn("PID record does not contain all required elements of type definition.");
-            //invalid according to type
+            // invalid according to type
             return false;
         }
         for (String recordKey : record.getPropertyIdentifiers()) {
