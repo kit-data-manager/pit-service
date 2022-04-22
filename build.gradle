@@ -1,7 +1,8 @@
 plugins {
     // Spring boot & dependency management:
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
-    id 'org.springframework.boot' version '2.5.7'
+    id 'org.springframework.boot' version '2.5.12'
+    // https://docs.spring.io/dependency-management-plugin/docs/current-SNAPSHOT/reference/html/
     id "io.spring.dependency-management" version "1.0.11.RELEASE"
     // Lombok generates getter and setter and more. https://projectlombok.org/
     // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
@@ -13,6 +14,10 @@ plugins {
     //id "com.github.kt3k.coveralls" version "2.12.0" 
     id "org.owasp.dependencycheck" version "6.5.0.1"
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
+}
+
+ext {
+    jdkVersion = 17
 }
 
 lombok {
@@ -108,9 +113,6 @@ jar {
 }
 
 compileJava {
-    // specify java version for compiling
-    // https://docs.gradle.org/current/userguide/building_java_projects.html#sec:java_cross_compilation
-    options.release = 11
     // Display more warnings when compiling.
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
@@ -121,7 +123,7 @@ java {
         // Gradle itself and building JVM projects." So let's make sure
         // we use the right thing here.
         // https://docs.gradle.org/current/userguide/toolchains.html#toolchains
-        languageVersion = JavaLanguageVersion.of(11)
+        languageVersion = JavaLanguageVersion.of(jdkVersion)
     }
 }
 
