@@ -54,7 +54,7 @@ public class PIDRecord {
 
     @JsonIgnore
     public void setPropertyName(String propertyIdentifier, String name) {
-        List<PIDRecordEntry> pe = entries.get(propertyIdentifier);
+          List<PIDRecordEntry> pe = entries.get(propertyIdentifier);
         if (pe == null) {
             throw new IllegalArgumentException("Property identifier not listed in this record: " + propertyIdentifier);
         }
@@ -88,7 +88,7 @@ public class PIDRecord {
      *
      * @param typeDef the given type or profile definition.
      * @return true if all mandatory properties of the type are present.
-     */
+      */
     public boolean checkTypeConformance(edu.kit.datamanager.pit.domain.TypeDefinition typeDef) {
         // TODO Validation should be externalized, so validation strategies can be exchanged.
         // TODO Validation should be kept in one place, e.g. a special module.
@@ -119,7 +119,7 @@ public class PIDRecord {
         return entry.get(0).getValue();
     }
 
-    public String[] getPropertyValues(String propertyIdentifier) {
+    public String getPropertyValues(String propertyIdentifier) {
         List<PIDRecordEntry> entry = entries.get(propertyIdentifier);
         if (entry == null) {
             throw new IllegalArgumentException("Property identifier not listed in this record: " + propertyIdentifier);
