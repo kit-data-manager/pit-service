@@ -1,187 +1,98 @@
 package edu.kit.datamanager.pit.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class PIDRecordTest {
-    private static final String PID = "fake/pid/42";
-    private Collection<String> propertiesToKeep;
-
-    
-//Assignin the new PID 
     @Test
-    void assignPID() {
-        PIDRecord r = new PIDRecord().withPID(PID);
-        assertEquals(PID, r.getPid());
-    }
-//Adding the Entry of Property Identifier ,PropertyName,PropertyValue,(key, Name ,Value) Test
-    @Test
-    void addingEntries() {
-        PIDRecord r = new PIDRecord().withPID(PID);
-        r.addEntry("some identifier", "some name", "some value");
-        
-        System.out.println(r);
+    void testCorrectEntryInsertionAndExtraction() {
+        PIDRecord rec = new PIDRecord();
+        String identifier = "propertyIdentifier";
+        String name = "propertyName";
+        String value = "propertyValue";
+        rec.addEntry(identifier, name, value);
 
-        Map<String, List<PIDRecordEntry>> entries = r.getEntries();
-        assertEquals(1, entries.keySet().size());
-       
-        assertEquals("some identifier", entries.values().iterator().next().get(0).getKey());
-        assertEquals("some name", entries.values().iterator().next().get(0).getName());
-        assertEquals("some value", entries.values().iterator().next().get(0).getValue());
-        assertNotNull( entries.values().iterator().next().get(0).getValue());
-        
-        
-    }
-
-
-        void testImmutability() {
-           
-
-    
-
-    }
-
-
-    @Test
-    void testCanEqual() {
-
+        // now we check if the class acts like expected.
+        assertTrue(rec.getPropertyIdentifiers().contains(identifier));
+        String receivedValue = rec.getPropertyValue(identifier);
+        assertEquals(value, receivedValue);
+        Map<String, List<PIDRecordEntry>> entries = rec.getEntries();
+        assertEquals(1, entries.size());
+        assertEquals(name, entries.get(identifier).get(0).getName());
     }
 
     @Test
-    void testCheckTypeConformance() {
-
+    void testAddEntryWithEmptyIdentifier() {
+        PIDRecord rec = new PIDRecord();
+        String identifier = "";
+        String name = "propertyName";
+        String value = "propertyValue";
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> rec.addEntry(identifier, name, value));
     }
 
     @Test
-    void testEquals() {
+    void testAddEntry_IdIsSpace() {
+        // TODO Discuss, is this a good thing? should we change it?
+        PIDRecord rec = new PIDRecord();
+        String identifier = " ";
+        String name = "propertyName";
+        String value = "propertyValue";
+        rec.addEntry(identifier, name, value);
 
+        // now we check if the class acts like expected.
+        assertTrue(rec.getPropertyIdentifiers().contains(identifier));
+        String receivedValue = rec.getPropertyValue(identifier);
+        assertEquals(value, receivedValue);
+        Map<String, List<PIDRecordEntry>> entries = rec.getEntries();
+        assertEquals(1, entries.size());
+        assertEquals(name, entries.get(identifier).get(0).getName());
     }
 
     @Test
-    void testGetEntries() {
+    void testAddEntry_IdIsNull() {
+        PIDRecord rec = new PIDRecord();
+        String identifier = null;
+        String name = "propertyName";
+        String value = "propertyValue";
 
-    }
-//Get PID(Getter Method) from PIDRecord
-    @Test
-    void testGetPid() {
-        PIDRecord r = new PIDRecord().withPID(PID);
-        Assertions.assertTrue(r.getPid() == "PID");
-    }
-//
-    private void assertTrue(String pid2) {
-        PIDRecord r = new PIDRecord().withPID(PID);
-        assertTrue(r.getPid());
+        assertThrows(
+                NullPointerException.class,
+                () -> rec.addEntry(identifier, name, value));
     }
 
     @Test
-    void testGetPropertyIdentifiers() {
-        
+    void testGetPropertyValuesWithSameIdentifier() {
+        PIDRecord rec = new PIDRecord();
+        String identifier = "propertyIdentifier";
+        String name = "propertyName";
+        String value = "propertyValue";
+        rec.addEntry(identifier, name, value);
 
- 
-    }
-@Test
-    private void assertnNull() {
-        PIDRecord r = new PIDRecord().withPID(PID);
-        Map<String, List<PIDRecordEntry>> entries = r.getEntries();
-        r.addEntry("some identifier", "some name", "some value");
+        assertTrue(rec.getPropertyIdentifiers().contains(identifier));
+        String receivedValue = rec.getPropertyValue(identifier);
+        assertEquals(value, receivedValue);
 
-        assertNotNull( entries.keySet().size());
+        String other_name = "otherName";
+        String other_value = "otherValue";
+        rec.addEntry(identifier, other_name, other_value);
 
-        
-        assertNotNull((entries.values().iterator().next().get(0).getKey()));
-        assertNotNull( entries.values().iterator().next().get(0).getName());
-        
+        assertTrue(rec.getPropertyIdentifiers().contains(identifier));
+        String receivedOtherValue = rec.getPropertyValue(identifier);
+        assertEquals(value, receivedOtherValue);
 
-    }
-    
-    @Test
-   // @DisplayName("Expecting these tests to use the testGretPropertyvalues configuration // check invalid Input ")
-    void testGetPropertyValue() {
-        PIDRecord r = new PIDRecord();
-      String expected ="some name";
-       assertEquals(expected ,r.getPropertyValues("some value"));
-       assertThrows(IllegalArgumentException.class, () -> r.getPropertyValues(""));
-
-
-    }
-
-    @Test
-  //  @DisplayName("Expecting to test Property value of PID Record")
-    void testGetPropertyValues() {
-PIDRecord Property_Values=new PIDRecord().withPID(PID);
-Property_Values.getPropertyValue("some value");
-Map<String, List<PIDRecordEntry>> entries = Property_Values.getEntries();
-   
-        String Expected="some value";
-        assertEquals(Expected, entries.values().iterator().next().get(0).getKey());
-        
-       // assertEquals(Expected,Actual);
-
-    }
-
-    @Test
-    void testHasProperty() {
-        PIDRecord HasProperty=new PIDRecord().withPID(PID);
-        HasProperty.hasProperty("some identifier");
-        assertTrue(HasProperty.hasProperty("some identifier"));
-
-
-
-    }
-
-    private void assertTrue(boolean hasProperty) {
-    }
-    @Test
-    void testHashCode() {
-
-    }
-
-    @Test
-    void testRemovePropertiesNotListed() {
-        PIDRecord Remove = new PIDRecord().withPID(PID);
-        Remove.addEntry("some identifier", "some name", "some value");
-        Map<String, List<PIDRecordEntry>> entries = Remove.getEntries();
-        //Remove.removePropertiesNotListed(propertiesToKeep);
-        assertNull(Remove.removePropertiesNotListed(propertiesToKeep));
-        
-    }
-
-    private void assertNull(Object removePropertiesNotListed) {
-    }
-
-    @Test
-    void testSetEntries() {
-
-    }
-
-    @Test
-    void testSetPid() {
-
-
-    }
-
-    @Test
-    void testSetPropertyName() {
-
-    }
-
-    @Test
-    void testToString() {
-
-    }
-
-    @Test
-    void testWithPID() {
-
+        String[] expectedValues = { value, other_value };
+        String[] receivedValues = rec.getPropertyValues(identifier);
+        assertEquals(expectedValues[0], receivedValues[0]);
+        assertEquals(expectedValues[1], receivedValues[1]);
+        assertEquals(expectedValues.length, receivedValues.length);
     }
 }
- 
