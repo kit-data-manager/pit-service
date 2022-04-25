@@ -7,10 +7,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Test Ensure the Entry of Insertion And Extraction of the class
+ */
+
 public class PIDRecordTest {
+    private static final String PID = "fake/pid/42";
+
+    @Test
+    void assignPIDTest() {
+        PIDRecord r = new PIDRecord().withPID(PID);
+        assertEquals(PID, r.getPid());
+    }
+
     @Test
     void testCorrectEntryInsertionAndExtraction() {
         PIDRecord rec = new PIDRecord();
@@ -26,6 +37,13 @@ public class PIDRecordTest {
         Map<String, List<PIDRecordEntry>> entries = rec.getEntries();
         assertEquals(1, entries.size());
         assertEquals(name, entries.get(identifier).get(0).getName());
+    }
+
+    @Test
+    void assignPID() {
+
+        PIDRecord r = new PIDRecord().withPID(PID);
+        assertEquals(PID, r.getPid());
     }
 
     @Test
@@ -76,6 +94,7 @@ public class PIDRecordTest {
         String name = "propertyName";
         String value = "propertyValue";
         rec.addEntry(identifier, name, value);
+        assertEquals(true, rec.hasProperty("propertyIdentifier"));
 
         assertTrue(rec.getPropertyIdentifiers().contains(identifier));
         String receivedValue = rec.getPropertyValue(identifier);
@@ -94,5 +113,18 @@ public class PIDRecordTest {
         assertEquals(expectedValues[0], receivedValues[0]);
         assertEquals(expectedValues[1], receivedValues[1]);
         assertEquals(expectedValues.length, receivedValues.length);
+    }
+
+    @Test
+    void hasProperty_Test() {
+
+        PIDRecord rec = new PIDRecord();
+        boolean Expected_identifier = true;
+        String identifier = "propertyIdentifier";
+        String name = "propertyName";
+        String value = "propertyValue";
+        rec.addEntry(identifier, name, value);
+        assertEquals(Expected_identifier, rec.hasProperty("propertyIdentifier"));
+
     }
 }

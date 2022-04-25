@@ -35,7 +35,12 @@ public class PIDRecord {
         this.setPid(pid);
         return this;
     }
-
+/**
+ * Add an entry to the this class
+ * @param propertyIdentifier
+ * @param propertyName
+ * @param propertyValue
+ */
     public void addEntry(String propertyIdentifier, String propertyName, String propertyValue) {
         if (propertyIdentifier.isEmpty()) {
             throw new IllegalArgumentException("The identifier of a property may not be empty!");
@@ -51,6 +56,11 @@ public class PIDRecord {
         }
         entryList.add(entry);
     }
+    /**
+     * set the value for property Identifier and Check Exception 
+     * @param propertyIdentifier
+     * @param name
+     */
 
     @JsonIgnore
     public void setPropertyName(String propertyIdentifier, String name) {
@@ -62,6 +72,11 @@ public class PIDRecord {
             entry.setName(name);
         }
     }
+    /**
+     * Check keyvalue by Hashmap
+     * @param propertyIdentifier
+     * @return
+     */
 
     public boolean hasProperty(String propertyIdentifier) {
         return entries.containsKey(propertyIdentifier);
@@ -101,7 +116,10 @@ public class PIDRecord {
         }
         return conf;
     }
-
+/**
+ * Get the PropertyIdentifier in th Entries
+ * @return
+ */
     @JsonIgnore
     public Set<String> getPropertyIdentifiers() {
         return entries.keySet();
@@ -118,8 +136,13 @@ public class PIDRecord {
         }
         return entry.get(0).getValue();
     }
+    /**
+     * To get the value of property Identifier and check the entries and through Excpetion 
+     * @param propertyIdentifier
+     * @return
+     */
 
-    public String getPropertyValues(String propertyIdentifier) {
+    public String[] getPropertyValues(String propertyIdentifier) {
         List<PIDRecordEntry> entry = entries.get(propertyIdentifier);
         if (entry == null) {
             throw new IllegalArgumentException("Property identifier not listed in this record: " + propertyIdentifier);
