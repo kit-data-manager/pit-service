@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -125,6 +126,20 @@ public class PIDRecordTest {
         String value = "propertyValue";
         rec.addEntry(identifier, name, value);
         assertEquals(Expected_identifier, rec.hasProperty("propertyIdentifier"));
+
+    }
+
+    @Test
+    void removePropertiesNotListedTest(){
+        PIDRecord rec = new PIDRecord();
+        String identifier = "propertyIdentifier";
+        String name = "propertyName";
+        String value = "propertyValue";
+        boolean expected= true;
+        rec.addEntry(identifier, name, value);
+        Collection<String> propertiesToKeep= (Collection<String>) rec.getEntries();
+        rec.removePropertiesNotListed(propertiesToKeep);
+        assertTrue(propertiesToKeep.contains(identifier));
 
     }
 }
