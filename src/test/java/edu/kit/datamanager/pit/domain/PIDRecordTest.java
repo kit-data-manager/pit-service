@@ -1,12 +1,13 @@
 package edu.kit.datamanager.pit.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -117,29 +118,36 @@ public class PIDRecordTest {
     }
 
     @Test
-    void hasProperty_Test() {
-
+    void testHasProperty() {
         PIDRecord rec = new PIDRecord();
-        boolean Expected_identifier = true;
         String identifier = "propertyIdentifier";
         String name = "propertyName";
         String value = "propertyValue";
         rec.addEntry(identifier, name, value);
-        assertEquals(Expected_identifier, rec.hasProperty("propertyIdentifier"));
-
+        assertTrue(rec.hasProperty("propertyIdentifier"));
     }
 
     @Test
-    void removePropertiesNotListedTest(){
+    void testRemovePropertiesNotListed() {
         PIDRecord rec = new PIDRecord();
-        String identifier = "propertyIdentifier";
+        String id1 = "propertyIdentifier";
+        String id2 = "otherIdentifier";
         String name = "propertyName";
-        String value = "propertyValue";
-        boolean expected= true;
-        rec.addEntry(identifier, name, value);
-        Collection<String> propertiesToKeep= (Collection<String>) rec.getEntries();
+        String value1 = "propertyValue";
+        String value2 = "otherValue";
+        rec.addEntry(id1, name, value1);
+        rec.addEntry(id1, name, value2);
+        rec.addEntry(id2, name, value2);
+        
+        Set<String> propertiesToKeep = rec.getPropertyIdentifiers();
         rec.removePropertiesNotListed(propertiesToKeep);
-        assertTrue(propertiesToKeep.contains(identifier));
+        assertTrue(propertiesToKeep.contains(id1));
+        assertTrue(propertiesToKeep.contains(id2));
+        assertTrue(rec.hasProperty(id1));
+        assertTrue(rec.hasProperty(id2));
 
+        propertiesToKeep.remove(id1);
+        rec.removePropertiesNotListed(propertiesToKeep);
+        assertFalse(rec.hasProperty(id1));
     }
 }
