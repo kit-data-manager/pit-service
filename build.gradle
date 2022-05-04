@@ -41,15 +41,6 @@ configurations {
     all*.exclude module : 'spring-boot-starter-logging'
 }
 
-if (System.getProperty("profile") == "release") {
-    // In some cases we might do some very extensive testing etc only when releasing.
-    println "Using release profile for building " + project.getName()
-    apply from: 'gradle/profile-release.gradle'
-} else {
-    // By default we only do stuff that does not take too long.
-    println "Using default profile for " + project.getName()
-}
-
 dependencies {
     // Due to the spring boot gradle plugin, we can omit versions in spring
     // dependencies. It will automatically choose the fitting ones.

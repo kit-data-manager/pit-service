@@ -33,11 +33,11 @@ jobs:
     - name: Build with Gradle
       run:   |
         if [ "$RUNNER_OS" == "Linux" ]; then
-              ./gradlew -Dprofile=release clean build jacocoTestReport
+              ./gradlew clean build jacocoTestReport
         elif [ "$RUNNER_OS" == "macOS" ]; then
-              ./gradlew -Dprofile=release clean build jacocoTestReport
+              ./gradlew clean build jacocoTestReport
         elif [ "$RUNNER_OS" == "Windows" ]; then
-              ./gradlew.bat -Dprofile=release clean build jacocoTestReport
+              ./gradlew.bat clean build jacocoTestReport
         else
               echo "$RUNNER_OS not supported"
               exit 1
