@@ -16,10 +16,6 @@ plugins {
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
 }
 
-ext {
-    jdkVersion = 17
-}
-
 lombok {
     // check here for new versions: https://projectlombok.org/download
     version = '1.18.22'
@@ -34,6 +30,10 @@ archivesBaseName = 'TypedPIDMaker'
 description = "A gateway to manage PIDs containing profiles and typed attributes."
 version = '0.4'
 group = 'edu.kit.datamanager'
+
+println "Running gradle version: $gradle.gradleVersion"
+println "Building ${name} version: ${version}"
+println "JDK version: ${JavaVersion.current()}"
 
 repositories {
     mavenLocal()
@@ -120,10 +120,11 @@ compileJava {
 java {
     toolchain {
         // "By default, Gradle uses the same Java version for running
-        // Gradle itself and building JVM projects." So let's make sure
-        // we use the right thing here.
+        // Gradle itself and building JVM projects."
+        // We can enforce a specific version here. By defult, we do not do this
+        // to enable the CI to test with different JDKs.
         // https://docs.gradle.org/current/userguide/toolchains.html#toolchains
-        languageVersion = JavaLanguageVersion.of(jdkVersion)
+        //languageVersion = JavaLanguageVersion.of(jdkVersion)
     }
 }
 
