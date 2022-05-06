@@ -6,8 +6,12 @@ plugins {
     // Lombok generates getter and setter and more. https://projectlombok.org/
     // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
     id "io.freefair.lombok" version "6.3.0"
-    id 'java'
+    // Release tagging with `./gradlew release`
+    // Check for new versions here: https://plugins.gradle.org/plugin/net.researchgate.release
+    // Usage: https://github.com/researchgate/gradle-release
+    id 'net.researchgate.release' version '2.8.1'
 
+    id 'java'
     // test and docs dependencies
     id 'jacoco'
     //id "com.github.kt3k.coveralls" version "2.12.0" 
@@ -65,6 +69,11 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
     testImplementation("org.springframework.security:spring-security-test")
+}
+
+release {
+    // define tag pattern (tags have to start with 'v')
+    tagTemplate = 'v${version}'
 }
 
 // Makes executable jar file.
