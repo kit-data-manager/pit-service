@@ -1,7 +1,8 @@
 plugins {
     // Spring boot & dependency management:
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
-    id 'org.springframework.boot' version '2.5.7'
+    id 'org.springframework.boot' version '2.5.13'
+    // https://docs.spring.io/dependency-management-plugin/docs/current-SNAPSHOT/reference/html/
     id "io.spring.dependency-management" version "1.0.11.RELEASE"
     // Lombok generates getter and setter and more. https://projectlombok.org/
     // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
@@ -33,6 +34,10 @@ archivesBaseName = 'TypedPIDMaker'
 description = "A gateway to manage PIDs containing profiles and typed attributes."
 version = '0.4'
 group = 'edu.kit.datamanager'
+
+println "Running gradle version: $gradle.gradleVersion"
+println "Building ${name} version: ${version}"
+println "JDK version: ${JavaVersion.current()}"
 
 repositories {
     mavenLocal()
@@ -108,9 +113,6 @@ jar {
 }
 
 compileJava {
-    // specify java version for compiling
-    // https://docs.gradle.org/current/userguide/building_java_projects.html#sec:java_cross_compilation
-    options.release = 11
     // Display more warnings when compiling.
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
@@ -118,10 +120,11 @@ compileJava {
 java {
     toolchain {
         // "By default, Gradle uses the same Java version for running
-        // Gradle itself and building JVM projects." So let's make sure
-        // we use the right thing here.
+        // Gradle itself and building JVM projects."
+        // We can enforce a specific version here. By defult, we do not do this
+        // to enable the CI to test with different JDKs.
         // https://docs.gradle.org/current/userguide/toolchains.html#toolchains
-        languageVersion = JavaLanguageVersion.of(11)
+        //languageVersion = JavaLanguageVersion.of(jdkVersion)
     }
 }
 
