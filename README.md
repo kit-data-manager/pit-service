@@ -10,7 +10,7 @@ contained in the PID record.
 
 In order to build the Typed PID Maker, you'll need:
 
-* Java SE Development Kit 8 or higher
+* Java SE Development Kit 11 (or openjdk 11) or higher
 
 After obtaining the sources change to the folder where the sources are located perform the following steps:
 
