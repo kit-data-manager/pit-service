@@ -23,13 +23,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * The main properties a user can give to this service using a application.properties file.
+ * The main properties a user can give to this service using a
+ * application.properties file.
  * 
- * Depending on the configuration, further configuration classes might be loaded,
+ * Depending on the configuration, further configuration classes might be
+ * loaded,
  * to give the user mode operions.
  * 
  * Example: If "pit.pidsystem.implementation" is "HANDLE_PROTOCOL" is set,
- *          `HandleProtocolProperties` will be active.
+ * `HandleProtocolProperties` will be active.
  * 
  * @author Andreas Pfeil
  */
@@ -53,8 +55,11 @@ public class ApplicationProperties extends GenericApplicationProperties {
   @Value("${pit.typeregistry.baseURI}")
   private URL typeRegistryUri;
 
+  @Value("${pit.validation.profileKey:21.T11148/076759916209e5d62bd5}")
+  private String profileKey;
+
   public IdentifierSystemImpl getIdentifierSystemImplementation() {
-    return identifierSystemImplementation;
+    return this.identifierSystemImplementation;
   }
 
   public void setIdentifierSystemImplementation(IdentifierSystemImpl identifierSystemImplementation) {
@@ -62,7 +67,7 @@ public class ApplicationProperties extends GenericApplicationProperties {
   }
 
   public URL getHandleBaseUri() {
-    return handleBaseUri;
+    return this.handleBaseUri;
   }
 
   public void setHandleBaseUri(URL handleBaseUri) {
@@ -70,10 +75,18 @@ public class ApplicationProperties extends GenericApplicationProperties {
   }
 
   public URL getTypeRegistryUri() {
-    return typeRegistryUri;
+    return this.typeRegistryUri;
   }
 
   public void setTypeRegistryUri(URL typeRegistryUri) {
     this.typeRegistryUri = typeRegistryUri;
+  }
+
+  public String getProfileKey() {
+    return this.profileKey;
+  }
+
+  public void setProfileKey(String profileKey) {
+    this.profileKey = profileKey;
   }
 }
