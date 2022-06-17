@@ -48,6 +48,14 @@ public class ApplicationProperties extends GenericApplicationProperties {
   @Value("${pit.pidsystem.implementation}")
   private IdentifierSystemImpl identifierSystemImplementation;
 
+  public enum ValidationStrategy {
+    EMBEDDED_STRICT,
+    NONE_DEBUG;
+  }
+
+  @Value("${pit.validation.strategy:embedded-strict}")
+  private ValidationStrategy validationStrategy = ValidationStrategy.EMBEDDED_STRICT;
+
   // TODO Used by DTR implementation for resolving. Too unflexible in mid-term.
   @Value("${pit.pidsystem.handle.baseURI}")
   private URL handleBaseUri;
@@ -89,4 +97,13 @@ public class ApplicationProperties extends GenericApplicationProperties {
   public void setProfileKey(String profileKey) {
     this.profileKey = profileKey;
   }
+
+  public ValidationStrategy getValidationStrategy() {
+    return this.validationStrategy;
+  }
+
+  public void setValidationStrategy(ValidationStrategy strategy) {
+    this.validationStrategy = strategy;
+  }
 }
+ 
