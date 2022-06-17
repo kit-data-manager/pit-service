@@ -7,6 +7,7 @@ import edu.kit.datamanager.pit.common.DataTypeException;
 import edu.kit.datamanager.pit.common.InconsistentRecordsException;
 import edu.kit.datamanager.pit.common.TypeNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
+import edu.kit.datamanager.pit.configuration.ApplicationProperties.ValidationStrategy;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
@@ -391,7 +392,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         LOG.info("Creating PID");
         boolean valid = false;
         try {
-            valid = this.validateRecord(record);
+            if(applicationProps.getValidationStrategy() == ValidationStrategy.EMBEDDED_STRICT){
+                valid = this.validateRecord(record);
+            }
         } catch (DataTypeException e) {
             throw new RecordValidationException("(no PID registered yet)", e.getMessage());
         }
@@ -443,7 +446,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         record.setPid(pid);
         boolean valid = false;
         try {
-            valid = this.validateRecord(record);
+            if(applicationProps.getValidationStrategy() == ValidationStrategy.EMBEDDED_STRICT){
+                valid = this.validateRecord(record);
+            }
         } catch (DataTypeException e) {
             throw new RecordValidationException(pid, e.getMessage());
         }
