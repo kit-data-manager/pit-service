@@ -53,7 +53,7 @@ public class ApplicationProperties extends GenericApplicationProperties {
     NONE_DEBUG;
   }
 
-  @Value("${pit.validation.ValidationStrategy:embedded-strict}")
+  @Value("${pit.validation.strategy:embedded-strict}")
   private ValidationStrategy validationStrategy = ValidationStrategy.EMBEDDED_STRICT;
 
   // TODO Used by DTR implementation for resolving. Too unflexible in mid-term.
