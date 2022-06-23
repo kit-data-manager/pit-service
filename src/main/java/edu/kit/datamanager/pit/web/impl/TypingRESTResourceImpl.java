@@ -6,6 +6,8 @@ import java.io.IOException;
 import edu.kit.datamanager.pit.common.DataTypeException;
 import edu.kit.datamanager.pit.common.InconsistentRecordsException;
 import edu.kit.datamanager.pit.common.TypeNotFoundException;
+import edu.kit.datamanager.pit.configuration.ApplicationProperties;
+import edu.kit.datamanager.pit.configuration.ApplicationProperties.ValidationStrategy;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
@@ -304,7 +306,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypingRESTResourceImpl.class);
 
-    private static final String PROFILE_KEY = "21.T11148/076759916209e5d62bd5";
+    @Autowired
+    private ApplicationProperties applicationProps;
 
     @Autowired
     protected ITypingService typingService;
@@ -323,13 +326,15 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final UriComponentsBuilder uriBuilder) throws IOException {
         LOG.trace("Performing isPidMatchingProfile({}).", identifier);
         String profileId = getContentPathFromRequest("profile", request);
-        LOG.trace("Validating PID record with identifier {} against profile with identifier {} from request path.", identifier, profileId);
+        LOG.trace("Validating PID record with identifier {} against profile with identifier {} from request path.",
+                identifier, profileId);
         if (typingService.conformsToType(identifier, profileId)) {
             LOG.trace("PID record with identifier {} is matching profile with identifier {}.", identifier, profileId);
             return ResponseEntity.status(200).build();
         }
         LOG.error("PID record with identifier {} is NOT matching profile with identifier {}.", identifier, profileId);
-        throw new RecordValidationException(identifier, "Record with identifier " + identifier + " not matching profile with identifier " + profileId + ".");
+        throw new RecordValidationException(identifier,
+                "Record with identifier " + identifier + " not matching profile with identifier " + profileId + ".");
     }
 
     @Override
@@ -350,14 +355,16 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
         LOG.trace("Reading PID record for identifier {}.", identifier);
         PIDRecord record = typingService.queryAllProperties(identifier);
-        LOG.trace("Validating PID record with identifier {} against type with id {} from request path.", identifier, typeId);
+        LOG.trace("Validating PID record with identifier {} against type with id {} from request path.", identifier,
+                typeId);
         if (TypeValidationUtils.isValid(record, typeDef)) {
             LOG.trace("PID record with identifier {} is matching type with identifier {}.", identifier, typeId);
             return ResponseEntity.ok().build();
         }
 
         LOG.error("PID record with identifier {} is NOT matching type with identifier {}.", identifier, typeId);
-        throw new RecordValidationException(identifier, "Record with identifier " + identifier + " not matching type with identifier " + typeId + ".");
+        throw new RecordValidationException(identifier,
+                "Record with identifier " + identifier + " not matching type with identifier " + typeId + ".");
     }
 
     @Override
@@ -367,7 +374,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final UriComponentsBuilder uriBuilder) throws IOException {
         String profileId = getContentPathFromRequest("profile", request);
 
-        //read profile from type registry
+        // read profile from type registry
         TypeDefinition profileDef = typingService.describeType(profileId);
         if (profileDef == null) {
             LOG.error("No definition found for identifier {}.", profileId);
@@ -381,25 +388,27 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             PIDRecord record,
             final WebRequest request,
             final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder
-    ) throws IOException {
+            final UriComponentsBuilder uriBuilder) throws IOException {
         LOG.info("Creating PID");
         boolean valid = false;
         try {
-            valid = this.validateRecord(record);
+            if(applicationProps.getValidationStrategy() == ValidationStrategy.EMBEDDED_STRICT){
+                valid = this.validateRecord(record);
+            }
         } catch (DataTypeException e) {
             throw new RecordValidationException("(no PID registered yet)", e.getMessage());
         }
-        boolean missingProfile = !record.hasProperty(PROFILE_KEY) || record.getPropertyValues(PROFILE_KEY).length < 1;
+        String profileKey = applicationProps.getProfileKey();
+        boolean missingProfile = !record.hasProperty(profileKey)
+                || record.getPropertyValues(profileKey).length < 1;
         if (valid) {
             String pid = this.typingService.registerPID(record);
             record.setPid(pid);
             PidRecordMessage message = PidRecordMessage.creation(
-                pid,
-                "",  // TODO parameter is depricated and will be removed soon.
-                AuthenticationHelper.getPrincipal(),
-                ControllerUtils.getLocalHostname()
-            );
+                    pid,
+                    "", // TODO parameter is depricated and will be removed soon.
+                    AuthenticationHelper.getPrincipal(),
+                    ControllerUtils.getLocalHostname());
             try {
                 this.messagingService.send(message);
             } catch (Exception e) {
@@ -408,7 +417,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             return ResponseEntity.status(HttpStatus.CREATED.value()).body(record);
         } else if (missingProfile) {
             // validation failed and profile is missing (this must therefore be the reason)
-            throw new RecordValidationException("(no PID registered yet)", "No profiles are specified in this record. Profile Key is " + PROFILE_KEY);
+            throw new RecordValidationException("(no PID registered yet)",
+                    "No profiles are specified in this record. Profile Key is " + profileKey);
         } else {
             // if validation failed
             throw new RecordValidationException("(no PID registered yet)");
@@ -425,7 +435,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         String pid = getContentPathFromRequest("pid", request);
         String pid_internal = record.getPid();
         if (pid_internal != null && !pid_internal.isEmpty() && pid == pid_internal) {
-            throw new InconsistentRecordsException("PID in record was given, but it was not the same as the PID in the URL.");
+            throw new InconsistentRecordsException(
+                    "PID in record was given, but it was not the same as the PID in the URL.");
         }
         if (!this.typingService.isIdentifierRegistered(pid)) {
             throw new PidNotFoundException(pid);
@@ -435,7 +446,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         record.setPid(pid);
         boolean valid = false;
         try {
-            valid = this.validateRecord(record);
+            if(applicationProps.getValidationStrategy() == ValidationStrategy.EMBEDDED_STRICT){
+                valid = this.validateRecord(record);
+            }
         } catch (DataTypeException e) {
             throw new RecordValidationException(pid, e.getMessage());
         }
@@ -443,15 +456,14 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             // TODO give the user a reason why this failed.
             throw new RecordValidationException(pid);
         }
-        
+
         // update and send message
         if (this.typingService.updatePID(record)) {
             PidRecordMessage message = PidRecordMessage.update(
-                pid,
-                "",  // TODO parameter is depricated and will be removed soon.
-                AuthenticationHelper.getPrincipal(),
-                ControllerUtils.getLocalHostname()
-            );
+                    pid,
+                    "", // TODO parameter is depricated and will be removed soon.
+                    AuthenticationHelper.getPrincipal(),
+                    ControllerUtils.getLocalHostname());
             this.messagingService.send(message);
             return ResponseEntity.ok().body(record);
         } else {
@@ -477,7 +489,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     private String getContentPathFromRequest(String lastPathElement, WebRequest request) {
-        String requestedUri = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE, WebRequest.SCOPE_REQUEST);
+        String requestedUri = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE,
+                WebRequest.SCOPE_REQUEST);
         if (requestedUri == null) {
             throw new CustomInternalServerError("Unable to obtain request URI.");
         }
@@ -488,16 +501,18 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     public ResponseEntity<PIDRecord> getRecord(
             final WebRequest request,
             final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder
-    ) throws IOException {
+            final UriComponentsBuilder uriBuilder) throws IOException {
         String pid = getContentPathFromRequest("pid", request);
         PIDRecord record = this.typingService.queryAllProperties(pid);
         return ResponseEntity.ok().body(record);
     }
 
     private boolean validateRecord(PIDRecord record) throws DataTypeException, IOException {
-        if (record.hasProperty(PROFILE_KEY)) {
-            String[] typeIDs = record.getPropertyValues(PROFILE_KEY);
+        // TODO should be part of TypeValidationUtils / typing service or wherever
+        // typing strategies will be in future.
+        String profileKey = applicationProps.getProfileKey();
+        if (record.hasProperty(profileKey)) {
+            String[] typeIDs = record.getPropertyValues(profileKey);
             boolean valid = typeIDs.length > 0;
             for (String typeID : typeIDs) {
                 TypeDefinition typeDef = typingService.describeType(typeID);
@@ -519,321 +534,353 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
     }
 
-//  /**
-//   * Simple ping method for testing (check whether the API is running etc.). Not
-//   * part of the official interface description.
-//   *
-//   * @return responds with 200 OK and a "Hello World" message in the body.
-//   */
-//  @Override
-//  public ResponseEntity simplePing(){
-//    return ResponseEntity.status(200).body("Hello World");
-//  }
-//
-//  /**
-//   * Generic resolution method to read PID records, property or type
-//   * definitions. Optionally implemented method. May be slower than the
-//   * specialized methods due to an increased number of back-end requests.
-//   *
-//   * @param identifier an identifier string
-//   * @return depending on the nature of the identified entity, the result can be
-//   * a PID record, a property or a type definition.
-//   * @throws IOException
-//   */
-//  @Override
-//  public ResponseEntity resolveGenericPID(
-//          @Parameter(description = "ID of entity") @PathVariable("identifier") String identifier)
-//          throws IOException{
-//    Object obj = typingService.genericResolve(identifier);
-//    if(obj == null){
-//      return ResponseEntity.status(404).build();
-//    }
-//    return ResponseEntity.status(200).body(obj);
-//  }
-//
-//  /**
-//   * Similar to {@link #resolveGenericPID(String)} but supports native slashes
-//   * in the identifier path.
-//   *
-//   * @see #resolveGenericPID(String)
-//   */
-//  @Override
-//  public ResponseEntity resolveGenericPID(@PathVariable("prefix") String prefix, @PathVariable("suffix") String suffix) throws IOException{
-//    return resolveGenericPID(prefix + "/" + suffix);
-//  }
-//
-//  /**
-//   * Simple HEAD method to check whether a particular pid is registered.
-//   *
-//   * @param identifier an identifier string
-//   * @return either 200 or 404, indicating whether the PID is registered or not
-//   * registered
-//   * @throws IOException
-//   */
-//  @Override
-//  public ResponseEntity isPidRegistered(@PathVariable("identifier") String identifier) throws IOException{
-//    boolean b = typingService.isIdentifierRegistered(identifier);
-//    if(b){
-//      return ResponseEntity.status(200).build();
-//    } else{
-//      return ResponseEntity.status(404).build();
-//    }
-//  }
-//
-//  /**
-//   * Similar to {@link #isPidRegistered(String)} but supports native slashes in
-//   * the identifier path.
-//   *
-//   * @see #isPidRegistered(String)
-//   */
-//  @Override
-//  public ResponseEntity isPidRegistered(@PathVariable("prefix") String prefix, @PathVariable("suffix") String suffix) throws IOException{
-//    return isPidRegistered(prefix + "/" + suffix);
-//  }
-//
-//  /**
-//   * Queries what kind of entity an identifier will point to (generic object,
-//   * property, type, ...). See {@link EntityClass} for possible return values.
-//   *
-//   * @param identifier full identifier name
-//   * @return a simple JSON object with the kind of entity the identifier points
-//   * to. See {@link EntityClass} for details.
-//   * @throws IOException
-//   * @see rdapit.pitservice.EntityClass
-//   */
-//  @Override
-//  public ResponseEntity peekIdentifier(@PathVariable("identifier") String identifier) throws IOException{
-//    EntityClass result = typingService.determineEntityClass(identifier);
-//    return ResponseEntity.status(200).body(result);
-//  }
-//
-//  /**
-//   * Similar to {@link #peekIdentifier(String)} but supports native slashes in
-//   * the identifier path.
-//   *
-//   * @see #peekIdentifier(String)
-//   */
-//  @Override
-//  public ResponseEntity peekIdentifier(@PathVariable("prefix") String prefix, @PathVariable("suffix") String suffix) throws IOException{
-//    EntityClass result = typingService.determineEntityClass(prefix + "/" + suffix);
-//    return ResponseEntity.status(200).body(result);
-//  }
-//
-//  /**
-//   * Sophisticated GET method to return all or some properties of an identifier.
-//   *
-//   * @param identifier full identifier name
-//   * @param propertyIdentifier Optional. Cannot be used in combination with the
-//   * type parameter. If given, the method returns only the value of the single
-//   * property. The identifier must be registered for a property in the type
-//   * registry. The method will return 404 if the PID exists but does not carry
-//   * the given property.
-//   * @param typeIdentifiers Optional. Cannot be used in combination with the
-//   * property parameter. If given, the method will return all properties
-//   * (mandatory and optional) that are specified in the given type(s) and listed
-//   * in the identifier's record. The type parameter must be a list of type
-//   * identifiers available from the registry. If an identifier is not known in
-//   * the registry, the method will return 404. The result will also include a
-//   * boolean value <i>typeConformance</i> that is only true if all mandatory
-//   * properties of the type are present in the PID record.
-//   * @param includePropertyNames Optional. If set to true, the method will also
-//   * provide property names in addition to identifiers. Note that this is more
-//   * expensive due to extra requests sent to the type registry.
-//   * @return if the request is processed properly, the method will return 200 OK
-//   * and a JSON object that contains a map of property identifiers to property
-//   * names (which may be empty) and values. It may also contain optional meta
-//   * information, e.g. conformance indications. The method will return 404 if
-//   * the identifier is not known.
-//   * @throws IOException on communication errors with identifier system or type
-//   * registry
-//   * @throws InconsistentRecordsException if records in the identifier system
-//   * and/or type registry are inconsistent, e.g. use property or type
-//   * identifiers that are not registered
-//   */
-//  @Override
-//  public ResponseEntity resolvePID(@PathVariable("identifier") String identifier,
-//          @RequestParam(value = "filter_by_property", required = false) String propertyIdentifier,
-//          @RequestParam(value = "filter_by_type", required = false) List<String> typeIdentifiers,
-//          @RequestParam(value = "include_property_names", required = false) boolean includePropertyNames) throws IOException, InconsistentRecordsException{
-//    identifier = URLDecoder.decode(identifier, "UTF-8");
-//
-//    if(typeIdentifiers != null && !typeIdentifiers.isEmpty()){
-//      // Filter by type ID
-//      if(!propertyIdentifier.isEmpty()){
-//        return ResponseEntity.status(400).body("Filtering by both type and property is not supported!");
-//      }
-//      PIDInformation result;
-//      if(typeIdentifiers.size() == 1){
-//        result = typingService.queryByTypeWithConformance(identifier, typeIdentifiers.get(0), includePropertyNames);
-//      } else{
-//        result = typingService.queryByTypeWithConformance(identifier, typeIdentifiers, includePropertyNames);
-//      }
-//      if(result == null){
-//        return ResponseEntity.status(404).body("Type not registered in the registry");
-//      }
-//      return ResponseEntity.status(200).body(result);
-//    } else if(propertyIdentifier == null || propertyIdentifier.isEmpty()){
-//      // No filtering - return all properties
-//      PIDInformation result = typingService.queryAllProperties(identifier, includePropertyNames);
-//      if(result == null){
-//        return ResponseEntity.status(404).body("Identifier not registered");
-//      }
-//      return ResponseEntity.status(200).body(result);
-//    } else{
-//      // Filter by property ID
-//      PIDInformation result = typingService.queryProperty(identifier, propertyIdentifier);
-//      if(result == null){
-//        return ResponseEntity.status(404).body("Property not present in identifier record");
-//      }
-//      return ResponseEntity.status(200).body(result);
-//    }
-//  }
-//
-//  /**
-//   * Similar to {@link #resolvePID(String, String, List, boolean)} but supports
-//   * native slashes in the identifier path.
-//   *
-//   * @see #resolvePID(String, String, List, boolean)
-//   */
-//  @Override
-//  public ResponseEntity resolvePID(
-//          @PathVariable("prefix") String identifierPrefix,
-//          @PathVariable("suffix") String identifierSuffix,
-//          @RequestParam(value = "filter_by_property", required = false) String propertyIdentifier, @RequestParam(value = "filter_by_type", required = false) List<String> typeIdentifiers,
-//          @RequestParam(value = "include_property_names", defaultValue = "false") boolean includePropertyNames) throws IOException, InconsistentRecordsException{
-//    return resolvePID(identifierPrefix + "/" + identifierSuffix, propertyIdentifier, typeIdentifiers, includePropertyNames);
-//  }
-//
-//  /**
-//   * GET method to read the definition of a property from the type registry.
-//   *
-//   * @param identifier the property identifier
-//   * @return a property definition record or 404 if the property is unknown.
-//   * @throws IOException
-//   */
-//  @Override
-//  public ResponseEntity resolveProperty(@PathVariable("identifier") String identifier) throws IOException{
-//    PropertyDefinition propDef = typingService.describeProperty(identifier);
-//    if(propDef == null){
-//      return ResponseEntity.status(404).build();
-//    }
-//    return ResponseEntity.status(200).body(propDef);
-//  }
-//
-//  /**
-//   * Similar to {@link #resolveProperty(String)} but supports native slashes in
-//   * the identifier path.
-//   *
-//   * @see #resolveProperty(String)
-//   */
-//  @Override
-//  public ResponseEntity resolveProperty(@PathVariable("prefix") String prefix, @PathVariable("suffix") String suffix) throws IOException{
-//    return resolveProperty(prefix + "/" + suffix);
-//  }
-//
-//  /**
-//   * GET method to read the definition of a type from the type registry.
-//   *
-//   * @param identifier the type identifier
-//   * @return a type definition record or 404 if the type is unknown.
-//   * @throws IOException
-//   */
-//  @Override
-//  public ResponseEntity resolveType(@PathVariable("identifier") String identifier) throws IOException{
-//    TypeDefinition typeDef = typingService.describeType(identifier);
-//    if(typeDef == null){
-//      return ResponseEntity.status(404).build();
-//    }
-//    return ResponseEntity.status(200).body(typeDef);
-//  }
-//
-//  /**
-//   * Similar to {@link #resolveType(String)} but supports native slashes in the
-//   * identifier path.
-//   *
-//   * @see #resolveType(String)
-//   */
-//  @Override
-//  public ResponseEntity resolveType(@PathVariable("prefix") String prefix, @PathVariable("suffix") String suffix) throws IOException{
-//    return resolveType(prefix + "/" + suffix);
-//  }
-//
-//  /**
-//   * GET method to read the definition of a profile from the type registry.
-//   *
-//   * @param identifier the profile identifier
-//   * @return a profile definition record or 404 if the profile is unknown.
-//   * @throws IOException
-//   *
-//   * Added by Quan (Gabriel) Zhou @ Indiana University Bloomington
-//   */
-//  @Override
-//  public ResponseEntity resolveProfile(@PathVariable("identifier") String identifier) throws IOException{
-//    ProfileDefinition profileDef = typingService.describeProfile(identifier);
-//    if(profileDef == null){
-//      return ResponseEntity.status(404).build();
-//    }
-//    return ResponseEntity.status(200).body(profileDef);
-//  }
-//
-//  /**
-//   * Similar to {@link #resolveProfile(String)} but supports native slashes in
-//   * the identifier path.
-//   *
-//   * @see #resolveProfile(String)
-//   */
-//  @Override
-//  public ResponseEntity resolveProfile(@PathVariable("prefix") String prefix, @PathVariable("suffix") String suffix) throws IOException{
-//    return resolveProfile(prefix + "/" + suffix);
-//  }
-//
-//  /**
-//   * Generic POST method to create new identifiers. The method determines an
-//   * identifier name automatically, based on a purely random (version 4) UUID.
-//   *
-//   * @param properties a map from string to string, mapping property identifiers
-//   * to values.
-//   * @return a simple string with the newly created PID name.
-//   */
-//  @Override
-//  public ResponseEntity registerPID(Map<String, String> properties){
-//    try{
-//      String pid = typingService.registerPID(properties);
-//      return ResponseEntity.status(201).body(pid);
-//    } catch(IOException exc){
-//      return ResponseEntity.status(500).body("Communication failure to identifier system: " + exc.getMessage());
-//    }
-//  }
-//
-//  /**
-//   * DELETE method to delete identifiers. Testing purposes only! Not part of the
-//   * official specification.
-//   *
-//   * @param identifier full identifier name
-//   * @return 200 or 404
-//   */
-//  @Override
-//  public ResponseEntity deletePID(@PathVariable("identifier") String identifier){
-//    boolean b = typingService.deletePID(identifier);
-//    if(b){
-//      // This is not strictly necessary, but we just do it as a courtesy
-//      // (additional information to the user)
-//      Map<String, String> result = new HashMap<>();
-//      result.put(identifier, "deleted");
-//      return ResponseEntity.status(200).body(result);
-//    } else{
-//      return ResponseEntity.status(404).build();
-//    }
-//  }
-//
-//  /**
-//   * Similar to {@link #deletePID(String)} but supports native slashes in the
-//   * identifier path.
-//   *
-//   * @see #deletePID(String)
-//   */
-//  @Override
-//  public ResponseEntity deletePID(@PathVariable("prefix") String prefix, @PathVariable("suffix") String suffix){
-//    return deletePID(prefix + "/" + suffix);
-//  }
+    // /**
+    // * Simple ping method for testing (check whether the API is running etc.). Not
+    // * part of the official interface description.
+    // *
+    // * @return responds with 200 OK and a "Hello World" message in the body.
+    // */
+    // @Override
+    // public ResponseEntity simplePing(){
+    // return ResponseEntity.status(200).body("Hello World");
+    // }
+    //
+    // /**
+    // * Generic resolution method to read PID records, property or type
+    // * definitions. Optionally implemented method. May be slower than the
+    // * specialized methods due to an increased number of back-end requests.
+    // *
+    // * @param identifier an identifier string
+    // * @return depending on the nature of the identified entity, the result can be
+    // * a PID record, a property or a type definition.
+    // * @throws IOException
+    // */
+    // @Override
+    // public ResponseEntity resolveGenericPID(
+    // @Parameter(description = "ID of entity") @PathVariable("identifier") String
+    // identifier)
+    // throws IOException{
+    // Object obj = typingService.genericResolve(identifier);
+    // if(obj == null){
+    // return ResponseEntity.status(404).build();
+    // }
+    // return ResponseEntity.status(200).body(obj);
+    // }
+    //
+    // /**
+    // * Similar to {@link #resolveGenericPID(String)} but supports native slashes
+    // * in the identifier path.
+    // *
+    // * @see #resolveGenericPID(String)
+    // */
+    // @Override
+    // public ResponseEntity resolveGenericPID(@PathVariable("prefix") String
+    // prefix, @PathVariable("suffix") String suffix) throws IOException{
+    // return resolveGenericPID(prefix + "/" + suffix);
+    // }
+    //
+    // /**
+    // * Simple HEAD method to check whether a particular pid is registered.
+    // *
+    // * @param identifier an identifier string
+    // * @return either 200 or 404, indicating whether the PID is registered or not
+    // * registered
+    // * @throws IOException
+    // */
+    // @Override
+    // public ResponseEntity isPidRegistered(@PathVariable("identifier") String
+    // identifier) throws IOException{
+    // boolean b = typingService.isIdentifierRegistered(identifier);
+    // if(b){
+    // return ResponseEntity.status(200).build();
+    // } else{
+    // return ResponseEntity.status(404).build();
+    // }
+    // }
+    //
+    // /**
+    // * Similar to {@link #isPidRegistered(String)} but supports native slashes in
+    // * the identifier path.
+    // *
+    // * @see #isPidRegistered(String)
+    // */
+    // @Override
+    // public ResponseEntity isPidRegistered(@PathVariable("prefix") String prefix,
+    // @PathVariable("suffix") String suffix) throws IOException{
+    // return isPidRegistered(prefix + "/" + suffix);
+    // }
+    //
+    // /**
+    // * Queries what kind of entity an identifier will point to (generic object,
+    // * property, type, ...). See {@link EntityClass} for possible return values.
+    // *
+    // * @param identifier full identifier name
+    // * @return a simple JSON object with the kind of entity the identifier points
+    // * to. See {@link EntityClass} for details.
+    // * @throws IOException
+    // * @see rdapit.pitservice.EntityClass
+    // */
+    // @Override
+    // public ResponseEntity peekIdentifier(@PathVariable("identifier") String
+    // identifier) throws IOException{
+    // EntityClass result = typingService.determineEntityClass(identifier);
+    // return ResponseEntity.status(200).body(result);
+    // }
+    //
+    // /**
+    // * Similar to {@link #peekIdentifier(String)} but supports native slashes in
+    // * the identifier path.
+    // *
+    // * @see #peekIdentifier(String)
+    // */
+    // @Override
+    // public ResponseEntity peekIdentifier(@PathVariable("prefix") String prefix,
+    // @PathVariable("suffix") String suffix) throws IOException{
+    // EntityClass result = typingService.determineEntityClass(prefix + "/" +
+    // suffix);
+    // return ResponseEntity.status(200).body(result);
+    // }
+    //
+    // /**
+    // * Sophisticated GET method to return all or some properties of an identifier.
+    // *
+    // * @param identifier full identifier name
+    // * @param propertyIdentifier Optional. Cannot be used in combination with the
+    // * type parameter. If given, the method returns only the value of the single
+    // * property. The identifier must be registered for a property in the type
+    // * registry. The method will return 404 if the PID exists but does not carry
+    // * the given property.
+    // * @param typeIdentifiers Optional. Cannot be used in combination with the
+    // * property parameter. If given, the method will return all properties
+    // * (mandatory and optional) that are specified in the given type(s) and listed
+    // * in the identifier's record. The type parameter must be a list of type
+    // * identifiers available from the registry. If an identifier is not known in
+    // * the registry, the method will return 404. The result will also include a
+    // * boolean value <i>typeConformance</i> that is only true if all mandatory
+    // * properties of the type are present in the PID record.
+    // * @param includePropertyNames Optional. If set to true, the method will also
+    // * provide property names in addition to identifiers. Note that this is more
+    // * expensive due to extra requests sent to the type registry.
+    // * @return if the request is processed properly, the method will return 200 OK
+    // * and a JSON object that contains a map of property identifiers to property
+    // * names (which may be empty) and values. It may also contain optional meta
+    // * information, e.g. conformance indications. The method will return 404 if
+    // * the identifier is not known.
+    // * @throws IOException on communication errors with identifier system or type
+    // * registry
+    // * @throws InconsistentRecordsException if records in the identifier system
+    // * and/or type registry are inconsistent, e.g. use property or type
+    // * identifiers that are not registered
+    // */
+    // @Override
+    // public ResponseEntity resolvePID(@PathVariable("identifier") String
+    // identifier,
+    // @RequestParam(value = "filter_by_property", required = false) String
+    // propertyIdentifier,
+    // @RequestParam(value = "filter_by_type", required = false) List<String>
+    // typeIdentifiers,
+    // @RequestParam(value = "include_property_names", required = false) boolean
+    // includePropertyNames) throws IOException, InconsistentRecordsException{
+    // identifier = URLDecoder.decode(identifier, "UTF-8");
+    //
+    // if(typeIdentifiers != null && !typeIdentifiers.isEmpty()){
+    // // Filter by type ID
+    // if(!propertyIdentifier.isEmpty()){
+    // return ResponseEntity.status(400).body("Filtering by both type and property
+    // is not supported!");
+    // }
+    // PIDInformation result;
+    // if(typeIdentifiers.size() == 1){
+    // result = typingService.queryByTypeWithConformance(identifier,
+    // typeIdentifiers.get(0), includePropertyNames);
+    // } else{
+    // result = typingService.queryByTypeWithConformance(identifier,
+    // typeIdentifiers, includePropertyNames);
+    // }
+    // if(result == null){
+    // return ResponseEntity.status(404).body("Type not registered in the
+    // registry");
+    // }
+    // return ResponseEntity.status(200).body(result);
+    // } else if(propertyIdentifier == null || propertyIdentifier.isEmpty()){
+    // // No filtering - return all properties
+    // PIDInformation result = typingService.queryAllProperties(identifier,
+    // includePropertyNames);
+    // if(result == null){
+    // return ResponseEntity.status(404).body("Identifier not registered");
+    // }
+    // return ResponseEntity.status(200).body(result);
+    // } else{
+    // // Filter by property ID
+    // PIDInformation result = typingService.queryProperty(identifier,
+    // propertyIdentifier);
+    // if(result == null){
+    // return ResponseEntity.status(404).body("Property not present in identifier
+    // record");
+    // }
+    // return ResponseEntity.status(200).body(result);
+    // }
+    // }
+    //
+    // /**
+    // * Similar to {@link #resolvePID(String, String, List, boolean)} but supports
+    // * native slashes in the identifier path.
+    // *
+    // * @see #resolvePID(String, String, List, boolean)
+    // */
+    // @Override
+    // public ResponseEntity resolvePID(
+    // @PathVariable("prefix") String identifierPrefix,
+    // @PathVariable("suffix") String identifierSuffix,
+    // @RequestParam(value = "filter_by_property", required = false) String
+    // propertyIdentifier, @RequestParam(value = "filter_by_type", required = false)
+    // List<String> typeIdentifiers,
+    // @RequestParam(value = "include_property_names", defaultValue = "false")
+    // boolean includePropertyNames) throws IOException,
+    // InconsistentRecordsException{
+    // return resolvePID(identifierPrefix + "/" + identifierSuffix,
+    // propertyIdentifier, typeIdentifiers, includePropertyNames);
+    // }
+    //
+    // /**
+    // * GET method to read the definition of a property from the type registry.
+    // *
+    // * @param identifier the property identifier
+    // * @return a property definition record or 404 if the property is unknown.
+    // * @throws IOException
+    // */
+    // @Override
+    // public ResponseEntity resolveProperty(@PathVariable("identifier") String
+    // identifier) throws IOException{
+    // PropertyDefinition propDef = typingService.describeProperty(identifier);
+    // if(propDef == null){
+    // return ResponseEntity.status(404).build();
+    // }
+    // return ResponseEntity.status(200).body(propDef);
+    // }
+    //
+    // /**
+    // * Similar to {@link #resolveProperty(String)} but supports native slashes in
+    // * the identifier path.
+    // *
+    // * @see #resolveProperty(String)
+    // */
+    // @Override
+    // public ResponseEntity resolveProperty(@PathVariable("prefix") String prefix,
+    // @PathVariable("suffix") String suffix) throws IOException{
+    // return resolveProperty(prefix + "/" + suffix);
+    // }
+    //
+    // /**
+    // * GET method to read the definition of a type from the type registry.
+    // *
+    // * @param identifier the type identifier
+    // * @return a type definition record or 404 if the type is unknown.
+    // * @throws IOException
+    // */
+    // @Override
+    // public ResponseEntity resolveType(@PathVariable("identifier") String
+    // identifier) throws IOException{
+    // TypeDefinition typeDef = typingService.describeType(identifier);
+    // if(typeDef == null){
+    // return ResponseEntity.status(404).build();
+    // }
+    // return ResponseEntity.status(200).body(typeDef);
+    // }
+    //
+    // /**
+    // * Similar to {@link #resolveType(String)} but supports native slashes in the
+    // * identifier path.
+    // *
+    // * @see #resolveType(String)
+    // */
+    // @Override
+    // public ResponseEntity resolveType(@PathVariable("prefix") String prefix,
+    // @PathVariable("suffix") String suffix) throws IOException{
+    // return resolveType(prefix + "/" + suffix);
+    // }
+    //
+    // /**
+    // * GET method to read the definition of a profile from the type registry.
+    // *
+    // * @param identifier the profile identifier
+    // * @return a profile definition record or 404 if the profile is unknown.
+    // * @throws IOException
+    // *
+    // * Added by Quan (Gabriel) Zhou @ Indiana University Bloomington
+    // */
+    // @Override
+    // public ResponseEntity resolveProfile(@PathVariable("identifier") String
+    // identifier) throws IOException{
+    // ProfileDefinition profileDef = typingService.describeProfile(identifier);
+    // if(profileDef == null){
+    // return ResponseEntity.status(404).build();
+    // }
+    // return ResponseEntity.status(200).body(profileDef);
+    // }
+    //
+    // /**
+    // * Similar to {@link #resolveProfile(String)} but supports native slashes in
+    // * the identifier path.
+    // *
+    // * @see #resolveProfile(String)
+    // */
+    // @Override
+    // public ResponseEntity resolveProfile(@PathVariable("prefix") String prefix,
+    // @PathVariable("suffix") String suffix) throws IOException{
+    // return resolveProfile(prefix + "/" + suffix);
+    // }
+    //
+    // /**
+    // * Generic POST method to create new identifiers. The method determines an
+    // * identifier name automatically, based on a purely random (version 4) UUID.
+    // *
+    // * @param properties a map from string to string, mapping property identifiers
+    // * to values.
+    // * @return a simple string with the newly created PID name.
+    // */
+    // @Override
+    // public ResponseEntity registerPID(Map<String, String> properties){
+    // try{
+    // String pid = typingService.registerPID(properties);
+    // return ResponseEntity.status(201).body(pid);
+    // } catch(IOException exc){
+    // return ResponseEntity.status(500).body("Communication failure to identifier
+    // system: " + exc.getMessage());
+    // }
+    // }
+    //
+    // /**
+    // * DELETE method to delete identifiers. Testing purposes only! Not part of the
+    // * official specification.
+    // *
+    // * @param identifier full identifier name
+    // * @return 200 or 404
+    // */
+    // @Override
+    // public ResponseEntity deletePID(@PathVariable("identifier") String
+    // identifier){
+    // boolean b = typingService.deletePID(identifier);
+    // if(b){
+    // // This is not strictly necessary, but we just do it as a courtesy
+    // // (additional information to the user)
+    // Map<String, String> result = new HashMap<>();
+    // result.put(identifier, "deleted");
+    // return ResponseEntity.status(200).body(result);
+    // } else{
+    // return ResponseEntity.status(404).build();
+    // }
+    // }
+    //
+    // /**
+    // * Similar to {@link #deletePID(String)} but supports native slashes in the
+    // * identifier path.
+    // *
+    // * @see #deletePID(String)
+    // */
+    // @Override
+    // public ResponseEntity deletePID(@PathVariable("prefix") String prefix,
+    // @PathVariable("suffix") String suffix){
+    // return deletePID(prefix + "/" + suffix);
+    // }
 }
