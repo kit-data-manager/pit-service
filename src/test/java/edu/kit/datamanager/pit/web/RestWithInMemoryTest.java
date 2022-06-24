@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -30,7 +29,6 @@ import org.springframework.mock.web.MockServletContext;
 // org.springframework.test is for integration testing (dependency "spring-test")
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -40,14 +38,13 @@ import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-// JUnit5 + Spring
-@ExtendWith(SpringExtension.class)
 // Might be needed for WebApp testing according to https://www.baeldung.com/integration-testing-in-spring
 //@WebAppConfiguration
 // Default preparation foo for mockMVC
 @AutoConfigureMockMvc
-// Set the in-memory implementation
+// JUnit5 + Spring
 @SpringBootTest
+// Set the in-memory implementation
 @TestPropertySource("/test/application-test.properties")
 // TODO why a testing profile?
 @ActiveProfiles("test")
@@ -112,7 +109,7 @@ public class RestWithInMemoryTest {
     @Test
     public void testCreateValidRecord() throws Exception {
         // test create
-        assertEquals(this.webApplicationContext.getEnvironment().getProperty("repo.messaging.enabled"), "false");
+        assertEquals("false", this.webApplicationContext.getEnvironment().getProperty("repo.messaging.enabled"));
         MvcResult created = this.mockMvc
             .perform(
                 post("/api/v1/pit/pid/")
