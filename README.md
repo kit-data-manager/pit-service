@@ -51,7 +51,7 @@ user@localhost:/home/user/typed-pid-maker$ ./build/libs/TypedPIDMaker-$(version)
 
 As soon as the microservice is started, you can browse to 
 
-http://localhost:8070/swagger-ui.html
+http://localhost:8090/swagger-ui.html
 
 in order to see available RESTful endpoints and their documentation. You may have to adapt the port according to your local settings.
 Furthermore, you can use this Web interface to test single API calls in order to get familiar with the service. 

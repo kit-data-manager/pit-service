@@ -20,12 +20,9 @@ import edu.kit.datamanager.security.filter.KeycloakTokenFilter;
 import edu.kit.datamanager.security.filter.KeycloakTokenValidator;
 import edu.kit.datamanager.security.filter.NoAuthenticationFilter;
 
-import javax.servlet.Filter;
-
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -62,15 +59,14 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
   @Value("${pit.security.enable-csrf:true}")
   private boolean enableCsrf;
-  @Value("${pit.security.allowedOriginPattern:http[*]://localhost:[*]}")
+  @Value("${pit.security.allowedOriginPattern:http*://localhost:[*]}")
   private String allowedOriginPattern;
-
-  public WebSecurityConfig() {
-  }
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
     http
+        .cors()
+        .and()
         // everyone, even unauthenticated users may do HTTP OPTIONS on urls.
         .authorizeRequests()
         .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -79,8 +75,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         // do not store sessions (use stateless "sessions")
         .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         .and()
-        // insert the AuthenticationManager which was configured in the method above as
-        // a filter, right after HTTP Basic auth.
         .addFilterAfter(keycloaktokenFilterBean(), BasicAuthenticationFilter.class)
         // TODO why?
         .headers().cacheControl().disable();
@@ -130,19 +124,17 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
   }
 
   @Bean
-  public FilterRegistrationBean<Filter> corsFilter() {
-    CorsConfiguration config = new CorsConfiguration();
-    config.setAllowCredentials(false);
-    config.addAllowedOriginPattern(allowedOriginPattern);
-    config.addAllowedHeader("*");
-    config.addAllowedMethod("*");
-    config.addExposedHeader("Content-Range");
-    config.addExposedHeader("ETag");
+  public CorsFilter corsFilter() {
+    CorsConfiguration corsConfig = new CorsConfiguration();
+    corsConfig.setAllowCredentials(false);
+    corsConfig.addAllowedOriginPattern(allowedOriginPattern);
+    corsConfig.addAllowedHeader("*");
+    corsConfig.addAllowedMethod("*");
+    corsConfig.addExposedHeader("Content-Range");
+    corsConfig.addExposedHeader("ETag");
 
     final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", config);
-    FilterRegistrationBean<Filter> bean = new FilterRegistrationBean<>(new CorsFilter(source));
-    bean.setOrder(0);
-    return bean;
+    source.registerCorsConfiguration("/**", corsConfig);
+    return new CorsFilter(source);
   }
 }
