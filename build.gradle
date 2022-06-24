@@ -1,7 +1,7 @@
 plugins {
     // Spring boot & dependency management:
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
-    id 'org.springframework.boot' version '2.5.13'
+    id 'org.springframework.boot' version '2.6.9'
     // https://docs.spring.io/dependency-management-plugin/docs/current-SNAPSHOT/reference/html/
     id "io.spring.dependency-management" version "1.0.11.RELEASE"
     // Lombok generates getter and setter and more. https://projectlombok.org/
@@ -61,6 +61,8 @@ dependencies {
     implementation("edu.kit.datamanager:repo-core:1.0.2")
     // com.google.common, LoadingCache
     implementation "com.github.google.guava:guava:v31.1"
+    // Required by Spring/Javers at runtime
+    implementation 'com.google.code.gson:gson:2.8.9'
 
     // spring core, e.g. @EnableJpaRepositories
     implementation "org.springframework:spring-core"

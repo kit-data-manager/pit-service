@@ -31,6 +31,7 @@ import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.TypingService;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import edu.kit.datamanager.pit.typeregistry.impl.TypeRegistry;
+import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -153,6 +154,12 @@ public class Application {
     @ConfigurationProperties("pit")
     public ApplicationProperties applicationProperties() {
         return new ApplicationProperties();
+    }
+
+    @Bean
+    // Reads keycloak related settings from properties.application.
+    public KeycloakJwtProperties properties() {
+      return new KeycloakJwtProperties();
     }
 
     public static void main(String[] args) {

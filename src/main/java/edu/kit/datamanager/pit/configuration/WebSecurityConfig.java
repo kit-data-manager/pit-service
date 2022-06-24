@@ -23,6 +23,7 @@ import edu.kit.datamanager.security.filter.NoAuthenticationFilter;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -44,6 +45,7 @@ import org.springframework.web.filter.CorsFilter;
  * @author jejkal
  */
 @Configuration
+@AutoConfigureAfter(value = KeycloakJwtProperties.class)
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
@@ -94,7 +96,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
   }
 
-  @Bean
   public KeycloakTokenFilter keycloaktokenFilterBean() throws Exception {
     return new KeycloakTokenFilter(KeycloakTokenValidator.builder()
         .readTimeout(properties.getReadTimeoutms())
@@ -102,12 +103,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         .sizeLimit(properties.getSizeLimit())
         .jwtLocalSecret(config.getJwtSecret())
         .build(properties.getJwkUrl(), properties.getResource(), properties.getJwtClaim()));
-  }
-
-  @Bean
-  // Reads properties.application. Result will be autowired to this class.
-  public KeycloakJwtProperties properties() {
-    return new KeycloakJwtProperties();
   }
 
   @Bean
