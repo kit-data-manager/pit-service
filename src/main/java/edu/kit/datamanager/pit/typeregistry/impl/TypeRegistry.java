@@ -45,16 +45,19 @@ public class TypeRegistry implements ITypeRegistry {
 
     protected RestTemplate restTemplate = new RestTemplate();
 
-    public TypeRegistry() {
-    }
-
     @Override
     public TypeDefinition queryTypeDefinition(String typeIdentifier) throws IOException, URISyntaxException {
         LOG.trace("Performing queryTypeDefinition({}).", typeIdentifier);
         String[] segments = typeIdentifier.split("/");
-        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUri(applicationProperties.getHandleBaseUri().toURI()).pathSegment(segments);
-        LOG.trace("Querying for type definition at URI {}.", uriBuilder.toString());
-        ResponseEntity<String> response = restTemplate.exchange(uriBuilder.build().toUri(), HttpMethod.GET, HttpEntity.EMPTY, String.class);
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder
+                .fromUri(
+                        applicationProperties
+                                .getHandleBaseUri()
+                                .toURI())
+                .pathSegment(segments);
+        LOG.trace("Querying for type definition at URI {}.", uriBuilder);
+        ResponseEntity<String> response = restTemplate.exchange(uriBuilder.build().toUri(), HttpMethod.GET,
+                HttpEntity.EMPTY, String.class);
         ObjectMapper mapper = new ObjectMapper();
         JsonNode rootNode = mapper.readTree(response.getBody());
         LOG.trace("Constructing type definition from response.");
@@ -69,9 +72,12 @@ public class TypeRegistry implements ITypeRegistry {
      *
      * @return The TypeDefinition as object.
      */
-    private TypeDefinition constructTypeDefinition(JsonNode rootNode) throws JsonProcessingException, IOException, URISyntaxException {
-        // TODO We are doing things too complicated here. Deserialization should be easy.
-        // But before we change the domain model to do so, we need a lot of tests to make sure things work as before after the changes.
+    private TypeDefinition constructTypeDefinition(JsonNode rootNode)
+            throws JsonProcessingException, IOException, URISyntaxException {
+        // TODO We are doing things too complicated here. Deserialization should be
+        // easy.
+        // But before we change the domain model to do so, we need a lot of tests to
+        // make sure things work as before after the changes.
         LOG.trace("Performing constructTypeDefinition(<rootNode>).");
         JsonNode entry = rootNode;
         Map<String, TypeDefinition> properties = new HashMap<>();
@@ -99,14 +105,13 @@ public class TypeRegistry implements ITypeRegistry {
                 try {
                     type_def = typeCache.get(value);
                 } catch (ExecutionException ex) {
-                    LOG.error("Failed to obtain type definition via cache.", ex);
                     throw new IOException("Failed to obtain type definition via cache.", ex);
                 }
-// queryTypeDefinition(value);
 
                 LOG.trace("Checking for sub-types in 'representationsAndSemantics' property.");
                 if (entryKV.has("representationsAndSemantics")) {
-                    LOG.trace("'representationsAndSemantics' attribute found. Transferring properties to type definition.");
+                    LOG.trace(
+                            "'representationsAndSemantics' attribute found. Transferring properties to type definition.");
                     JsonNode semNode = entryKV.get("representationsAndSemantics");
                     semNode = semNode.get(0);
                     LOG.trace("Checking for 'expression' property.");
@@ -149,7 +154,7 @@ public class TypeRegistry implements ITypeRegistry {
         }
 
         if (!entry.has("identifier")) {
-            LOG.error("No 'identifier' property found.", entry);
+            LOG.error("No 'identifier' property found in entry: {}", entry);
             throw new IOException("No 'identifier' attribute found in type definition.");
         }
         String identifier = entry.get("identifier").asText();
@@ -204,9 +209,7 @@ public class TypeRegistry implements ITypeRegistry {
         }
 
         LOG.trace("Finalizing and returning type definition.");
-        properties.keySet().forEach((pd) -> {
-            result.addSubType(properties.get(pd));
-        });
+        properties.keySet().forEach(pd -> result.addSubType(properties.get(pd)));
         return result;
     }
 }
