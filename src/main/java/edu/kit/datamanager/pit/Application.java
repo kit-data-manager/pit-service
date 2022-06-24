@@ -64,17 +64,17 @@ import org.springframework.web.client.RestTemplate;
  */
 @SpringBootApplication
 @EnableScheduling
-@EntityScan({"edu.kit.datamanager"})
-// Required for "DAO" objects to work, needed for messaging service and database mappings
+@EntityScan({ "edu.kit.datamanager" })
+// Required for "DAO" objects to work, needed for messaging service and database
+// mappings
 @EnableJpaRepositories("edu.kit.datamanager")
-// Detects services and components in datamanager dependencies (service-base and repo-core)
-@ComponentScan({"edu.kit.datamanager"})
+// Detects services and components in datamanager dependencies (service-base and
+// repo-core)
+@ComponentScan({ "edu.kit.datamanager" })
 public class Application {
 
     private static final Logger LOG = LoggerFactory.getLogger(Application.class);
 
-//  @Autowired
-//  private RequestMappingHandlerAdapter requestMappingHandlerAdapter;
     @Bean
     @Scope("prototype")
     public Logger logger(InjectionPoint injectionPoint) {
@@ -96,7 +96,7 @@ public class Application {
     public ObjectMapper jsonObjectMapper() {
         return Jackson2ObjectMapperBuilder.json()
                 .serializationInclusion(JsonInclude.Include.NON_EMPTY) // Don’t include null values
-                .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) //ISODate
+                .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) // ISODate
                 .modules(new JavaTimeModule())
                 .build();
     }
@@ -105,8 +105,10 @@ public class Application {
     public RestTemplate restTemplate() {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         RestTemplate restTemplate = new RestTemplate(requestFactory);
-        // BufferingClientHttpRequestFactory allows us to read the response more than once - Necessary for debugging.
-        restTemplate.setRequestFactory(new BufferingClientHttpRequestFactory(new HttpComponentsClientHttpRequestFactory(httpClient())));
+        // BufferingClientHttpRequestFactory allows us to read the response more than
+        // once - Necessary for debugging.
+        restTemplate.setRequestFactory(
+                new BufferingClientHttpRequestFactory(new HttpComponentsClientHttpRequestFactory(httpClient())));
         return restTemplate;
     }
 
@@ -125,7 +127,8 @@ public class Application {
                 .setMaxObjectSize(500000) // 500KB
                 .setMaxCacheEntries(2000)
                 // Set this to false and a response with queryString
-                // will be cached when it is explicitly cacheable .setNeverCacheHTTP10ResponsesWithQueryString(false)
+                // will be cached when it is explicitly cacheable
+                // .setNeverCacheHTTP10ResponsesWithQueryString(false)
                 .build();
     }
 
@@ -134,9 +137,9 @@ public class Application {
         return CacheBuilder.newBuilder()
                 .maximumSize(1000)
                 .expireAfterWrite(10, TimeUnit.MINUTES)
-                .removalListener((RemovalNotification<String, TypeDefinition> rn) -> {
-                    LOG.trace("Removing type definition located at {} from schema cache. Cause: {}", rn.getKey(), rn.getCause());
-                })
+                .removalListener((RemovalNotification<String, TypeDefinition> rn) -> LOG.trace(
+                        "Removing type definition located at {} from schema cache. Cause: {}", rn.getKey(),
+                        rn.getCause()))
                 .build(new CacheLoader<String, TypeDefinition>() {
                     @Override
                     public TypeDefinition load(String typeIdentifier) throws IOException, URISyntaxException {
@@ -146,15 +149,6 @@ public class Application {
                 });
     }
 
-    /*
-    TODO there is an unsoundness in repo-core that, if it is removed, something like this might be required.
-    @Bean
-    @ConditionalOnProperty(name = "repo.messaging.enabled", havingValue = "true")
-    public IMessagingService messagingService(){
-        return new RabbitMQMessagingService();
-    }
-    */
-    
     @Bean
     @ConfigurationProperties("pit")
     public ApplicationProperties applicationProperties() {
