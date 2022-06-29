@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
@@ -31,6 +32,7 @@ public class HandleProtocolProperties {
     // See: https://github.com/spring-projects/spring-boot/issues/15999
     // A bad decision is also a decision, I guess.
     @NestedConfigurationProperty
+    @Nullable
     private HandleCredentials credentials;
 
     public HandleCredentials getCredentials() {

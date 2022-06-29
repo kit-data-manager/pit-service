@@ -15,20 +15,18 @@
  */
 package edu.kit.datamanager.pit.configuration;
 
-import edu.kit.datamanager.security.filter.JwtAuthenticationFilter;
-import edu.kit.datamanager.security.filter.JwtAuthenticationProvider;
+import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
+import edu.kit.datamanager.security.filter.KeycloakTokenFilter;
+import edu.kit.datamanager.security.filter.KeycloakTokenValidator;
 import edu.kit.datamanager.security.filter.NoAuthenticationFilter;
-import edu.kit.datamanager.security.filter.NoopAuthenticationEventPublisher;
-
-import javax.servlet.Filter;
 
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -47,59 +45,68 @@ import org.springframework.web.filter.CorsFilter;
  * @author jejkal
  */
 @Configuration
+@AutoConfigureAfter(value = KeycloakJwtProperties.class)
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
   @Autowired
   private Logger logger;
 
   @Autowired
+  private KeycloakJwtProperties properties;
+
+  @Autowired
   private ApplicationProperties config;
 
-  public WebSecurityConfig(){
-  }
+  @Value("${pit.security.enable-csrf:true}")
+  private boolean enableCsrf;
+  @Value("${pit.security.allowedOriginPattern:http*://localhost:[*]}")
+  private String allowedOriginPattern;
 
   @Override
-  public void configure(AuthenticationManagerBuilder auth) throws Exception{
-    auth
-      // we do not act on success or failure in any special way.
-      .authenticationEventPublisher(new NoopAuthenticationEventPublisher())
-      // we use JWT to authenticate users.
-      .authenticationProvider(
-        new JwtAuthenticationProvider(config.getJwtSecret(), logger)
-      );
-  }
+  protected void configure(HttpSecurity http) throws Exception {
+    http
+        .cors()
+        .and()
+        // everyone, even unauthenticated users may do HTTP OPTIONS on urls.
+        .authorizeRequests()
+        .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+        .antMatchers("/api/v1").authenticated()
+        .and()
+        // do not store sessions (use stateless "sessions")
+        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        .and()
+        .addFilterAfter(keycloaktokenFilterBean(), BasicAuthenticationFilter.class)
+        // TODO why?
+        .headers().cacheControl().disable();
 
-  @Override
-  protected void configure(HttpSecurity http) throws Exception{
-    HttpSecurity httpSecurity = http
-      // everyone, even unauthenticated users may do HTTP OPTIONS on urls.
-      .authorizeRequests()
-      .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-      .antMatchers("/api/v1").authenticated()
-      .and()
-      // do not store sessions (use stateless "sessions")
-      .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-      .and()
-      // TODO disables csrf. Should be evaluated before releasing this service. https://developer.mozilla.org/en-US/docs/Glossary/CSRF
-      .csrf().disable()
-      // insert the AuthenticationManager which was configured in the method above as a filter, right after HTTP Basic auth.
-      .addFilterAfter(new JwtAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class);
+    if (!enableCsrf) {
+      // TODO disables csrf. https://developer.mozilla.org/en-US/docs/Glossary/CSRF
+      http.csrf().disable();
+    }
 
     if (!config.isAuthEnabled()) {
       logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
-      httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter(config.getJwtSecret(), authenticationManager()), JwtAuthenticationFilter.class);
+      http.addFilterAfter(
+          new NoAuthenticationFilter(config.getJwtSecret(), authenticationManager()),
+          KeycloakTokenFilter.class);
     } else {
       logger.info("Authentication is ENABLED.");
     }
+  }
 
-    // TODO why?
-    http.headers().cacheControl().disable();
+  public KeycloakTokenFilter keycloaktokenFilterBean() throws Exception {
+    return new KeycloakTokenFilter(KeycloakTokenValidator.builder()
+        .readTimeout(properties.getReadTimeoutms())
+        .connectTimeout(properties.getConnectTimeoutms())
+        .sizeLimit(properties.getSizeLimit())
+        .jwtLocalSecret(config.getJwtSecret())
+        .build(properties.getJwkUrl(), properties.getResource(), properties.getJwtClaim()));
   }
 
   @Bean
-  public HttpFirewall allowUrlEncodedSlashHttpFirewall(){
+  public HttpFirewall allowUrlEncodedSlashHttpFirewall() {
     DefaultHttpFirewall firewall = new DefaultHttpFirewall();
     // might be necessary for certain identifier types.
     firewall.setAllowUrlEncodedSlash(true);
@@ -107,24 +114,22 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
   }
 
   @Override
-  public void configure(WebSecurity web) throws Exception{
+  public void configure(WebSecurity web) throws Exception {
     web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
   }
 
   @Bean
-  public FilterRegistrationBean<Filter> corsFilter(){
-    CorsConfiguration config = new CorsConfiguration();
-    config.setAllowCredentials(false);
-    config.addAllowedOrigin("*"); // @Value: http://localhost:8080
-    config.addAllowedHeader("*");
-    config.addAllowedMethod("*");
-    config.addExposedHeader("Content-Range");
-    config.addExposedHeader("ETag");
-    
+  public CorsFilter corsFilter() {
+    CorsConfiguration corsConfig = new CorsConfiguration();
+    corsConfig.setAllowCredentials(false);
+    corsConfig.addAllowedOriginPattern(allowedOriginPattern);
+    corsConfig.addAllowedHeader("*");
+    corsConfig.addAllowedMethod("*");
+    corsConfig.addExposedHeader("Content-Range");
+    corsConfig.addExposedHeader("ETag");
+
     final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", config);
-    FilterRegistrationBean<Filter> bean = new FilterRegistrationBean<>(new CorsFilter(source));
-    bean.setOrder(0);
-    return bean;
+    source.registerCorsConfiguration("/**", corsConfig);
+    return new CorsFilter(source);
   }
 }

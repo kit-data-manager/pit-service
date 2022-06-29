@@ -512,17 +512,17 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         // typing strategies will be in future.
         String profileKey = applicationProps.getProfileKey();
         if (record.hasProperty(profileKey)) {
-            String[] typeIDs = record.getPropertyValues(profileKey);
-            boolean valid = typeIDs.length > 0;
-            for (String typeID : typeIDs) {
-                TypeDefinition typeDef = typingService.describeType(typeID);
-                if (typeDef == null) {
-                    LOG.error("No type definition found for identifier {}.", typeID);
-                    throw new DataTypeException(String.format("No type found for identifier {}.", typeID));
+            String[] profilePIDs = record.getPropertyValues(profileKey);
+            boolean valid = profilePIDs.length > 0;
+            for (String profilePID : profilePIDs) {
+                TypeDefinition profileDefinition = typingService.describeType(profilePID);
+                if (profileDefinition == null) {
+                    LOG.error("No type definition found for identifier {}.", profilePID);
+                    throw new DataTypeException(String.format("No type found for identifier {}.", profilePID));
                 }
 
                 LOG.debug("validating profile");
-                valid &= TypeValidationUtils.isValid(record, typeDef);
+                valid &= TypeValidationUtils.isValid(record, profileDefinition);
                 LOG.debug("validation done");
                 if (!valid) {
                     break;
