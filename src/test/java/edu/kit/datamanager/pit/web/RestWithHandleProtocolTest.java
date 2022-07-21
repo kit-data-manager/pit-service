@@ -2,7 +2,6 @@ package edu.kit.datamanager.pit.web;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -10,7 +9,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
@@ -32,13 +30,12 @@ import javax.servlet.ServletContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-// JUnit5 + Spring
-@ExtendWith(SpringExtension.class)
 // Might be needed for WebApp testing according to
 // https://www.baeldung.com/integration-testing-in-spring
 // @WebAppConfiguration
 // Default preparation foo for mockMVC
 @AutoConfigureMockMvc
+// JUnit5 + Spring
 @SpringBootTest(properties = {
     // Set the Handle Protocol implementation
     "pit.pidsystem.implementation = HANDLE_PROTOCOL"
@@ -90,6 +87,6 @@ public class RestWithHandleProtocolTest {
         
         String resolvedBody = resolved.getResponse().getContentAsString();
         PIDRecord resolvedRecord = mapper.readValue(resolvedBody, PIDRecord.class);
-        assertEquals(resolvedRecord.getPid(), pid);
+        assertEquals(pid, resolvedRecord.getPid());
     }
 }
