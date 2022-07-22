@@ -6,15 +6,15 @@ response=$(curl --request GET \
   --include)
 
 wasSuccessful=$(
-    echo $response \
+    echo "$response" \
     | grep 200 \
     | wc -l
 )
 
-if [ $wasSuccessful -eq 0 ]
+if [ "$wasSuccessful" -eq 0 ]
 then
     echo "FAILED: Expected HTTP 200 when accessing http://localhost:8090/swagger-ui.html. Response:"
-    echo $response
+    echo "$response"
     exit 1  # failure
 else
     echo "SUCCESS: Swagger is accessible"

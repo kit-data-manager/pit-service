@@ -66,15 +66,15 @@ response=$(curl --request POST \
 }')
 
 wasSuccessful=$(
-    echo $response \
+    echo "$response" \
     | grep 201 \
     | wc -l
 )
 
-if [ $wasSuccessful -eq 0 ]
+if [ "$wasSuccessful" -eq 0 ]
 then
     echo "FAILED: Expected 201 when creating a PID. Response:"
-    echo $response
+    echo "$response"
     exit 1  # failure
 else
     echo "SUCCESS: Created a PID"

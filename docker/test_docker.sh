@@ -4,14 +4,14 @@
 tag=typed-pid-maker-test
 container=typid-test
 # meta information for this script
-this=${BASH_SOURCE}
+this=${BASH_SOURCE[0]}
 echo "this script is at $this"
-docker_dir=$(dirname $this)
+docker_dir=$(dirname "$this")
 
 echo "build docker image"
 sleep .2
 # use "standalone" or "release" to build in the docker container
-if [ $1 ]
+if [ "$1" ]
 then
     echo "  > compiling in container: "
     docker build --file $docker_dir/Dockerfile-build-in-image --tag $tag $docker_dir/..
@@ -31,12 +31,12 @@ sleep 20 # seconds
 failure=0
 echo "running tests"
 
-for test in $(ls $docker_dir/tests/*.sh)
+for test in $docker_dir/tests/*.sh
 do
     echo ""
     echo "> running test $test:"
     bash $test
-    failure=$(expr $failure + $?)
+    failure=$(($failure + $?))
     echo "> finished $test"
 done
 
