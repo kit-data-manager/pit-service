@@ -31,12 +31,12 @@ sleep 20 # seconds
 failure=0
 echo "running tests"
 
-for test in $docker_dir/tests/*.sh
+for test in "$docker_dir"/tests/*.sh
 do
     echo ""
     echo "> running test $test:"
     bash $test
-    failure=$(($failure + $?))
+    failure=$((failure + ?))
     echo "> finished $test"
 done
 
