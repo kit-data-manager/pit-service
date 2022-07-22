@@ -35,8 +35,9 @@ for test in "$docker_dir"/tests/*.sh
 do
     echo ""
     echo "> running test $test:"
-    bash $test
-    failure=$((failure + ?))
+    bash "$test"
+    error=$?
+    ((failure += error))
     echo "> finished $test"
 done
 
