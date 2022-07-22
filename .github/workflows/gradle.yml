@@ -1,7 +1,7 @@
 # This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-gradle
 
-name: Java CI with Gradle
+name: Build and Test
 
 on:
   push:
@@ -22,9 +22,14 @@ jobs:
       matrix:
         operating-system: [ubuntu-latest, macOS-latest, windows-latest]
         jdk: [ 11, 17 ]  # (open)JDK releases
+        exclude:  # to save time and resources
+          - os: windows-latest
+            version: 11
+          - os: macOS-latest
+            version: 11
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up openJDK version
       uses: actions/setup-java@v2
       with:
@@ -39,7 +44,7 @@ jobs:
       uses: gradle/gradle-build-action@v2
       with:
         arguments: build
-    - name: Coveralls test report
+    - name: Do one Coveralls test report
       uses: gradle/gradle-build-action@v2
       if: matrix.os == 'ubuntu-latest' && matrix.jdk == 17
       with:
