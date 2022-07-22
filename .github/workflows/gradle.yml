@@ -23,10 +23,10 @@ jobs:
         operating-system: [ubuntu-latest, macOS-latest, windows-latest]
         jdk: [ 11, 17 ]  # (open)JDK releases
         exclude:  # to save time and resources
-          - os: windows-latest
-            version: 11
-          - os: macOS-latest
-            version: 11
+          - operating-system: windows-latest
+            jdk: 11
+          - operating-system: macOS-latest
+            jdk: 11
 
     steps:
     - uses: actions/checkout@v3
