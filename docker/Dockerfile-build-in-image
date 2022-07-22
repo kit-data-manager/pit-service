@@ -1,0 +1,30 @@
+####################################################
+# GLOBAL VARIABLE DECLARATION
+####################################################
+ARG REPO_PORT_DEFAULT=8090
+ARG SERVICE_DIRECTORY=/typid
+####################################################
+
+
+FROM openjdk:17-bullseye AS build-typid
+LABEL maintainer="webmaster@datamanager.kit.edu"
+LABEL stage=build
+RUN mkdir -p ${SERVICE_DIRECTORY}/
+WORKDIR ${SERVICE_DIRECTORY}/
+COPY . .
+RUN ./gradlew build --stacktrace && \
+    cp build/libs/TypedPIDMaker*.jar ../
+
+
+# Create a clean, minimal image
+FROM openjdk:17-bullseye as typed-pid-maker
+LABEL maintainer="webmaster@datamanager.kit.edu"
+LABEL stage=run
+
+ENV REPO_PORT=${REPO_PORT_DEFAULT}
+
+RUN mkdir -p ${SERVICE_DIRECTORY}/config
+COPY --from=build-typid ${SERVICE_DIRECTORY}/TypedPIDMaker*.jar ${SERVICE_DIRECTORY}/TypedPIDMaker.jar
+COPY config/* ${SERVICE_DIRECTORY}/config/
+EXPOSE ${REPO_PORT}
+CMD bash ./TypedPIDMaker.jar

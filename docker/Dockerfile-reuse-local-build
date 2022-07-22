@@ -1,0 +1,19 @@
+####################################################
+# GLOBAL VARIABLE DECLARATION
+####################################################
+ARG REPO_PORT_DEFAULT=8090
+ARG SERVICE_DIRECTORY=/typid
+####################################################
+
+# Create a clean, minimal image
+FROM openjdk:17-bullseye as typed-pid-maker
+LABEL maintainer="webmaster@datamanager.kit.edu"
+LABEL stage=run
+
+ENV REPO_PORT=${REPO_PORT_DEFAULT}
+
+RUN mkdir -p ${SERVICE_DIRECTORY}/config
+COPY /build/libs/TypedPIDMaker*.jar ${SERVICE_DIRECTORY}/TypedPIDMaker.jar
+COPY config/* ${SERVICE_DIRECTORY}/config/
+EXPOSE ${REPO_PORT}
+CMD bash ./TypedPIDMaker.jar
