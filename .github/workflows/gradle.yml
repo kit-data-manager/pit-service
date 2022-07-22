@@ -49,3 +49,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest' && matrix.jdk == 17
       with:
         arguments:  jacocoTestReport coveralls
+    - name: Docker build and test
+      if: matrix.os == 'ubuntu-latest' && matrix.jdk == 17
+      run: time bash ./docker/test_docker.sh
+      shell: bash
