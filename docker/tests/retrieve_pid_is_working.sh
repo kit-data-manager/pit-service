@@ -91,7 +91,7 @@ echo got PID "$pid"
 echo "Get the created PID"
 
 response=$(curl --request GET \
-    --url http://localhost:8090/api/v1/pit/pid/$pid \
+    --url "http://localhost:8090/api/v1/pit/pid/$pid" \
     --include)
 
 wasSuccessful=$(
