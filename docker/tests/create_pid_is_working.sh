@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# CREATE PID
+echo "create a PID"
+
 response=$(curl --request POST \
   --url http://localhost:8090/api/v1/pit/pid/ \
   --header 'Content-Type: application/json' \
@@ -76,7 +79,15 @@ then
     echo "FAILED: Expected 201 when creating a PID. Response:"
     echo "$response"
     exit 1  # failure
-else
-    echo "SUCCESS: Created a PID"
-    exit 0  # success
 fi
+echo "Created a PID"
+
+pid=$(
+    echo "$response" \
+    | grep -o '"pid":"[^"]*' \
+    | cut -d'"' -f4
+)
+echo got PID "$pid"
+
+exit 0  # success
+
