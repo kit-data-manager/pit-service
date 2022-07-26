@@ -10,7 +10,7 @@ plugins {
     // Release tagging with `./gradlew release`
     // Check for new versions here: https://plugins.gradle.org/plugin/net.researchgate.release
     // Usage: https://github.com/researchgate/gradle-release
-    id 'net.researchgate.release' version '2.8.1'
+    id 'net.researchgate.release' version '3.0.0'
 
     id 'java'
     // test and docs dependencies
@@ -62,7 +62,7 @@ dependencies {
     // com.google.common, LoadingCache
     implementation "com.github.google.guava:guava:v31.1"
     // Required by Spring/Javers at runtime
-    implementation 'com.google.code.gson:gson:2.8.9'
+    implementation 'com.google.code.gson:gson:2.9.0'
 
     // spring core, e.g. @EnableJpaRepositories
     implementation "org.springframework:spring-core"
