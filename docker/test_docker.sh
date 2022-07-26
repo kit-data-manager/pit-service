@@ -34,11 +34,16 @@ echo "running tests"
 for test in "$docker_dir"/tests/*.sh
 do
     echo ""
-    echo "> running test $test:"
+    echo "=== running test $test: ==="
     bash "$test"
     error=$?
     ((failure += error))
-    echo "> finished $test"
+    if (( error == 0 ))
+    then
+        echo "=== SUCCESS: $test ==="
+    else
+        echo "=== FAILED: $test ==="
+    fi
 done
 
 echo ""
