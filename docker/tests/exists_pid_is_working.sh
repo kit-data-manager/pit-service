@@ -94,7 +94,7 @@ echo got PID "$pid"
 echo "check if PID exists"
 
 response=$(curl --head \
-  --url http://localhost:8090/api/v1/pit/pid/$pid \
+  --url "http://localhost:8090/api/v1/pit/pid/$pid" \
   --include)
 
 wasSuccessful=$(

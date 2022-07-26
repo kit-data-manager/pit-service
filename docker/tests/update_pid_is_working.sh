@@ -91,7 +91,7 @@ echo got PID "$pid"
 echo "update the pid which was created"
 
 response=$(curl --request PUT \
-  --url http://localhost:8090/api/v1/pit/pid/$pid \
+  --url "http://localhost:8090/api/v1/pit/pid/$pid" \
   --header 'Content-Type: application/json' \
   --data '{
 	"entries": {
