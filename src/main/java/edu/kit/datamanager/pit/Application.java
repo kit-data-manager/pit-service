@@ -89,8 +89,8 @@ public class Application {
     }
 
     @Bean
-    public ITypingService typingService(IIdentifierSystem identifierSystem) throws IOException {
-        return new TypingService(identifierSystem, typeRegistry(), typeCache());
+    public ITypingService typingService(IIdentifierSystem identifierSystem, ApplicationProperties props) throws IOException {
+        return new TypingService(identifierSystem, typeRegistry(), typeCache(props));
     }
 
     @Bean(name = "OBJECT_MAPPER_BEAN")
@@ -123,7 +123,7 @@ public class Application {
 
     @Bean
     public CacheConfig cacheConfig() {
-        return CacheConfig
+        return CacheConfig 
                 .custom()
                 .setMaxObjectSize(500000) // 500KB
                 .setMaxCacheEntries(2000)
@@ -134,10 +134,12 @@ public class Application {
     }
 
     @Bean
-    public LoadingCache<String, TypeDefinition> typeCache() {
+    public LoadingCache<String, TypeDefinition> typeCache(ApplicationProperties props){
+        int maximumsize = props.getMaximumSize();
+        long expireafterwrite = props.getExpireAfterWrite();
         return CacheBuilder.newBuilder()
-                .maximumSize(1000)
-                .expireAfterWrite(10, TimeUnit.MINUTES)
+                .maximumSize(maximumsize)
+                .expireAfterWrite(expireafterwrite, TimeUnit.MINUTES)
                 .removalListener((RemovalNotification<String, TypeDefinition> rn) -> LOG.trace(
                         "Removing type definition located at {} from schema cache. Cause: {}", rn.getKey(),
                         rn.getCause()))

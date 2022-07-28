@@ -63,6 +63,12 @@ public class ApplicationProperties extends GenericApplicationProperties {
   @Value("${pit.typeregistry.baseURI}")
   private URL typeRegistryUri;
 
+  @Value("${pit.typeregistry.cache.maxEntries:1000}")
+  private int maximumSize;
+
+  @Value("${pit.typeregistry.cache.lifetimeMinutes:10}")
+  private long expireAfterWrite;
+
   @Value("${pit.validation.profileKey:21.T11148/076759916209e5d62bd5}")
   private String profileKey;
 
@@ -105,5 +111,20 @@ public class ApplicationProperties extends GenericApplicationProperties {
   public void setValidationStrategy(ValidationStrategy strategy) {
     this.validationStrategy = strategy;
   }
+
+  public int getMaximumSize() {
+    return maximumSize;
+  }
+
+  public void setMaximumSize(int maximumSize) {
+    this.maximumSize = maximumSize;
+  }
+
+  public long getExpireAfterWrite() {
+    return expireAfterWrite;
+  }
+
+  public void setExpireAfterWrite(long expireAfterWrite) {
+    this.expireAfterWrite = expireAfterWrite;
+  }
 }
- 
