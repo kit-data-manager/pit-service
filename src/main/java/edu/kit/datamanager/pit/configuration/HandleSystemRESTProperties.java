@@ -15,9 +15,7 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @AutoConfigureAfter(value = ApplicationProperties.class)
 @ConditionalOnBean(value = ApplicationProperties.class)
-@ConditionalOnExpression(
-    "#{ '${pit.pidsystem.implementation}' eq T(edu.kit.datamanager.pit.configuration.ApplicationProperties.IdentifierSystemImpl).HANDLE_REST.name() }"
-)
+@ConditionalOnExpression("#{ '${pit.pidsystem.implementation}' eq T(edu.kit.datamanager.pit.configuration.ApplicationProperties.IdentifierSystemImpl).HANDLE_REST.name() }")
 public class HandleSystemRESTProperties {
 
     private static final Logger LOG = LoggerFactory.getLogger(HandleSystemRESTProperties.class);
@@ -28,10 +26,10 @@ public class HandleSystemRESTProperties {
 
     @Value("${pit.pidsystem.handle.userName}")
     private String handleUser;
-  
+
     @Value("${pit.pidsystem.handle.userPassword}")
     private String handlePassword;
-  
+
     @Value("${pit.pidsystem.handle.generatorPrefix}")
     private String generatorPrefix;
 

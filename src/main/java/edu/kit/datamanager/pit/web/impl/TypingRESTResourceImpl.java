@@ -392,7 +392,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         LOG.info("Creating PID");
         boolean valid = false;
         try {
-            if(applicationProps.getValidationStrategy() == ValidationStrategy.EMBEDDED_STRICT){
+            if (applicationProps.getValidationStrategy() == ValidationStrategy.EMBEDDED_STRICT) {
                 valid = this.validateRecord(record);
             }
         } catch (DataTypeException e) {
@@ -446,7 +446,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         record.setPid(pid);
         boolean valid = false;
         try {
-            if(applicationProps.getValidationStrategy() == ValidationStrategy.EMBEDDED_STRICT){
+            if (applicationProps.getValidationStrategy() == ValidationStrategy.EMBEDDED_STRICT) {
                 valid = this.validateRecord(record);
             }
         } catch (DataTypeException e) {
