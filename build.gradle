@@ -13,6 +13,8 @@ plugins {
     id 'net.researchgate.release' version '3.0.0'
 
     id 'java'
+    // for comfortable run command with arguments
+    id 'application'
     // test and docs dependencies
     id 'jacoco'
     // Adds coveralls task for CI to send results to the coveralls service.
@@ -107,6 +109,10 @@ dependencies {
 release {
     // define tag pattern (tags have to start with 'v')
     tagTemplate = 'v${version}'
+}
+
+application {
+    mainClass = 'edu.kit.datamanager.pit.Application'
 }
 
 // Makes executable jar file.
