@@ -21,26 +21,31 @@ public class KnownPID implements Serializable {
     private Instant created;
     @NotBlank(message = "The timestamp of the most recently performed modification.")
     private Instant modified;
-    
+
     public String getPid() {
         return pid;
     }
+
     public void setPid(String pid) {
         this.pid = pid;
     }
+
     public Instant getCreated() {
         return created;
     }
+
     public void setCreated(Instant created) {
         this.created = created;
     }
+
     public Instant getModified() {
         return modified;
     }
+
     public void setModified(Instant modified) {
         this.modified = modified;
     }
-    
+
     @Override
     public int hashCode() {
         final int prime = 31;
