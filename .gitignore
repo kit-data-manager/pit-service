@@ -18,6 +18,8 @@
 .classpath
 /bin/
 .vscode
+# ignore potential databases
+*.db
 
 # the following lists are mostly taken from
 # https://github.com/github/gitignore (CC0 1.0)
