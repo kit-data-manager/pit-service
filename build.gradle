@@ -10,7 +10,7 @@ plugins {
     // Release tagging with `./gradlew release`
     // Check for new versions here: https://plugins.gradle.org/plugin/net.researchgate.release
     // Usage: https://github.com/researchgate/gradle-release
-    id 'net.researchgate.release' version '3.0.0'
+    id 'net.researchgate.release' version '3.0.1'
 
     id 'java'
     // test and docs dependencies
