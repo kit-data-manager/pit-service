@@ -1,9 +1,7 @@
 package edu.kit.datamanager.pit.pidlog;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -42,11 +40,14 @@ public class KnownPidTest {
         KnownPid p = new KnownPid(pid, NOW, LATER);
         KnownPid b = new KnownPid(pid, NOW, LATER);
         assertEquals(p, b);
+        assertEquals(p.hashCode(), b.hashCode());
 
         b.setModified(NOW);
         assertNotEquals(p, b);
+        assertNotEquals(p.hashCode(), b.hashCode());
 
         b.setCreated(LATER);
         assertNotEquals(p, b);
+        assertNotEquals(p.hashCode(), b.hashCode());
     }
 }
