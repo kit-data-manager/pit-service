@@ -42,11 +42,15 @@ jobs:
     - name: Build and Test
       uses: gradle/gradle-build-action@v2
       with:
+        cache-disabled: true # tmp
+        gradle-home-cache-cleanup: true
         arguments: clean build
     - name: Do one Coveralls test report
       uses: gradle/gradle-build-action@v2
       if: matrix.operating-system == 'ubuntu-latest' && matrix.jdk == 17
       with:
+        cache-disabled: true # tmp
+        gradle-home-cache-cleanup: true
         arguments:  jacocoTestReport coveralls
     - name: Docker build and test
       if: matrix.operating-system == 'ubuntu-latest' && matrix.jdk == 17
