@@ -81,6 +81,7 @@ public class KnownPidsDaoTest {
     void testEntryWasOverridden() {
         Optional<KnownPid> entry = instance.findByPid("too_late");
         assertTrue(entry.isPresent());
+        System.out.println("Found: " + entry.get().toString());
         assertEquals(TOO_LATE, entry.get().getCreated());
         assertEquals(TOO_LATE, entry.get().getModified());
     }
