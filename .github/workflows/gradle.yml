@@ -35,7 +35,6 @@ jobs:
       with:
         java-version: ${{ matrix.jdk }}
         distribution: 'zulu'  # =openJDK
-        cache: gradle
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Validate Gradle wrapper
