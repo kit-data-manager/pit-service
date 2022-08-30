@@ -6,6 +6,7 @@ import java.time.Instant;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 /**
  * Stores information about a known PID so it can be stored in a database.
@@ -13,14 +14,23 @@ import javax.validation.constraints.NotBlank;
  * The use of storing this information is to have a logbook of all created PIDs.
  */
 @Entity
-public class KnownPID implements Serializable {
+public class KnownPid implements Serializable {
     @Id
     @NotBlank(message = "The known PID.")
     private String pid;
-    @NotBlank(message = "The date the PID was created")
+    @NotNull(message = "The date the PID was created")
     private Instant created;
-    @NotBlank(message = "The timestamp of the most recently performed modification.")
+    @NotNull(message = "The timestamp of the most recently performed modification.")
     private Instant modified;
+
+
+    public KnownPid() {}
+
+    public KnownPid(String pid, Instant created, Instant modified) {
+        this.pid = pid;
+        this.created = created;
+        this.modified = modified;
+    }
 
     public String getPid() {
         return pid;
@@ -64,7 +74,7 @@ public class KnownPID implements Serializable {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        KnownPID other = (KnownPID) obj;
+        KnownPid other = (KnownPid) obj;
         if (created == null) {
             if (other.created != null)
                 return false;

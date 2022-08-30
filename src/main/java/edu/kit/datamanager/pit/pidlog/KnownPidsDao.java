@@ -19,24 +19,24 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
  * as well as the general concept documented in
  * https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#repositories.core-concepts
  */
-public interface KnownPidsDao extends JpaRepository<KnownPID, String>, JpaSpecificationExecutor<KnownPID> {
-    Optional<KnownPID> findByPid(String pid);
+public interface KnownPidsDao extends JpaRepository<KnownPid, String>, JpaSpecificationExecutor<KnownPid> {
+    Optional<KnownPid> findByPid(String pid);
 
-    Collection<KnownPID> findDistinctPidsByCreated(Instant created);
+    Collection<KnownPid> findDistinctPidsByCreated(Instant created);
 
-    Collection<KnownPID> findDistinctPidsByModified(Instant modified);
+    Collection<KnownPid> findDistinctPidsByModified(Instant modified);
 
-    Collection<KnownPID> findDistinctPidsByCreatedBetween(Instant from, Instant to);
+    Collection<KnownPid> findDistinctPidsByCreatedBetween(Instant from, Instant to);
 
-    Collection<KnownPID> findDistinctPidsByModifiedBetween(Instant from, Instant to);
+    Collection<KnownPid> findDistinctPidsByModifiedBetween(Instant from, Instant to);
 
-    Page<KnownPID> findDistinctPidsByCreated(Instant created, Pageable pageable);
+    Page<KnownPid> findDistinctPidsByCreated(Instant created, Pageable pageable);
 
-    Page<KnownPID> findDistinctPidsByModified(Instant modified, Pageable pageable);
+    Page<KnownPid> findDistinctPidsByModified(Instant modified, Pageable pageable);
 
-    Page<KnownPID> findDistinctPidsByCreatedBetween(Instant from, Instant to, Pageable pageable);
+    Page<KnownPid> findDistinctPidsByCreatedBetween(Instant from, Instant to, Pageable pageable);
 
-    Page<KnownPID> findDistinctPidsByModifiedBetween(Instant from, Instant to, Pageable pageable);
+    Page<KnownPid> findDistinctPidsByModifiedBetween(Instant from, Instant to, Pageable pageable);
 
     long countDistinctPidsByCreatedBetween(Instant from, Instant to);
 
