@@ -42,7 +42,7 @@ jobs:
     - name: Build and Test
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: build
+        arguments: clean build
     - name: Do one Coveralls test report
       uses: gradle/gradle-build-action@v2
       if: matrix.operating-system == 'ubuntu-latest' && matrix.jdk == 17
