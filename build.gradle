@@ -1,16 +1,16 @@
 plugins {
     // Spring boot & dependency management:
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
-    id 'org.springframework.boot' version '2.7.2'
+    id 'org.springframework.boot' version '2.7.3'
     // https://docs.spring.io/dependency-management-plugin/docs/current-SNAPSHOT/reference/html/
-    id "io.spring.dependency-management" version "1.0.12.RELEASE"
+    id "io.spring.dependency-management" version "1.0.13.RELEASE"
     // Lombok generates getter and setter and more. https://projectlombok.org/
     // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
     id "io.freefair.lombok" version "6.5.0.3"
     // Release tagging with `./gradlew release`
     // Check for new versions here: https://plugins.gradle.org/plugin/net.researchgate.release
     // Usage: https://github.com/researchgate/gradle-release
-    id 'net.researchgate.release' version '3.0.0'
+    id 'net.researchgate.release' version '3.0.1'
 
     id 'java'
     // for comfortable run command with arguments
@@ -20,7 +20,7 @@ plugins {
     // Adds coveralls task for CI to send results to the coveralls service.
     id "com.github.kt3k.coveralls" version "2.12.0"
     //id "com.github.kt3k.coveralls" version "2.12.0" 
-    id "org.owasp.dependencycheck" version "7.1.1"
+    id "org.owasp.dependencycheck" version "7.1.2"
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
 }
 
@@ -55,7 +55,7 @@ configurations {
 }
 
 ext {
-    springDocVersion  = '1.6.9'
+    springDocVersion  = '1.6.11'
 }
 
 dependencies {
