@@ -36,7 +36,6 @@ jacoco {
 
 archivesBaseName = 'TypedPIDMaker'
 description = "A gateway to manage PIDs containing profiles and typed attributes."
-version = '0.4'
 group = 'edu.kit.datamanager'
 
 println "Running gradle version: $gradle.gradleVersion"
