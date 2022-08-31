@@ -5,9 +5,9 @@ name: Build and Test
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, main ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, main ]
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -22,11 +22,6 @@ jobs:
       matrix:
         operating-system: [ubuntu-latest, macOS-latest, windows-latest]
         jdk: [ 11, 17 ]  # (open)JDK releases
-        exclude:  # to save time and resources
-          - operating-system: windows-latest
-            jdk: 11
-          - operating-system: macOS-latest
-            jdk: 11
 
     steps:
     - uses: actions/checkout@v3
