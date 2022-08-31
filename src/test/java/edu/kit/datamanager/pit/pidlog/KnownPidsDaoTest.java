@@ -36,12 +36,12 @@ public class KnownPidsDaoTest {
 
     private static final Instant NOW = Instant.now();
 
-    private static final Instant TOO_SOON = NOW.minus(2, ChronoUnit.DAYS);
-    private static final Instant MIN = NOW.minus(1, ChronoUnit.DAYS);
-    private static final Instant SOONER = NOW.plus(1, ChronoUnit.DAYS);
-    private static final Instant LATER = NOW.plus(1, ChronoUnit.DAYS);
-    private static final Instant MAX = NOW.plus(1, ChronoUnit.DAYS);
-    private static final Instant TOO_LATE = NOW.plus(2, ChronoUnit.DAYS);
+    private static final Instant TOO_SOON = NOW.minus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
+    private static final Instant MIN = NOW.minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
+    private static final Instant SOONER = NOW.plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
+    private static final Instant LATER = NOW.plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
+    private static final Instant MAX = NOW.plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
+    private static final Instant TOO_LATE = NOW.plus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
 
     @BeforeAll
     public static void setUpClass() {
