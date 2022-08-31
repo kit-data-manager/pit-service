@@ -2,6 +2,7 @@ package edu.kit.datamanager.pit.pidlog;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -45,7 +46,7 @@ public class KnownPid implements Serializable {
     }
 
     public void setCreated(Instant created) {
-        this.created = created;
+        this.created = created.truncatedTo(ChronoUnit.MILLIS);
     }
 
     public Instant getModified() {
@@ -53,7 +54,7 @@ public class KnownPid implements Serializable {
     }
 
     public void setModified(Instant modified) {
-        this.modified = modified;
+        this.modified = modified.truncatedTo(ChronoUnit.MILLIS);
     }
 
     @Override
