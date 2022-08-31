@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 
 public class KnownPidTest {
 
-    private static final Instant NOW = Instant.now();
-    private static final Instant LATER = NOW.plus(1, ChronoUnit.DAYS);
+    private static final Instant NOW = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+    private static final Instant LATER = NOW.plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
 
     @Test
     void testContruction() {
