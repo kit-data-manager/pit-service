@@ -2,6 +2,8 @@ package edu.kit.datamanager.pit.web.impl;
 
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Optional;
 
 import edu.kit.datamanager.pit.common.DataTypeException;
 import edu.kit.datamanager.pit.common.InconsistentRecordsException;
@@ -12,6 +14,8 @@ import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
+import edu.kit.datamanager.pit.pidlog.KnownPid;
+import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.util.TypeValidationUtils;
 import edu.kit.datamanager.pit.web.ITypingRestResource;
@@ -315,6 +319,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     @Autowired
     private IMessagingService messagingService;
 
+    @Autowired
+    private KnownPidsDao localPidStorage;
+
     public TypingRESTResourceImpl() {
         super();
     }
@@ -402,7 +409,13 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         boolean missingProfile = !record.hasProperty(profileKey)
                 || record.getPropertyValues(profileKey).length < 1;
         if (valid) {
+            // register
             String pid = this.typingService.registerPID(record);
+            // store result locally
+            Instant now = Instant.now();
+            KnownPid newPid = new KnownPid(pid, now, now);
+            localPidStorage.saveAndFlush(newPid);
+            // distribute to other services
             record.setPid(pid);
             PidRecordMessage message = PidRecordMessage.creation(
                     pid,
@@ -459,6 +472,17 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
         // update and send message
         if (this.typingService.updatePID(record)) {
+            // store pid locally
+            Instant now = Instant.now();
+            Optional<KnownPid> oldPid = localPidStorage.findByPid(pid);
+            if (oldPid.isEmpty()) {
+                localPidStorage.saveAndFlush(new KnownPid(record.getPid(), now, now));
+            } else {
+                KnownPid newPid = oldPid.get();
+                newPid.setModified(now);
+                localPidStorage.saveAndFlush(newPid);
+            }
+            // distribute pid to other services
             PidRecordMessage message = PidRecordMessage.update(
                     pid,
                     "", // TODO parameter is depricated and will be removed soon.
