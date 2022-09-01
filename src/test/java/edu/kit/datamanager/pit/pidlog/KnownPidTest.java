@@ -29,9 +29,25 @@ public class KnownPidTest {
     @Test
     void testTrivialEquivalence() {
         KnownPid p = new KnownPid();
-        assertNotEquals(null, p);
+        assertEquals(p, p);
+        assertNotEquals(p, null); // pid is null
+
         KnownPid b = new KnownPid();
         assertEquals(p, b);
+        assertEquals(p.hashCode(), b.hashCode());
+
+        b.setCreated(NOW);
+        assertNotEquals(p, b);
+
+        b = new KnownPid();
+        b.setModified(NOW);
+        assertNotEquals(p, b);
+
+        b = new KnownPid();
+        b.setPid("other");
+        assertNotEquals(p, b);
+        p.setPid("first");
+        assertNotEquals(p, b);
     }
 
     @Test
@@ -45,6 +61,7 @@ public class KnownPidTest {
         b.setModified(NOW);
         assertNotEquals(p, b);
         assertNotEquals(p.hashCode(), b.hashCode());
+        b.setModified(LATER);
 
         b.setCreated(LATER);
         assertNotEquals(p, b);
