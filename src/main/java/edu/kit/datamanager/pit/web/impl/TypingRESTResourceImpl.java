@@ -412,9 +412,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             // register
             String pid = this.typingService.registerPID(record);
             // store result locally
-            Instant now = Instant.now();
-            KnownPid newPid = new KnownPid(pid, now, now);
-            localPidStorage.saveAndFlush(newPid);
+            if (applicationProps.getStorageStrategy().storesModified()) {
+                storeOrUpdateInLocalStorage(pid);
+            }
             // distribute to other services
             record.setPid(pid);
             PidRecordMessage message = PidRecordMessage.creation(
@@ -473,14 +473,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         // update and send message
         if (this.typingService.updatePID(record)) {
             // store pid locally
-            Instant now = Instant.now();
-            Optional<KnownPid> oldPid = localPidStorage.findByPid(pid);
-            if (oldPid.isEmpty()) {
-                localPidStorage.saveAndFlush(new KnownPid(record.getPid(), now, now));
-            } else {
-                KnownPid newPid = oldPid.get();
-                newPid.setModified(now);
-                localPidStorage.saveAndFlush(newPid);
+            if (applicationProps.getStorageStrategy().storesModified()) {
+                storeOrUpdateInLocalStorage(record.getPid());
             }
             // distribute pid to other services
             PidRecordMessage message = PidRecordMessage.update(
@@ -505,10 +499,25 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
         if (typingService.isIdentifierRegistered(pid)) {
             LOG.trace("PID successfully checked.");
+            if (applicationProps.getStorageStrategy().storesResolved()) {
+                storeOrUpdateInLocalStorage(pid);
+            }
             return ResponseEntity.ok().body("PID is registered.");
         } else {
             LOG.error("PID {} not found at configured identifier system.", pid);
             throw new PidNotFoundException("Identifier with value " + pid + " not found.");
+        }
+    }
+
+    private void storeOrUpdateInLocalStorage(String pid) {
+        Instant now = Instant.now();
+        Optional<KnownPid> oldPid = localPidStorage.findByPid(pid);
+        if (oldPid.isEmpty()) {
+            localPidStorage.saveAndFlush(new KnownPid(pid, now, now));
+        } else {
+            KnownPid newPid = oldPid.get();
+            newPid.setModified(now);
+            localPidStorage.saveAndFlush(newPid);
         }
     }
 
@@ -528,6 +537,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final UriComponentsBuilder uriBuilder) throws IOException {
         String pid = getContentPathFromRequest("pid", request);
         PIDRecord record = this.typingService.queryAllProperties(pid);
+        if (applicationProps.getStorageStrategy().storesResolved()) {
+            storeOrUpdateInLocalStorage(pid);
+        }
         return ResponseEntity.ok().body(record);
     }
 

@@ -18,6 +18,8 @@ package edu.kit.datamanager.pit.configuration;
 import edu.kit.datamanager.configuration.GenericApplicationProperties;
 import java.net.URL;
 
+import javax.validation.constraints.NotNull;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
@@ -46,6 +48,7 @@ public class ApplicationProperties extends GenericApplicationProperties {
   }
 
   @Value("${pit.pidsystem.implementation}")
+  @NotNull
   private IdentifierSystemImpl identifierSystemImplementation;
 
   public enum ValidationStrategy {
@@ -54,16 +57,27 @@ public class ApplicationProperties extends GenericApplicationProperties {
   }
 
   @Value("${pit.validation.strategy:embedded-strict}")
+  @NotNull
   private ValidationStrategy validationStrategy = ValidationStrategy.EMBEDDED_STRICT;
 
   public enum StorageStrategy {
     // Only store PIDs which have been created or modified using this instance
     KEEP_MODIFIED,
     // Store created, modified or resolved PIDs.
-    KEEP_RESOLVED_AND_MODIFIED
+    KEEP_RESOLVED_AND_MODIFIED;
+
+    public boolean storesModified() {
+      return this == StorageStrategy.KEEP_MODIFIED
+          || this == StorageStrategy.KEEP_RESOLVED_AND_MODIFIED;
+    }
+
+    public boolean storesResolved() {
+      return this == StorageStrategy.KEEP_RESOLVED_AND_MODIFIED;
+    }
   }
 
   @Value("${pit.storage.strategy:keep-modified}")
+  @NotNull
   private StorageStrategy storageStrategy = StorageStrategy.KEEP_MODIFIED;
 
   // TODO Used by DTR implementation for resolving. Too unflexible in mid-term.
