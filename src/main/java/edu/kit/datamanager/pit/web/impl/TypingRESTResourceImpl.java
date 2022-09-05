@@ -413,7 +413,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             String pid = this.typingService.registerPID(record);
             // store result locally
             if (applicationProps.getStorageStrategy().storesModified()) {
-                storeOrUpdateInLocalStorage(pid);
+                storeLocally(pid, true);
             }
             // distribute to other services
             record.setPid(pid);
@@ -474,7 +474,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         if (this.typingService.updatePID(record)) {
             // store pid locally
             if (applicationProps.getStorageStrategy().storesModified()) {
-                storeOrUpdateInLocalStorage(record.getPid());
+                storeLocally(record.getPid(), true);
             }
             // distribute pid to other services
             PidRecordMessage message = PidRecordMessage.update(
@@ -500,7 +500,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         if (typingService.isIdentifierRegistered(pid)) {
             LOG.trace("PID successfully checked.");
             if (applicationProps.getStorageStrategy().storesResolved()) {
-                storeOrUpdateInLocalStorage(pid);
+                storeLocally(pid, false);
             }
             return ResponseEntity.ok().body("PID is registered.");
         } else {
@@ -509,12 +509,20 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
     }
 
-    private void storeOrUpdateInLocalStorage(String pid) {
+    /**
+     * Stores the PID in a local database.
+     * 
+     * @param pid    the PID
+     * @param update if true, updates the modified timestamp if it already exists.
+     *               If it does not exist, it will be created with both timestamps
+     *               (created and modified) being the same.
+     */
+    private void storeLocally(String pid, boolean update) {
         Instant now = Instant.now();
         Optional<KnownPid> oldPid = localPidStorage.findByPid(pid);
         if (oldPid.isEmpty()) {
             localPidStorage.saveAndFlush(new KnownPid(pid, now, now));
-        } else {
+        } else if (update) {
             KnownPid newPid = oldPid.get();
             newPid.setModified(now);
             localPidStorage.saveAndFlush(newPid);
@@ -538,7 +546,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         String pid = getContentPathFromRequest("pid", request);
         PIDRecord record = this.typingService.queryAllProperties(pid);
         if (applicationProps.getStorageStrategy().storesResolved()) {
-            storeOrUpdateInLocalStorage(pid);
+            storeLocally(pid, false);
         }
         return ResponseEntity.ok().body(record);
     }
