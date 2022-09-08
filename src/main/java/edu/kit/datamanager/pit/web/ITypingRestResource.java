@@ -16,23 +16,36 @@
 package edu.kit.datamanager.pit.web;
 
 import edu.kit.datamanager.pit.domain.TypeDefinition;
+import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.common.InconsistentRecordsException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Collection;
+
 import javax.servlet.http.HttpServletResponse;
+
+import org.springdoc.core.converters.models.PageableAsQueryParam;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 /**
  *
@@ -62,7 +75,9 @@ public interface ITypingRestResource {
         @ApiResponse(responseCode = "409", description = "Resource is NOT matching the type.", content = @Content(mediaType = "text/plain")),
         @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
     })
-    public ResponseEntity<String> isPidMatchingProfile(@RequestParam("identifier") String identifier,
+    public ResponseEntity<String> isPidMatchingProfile(
+            @RequestParam("identifier")
+            String identifier,
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder
@@ -93,7 +108,8 @@ public interface ITypingRestResource {
     public ResponseEntity<String> isResourceMatchingType(@RequestParam("identifier") String identifier,
             final WebRequest request,
             final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder) throws IOException;
+            final UriComponentsBuilder uriBuilder
+    ) throws IOException;
 
     /**
      * Get a profile or type by its identifier presented by the last path segment(s).
@@ -113,7 +129,8 @@ public interface ITypingRestResource {
     public ResponseEntity<TypeDefinition> getProfile(
             final WebRequest request,
             final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder) throws IOException;
+            final UriComponentsBuilder uriBuilder
+    ) throws IOException;
 
     /**
      * Create a new PID using the record information provided in the request
@@ -138,7 +155,8 @@ public interface ITypingRestResource {
     public ResponseEntity<PIDRecord> createPID(@RequestBody final PIDRecord record,
             final WebRequest request,
             final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder) throws IOException;
+            final UriComponentsBuilder uriBuilder
+    ) throws IOException;
 
     /**
      * Update the given PIDs record using the information provided in the request
@@ -161,7 +179,8 @@ public interface ITypingRestResource {
     public ResponseEntity<PIDRecord> updatePID(@RequestBody final PIDRecord record,
             final WebRequest request,
             final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder) throws IOException, InconsistentRecordsException;
+            final UriComponentsBuilder uriBuilder
+    ) throws IOException, InconsistentRecordsException;
 
     /**
      * Check if a certain PID provided as path segment(s) exist.
@@ -184,7 +203,8 @@ public interface ITypingRestResource {
     public ResponseEntity<String> isPidRegistered(
             final WebRequest request,
             final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder) throws IOException;
+            final UriComponentsBuilder uriBuilder
+    ) throws IOException;
 
     /**
      * Get the record of the given PID.
@@ -202,13 +222,128 @@ public interface ITypingRestResource {
     public ResponseEntity<PIDRecord> getRecord (
             final WebRequest request,
             final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder) throws IOException;
+            final UriComponentsBuilder uriBuilder
+    ) throws IOException;
 
-    ////////////////
-    ////////////////
-    ////////////////
-    ////////////////
-    ////////////////
+
+    /**
+     * Requests a PID from the local store. If this PID is known, it will be returned
+     * together with the timestamps of creation and modification executed on this
+     * PID by this service.
+     * 
+     * This store is not a cache! Instead, the service remembers every PID which it
+     * created (and resolved, depending on the configuration parameter
+     * `pit.storage.strategy` of the service) on request.
+     * 
+     * @param pid        the PID to request timestamps for.
+     * @param request
+     * @param response
+     * @param uriBuilder
+     * @return the known PID and its timestamps.
+     * @throws IOException
+     */
+    @Operation(
+        summary = "Returns a PID and its timestamps from the local store, if available.",
+        description = "Returns a PID from the local store. This store is not a cache! Instead, the"
+                    + " service remembers every PID which it created (and resolved, depending on the"
+                    + " configuration parameter `pit.storage.strategy` of the service) on request. If"
+                    + " this PID is known, it will be returned together with the timestamps of"
+                    + " creation and modification executed on this PID by this service.",
+        responses = {
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "If the PID is known and its information was returned.",
+                        content = @Content(schema = @Schema(implementation = KnownPid.class))
+                ),
+                @ApiResponse(
+                        responseCode = "404",
+                        description = "If the PID is unknown.",
+                        content = @Content(mediaType = "text/plain")
+                ),
+        }
+    )
+@GetMapping(path = "/known-pid/**")
+    public ResponseEntity<KnownPid> findByPid(
+            //@Parameter(name = "pid", description = "The PID to request timestamps for.")
+            //@PathVariable(name = "pid", required = true)
+            //String pid,
+            
+            final WebRequest request,
+            
+            final HttpServletResponse response,
+            
+            final UriComponentsBuilder uriBuilder
+     ) throws IOException;
+
+
+     /**
+      * Return a list of known PIDs and their timestamps (creation and modification),
+      * filtered by the given criterial. If no criteria is given, all known PIDs can
+      * be received (by paging, if the number is too large).
+      * 
+      * Known PIDs are defined as being stored in a local store. This store is not a
+      * cache! Instead, the service remembers every PID which it created (and
+      * resolved, depending on the configuration parameter `pit.storage.strategy` of
+      * the service) on request.
+      * 
+      * @param createdAfter defines the earliest date for the creation timestamp.
+      * @param createdBefore defines the latest date for the creation timestamp.
+      * @param modifiedAfter defines the earliest date for the modification timestamp.
+      * @param modifiedBefore defines the latest date for the modification timestamp.
+      * @param pageable defines page size and page to navigate through large lists.
+      * @param request
+      * @param response
+      * @param uriBuilder
+      * @return
+      */
+    @Operation(
+        summary = "Return a list of known PIDs and their timestamps, filtered by the given criterial.",
+        description = "Return a list of known PIDs and their timestamps (creation and modification),"
+        + " filtered by the given criterial. If no criteria is given, all known PIDs can"
+        + " be received (by paging, if the number is too large)."
+        + " Known PIDs are defined as being stored in a local store. This store is not a"
+        + " cache! Instead, the service remembers every PID which it created (and"
+        + " resolved, depending on the configuration parameter `pit.storage.strategy` of"
+        + " the service) on request.",
+        responses = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "If the request was valid. May return an empty list.",
+                content = @Content(array = @ArraySchema(schema = @Schema(implementation = KnownPid.class)))
+            )
+        }
+    )
+    @GetMapping(path = "/known-pid")
+    @PageableAsQueryParam
+    public ResponseEntity<Collection<KnownPid>> findByInterval(
+
+            @Parameter(name = "created_after", description = "The UTC time of the earliest creation timestamp of a returned PID.", required = false)
+            @RequestParam(name = "created_after", required = false)
+            Instant createdAfter,
+            
+            @Parameter(name = "created_before", description = "The UTC time of the latest creation timestamp of a returned PID.", required = false)
+            @RequestParam(name = "created_before", required = false)
+            Instant createdBefore,
+
+            @Parameter(name = "modified_after", description = "The UTC time of the earliest modification timestamp of a returned PID.", required = false)
+            @RequestParam(name = "modified_after", required = false)
+            Instant modifiedAfter,
+            
+            @Parameter(name = "modified_before", description = "The UTC time of the latest modification timestamp of a returned PID.", required = false)
+            @RequestParam(name = "modified_before", required = false)
+            Instant modifiedBefore,
+            
+            @Parameter(hidden = true)
+            @PageableDefault(sort = {"modified"}, direction = Sort.Direction.ASC)
+            Pageable pageable,
+            
+            WebRequest request,
+            
+            HttpServletResponse response,
+            
+            UriComponentsBuilder uriBuilder
+    ) throws IOException;
+
     /**
      * Simple ping method for testing (check whether the API is running etc.).
      * Not part of the official interface description.

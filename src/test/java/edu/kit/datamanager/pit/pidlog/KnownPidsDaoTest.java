@@ -1,8 +1,10 @@
 package edu.kit.datamanager.pit.pidlog;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -90,6 +92,34 @@ public class KnownPidsDaoTest {
     void testCountDistinctPidsByCreatedBetween() {
         long num = instance.countDistinctPidsByCreatedBetween(MIN, MAX);
         assertEquals(3, num);
+    }
+
+    @Test
+    void testCountDistinctPidsByCreatedBetweenLongTimespans() {
+        // First, let us define a long time span by one year before and after
+        Instant MAX = TOO_LATE.plus(357, ChronoUnit.DAYS);
+        Instant MIN = TOO_SOON.minus(357, ChronoUnit.DAYS);
+        long numOfAll = instance.count();
+        assertEquals(7, numOfAll);
+        long num = instance.countDistinctPidsByCreatedBetween(MIN, MAX);
+        assertEquals(numOfAll, num);
+        // Seems like some component does not support Instant.MIN or Instant.MAX:
+        assertThrows(
+            DateTimeException.class,
+            () -> instance.countDistinctPidsByCreatedBetween(Instant.MIN, MAX));
+        assertThrows(
+            DateTimeException.class,
+            () -> instance.countDistinctPidsByCreatedBetween(MIN, Instant.MAX));
+        // It also does not support null:
+        num = instance.countDistinctPidsByCreatedBetween(null, MAX);
+        assertEquals(0, num);
+        num = instance.countDistinctPidsByCreatedBetween(MIN, null);
+        assertEquals(0, num);
+        // Now, let us define a long time span the probably minimum supported by the DAO, Instant.Epoch:
+        num = instance.countDistinctPidsByCreatedBetween(Instant.EPOCH, MAX);
+        assertEquals(numOfAll, num);
+        // This means, to define a Minimum, we should use Instant.EPOCH,
+        // and for a maximum we should use something in the future from Instant.now().
     }
 
     @Test
