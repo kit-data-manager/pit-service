@@ -3,6 +3,9 @@ package edu.kit.datamanager.pit.web.impl;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import java.io.IOException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Optional;
 
 import edu.kit.datamanager.pit.common.DataTypeException;
@@ -30,6 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -549,6 +553,68 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             storeLocally(pid, false);
         }
         return ResponseEntity.ok().body(record);
+    }
+
+    @Override
+    public ResponseEntity<KnownPid> findByPid(
+            //String pid,
+            WebRequest request,
+            HttpServletResponse response,
+            UriComponentsBuilder uriBuilder
+    ) throws IOException {
+        String pid = getContentPathFromRequest("known-pid", request);
+        Optional<KnownPid> known = this.localPidStorage.findByPid(pid);
+        if (known.isPresent()) {
+            return ResponseEntity.ok().body(known.get());
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @Override
+    public ResponseEntity<Collection<KnownPid>> findByInterval(
+        Instant createdAfter,
+        Instant createdBefore,
+        Instant modifiedAfter,
+        Instant modifiedBefore,
+        Pageable pageable,
+        WebRequest request,
+        HttpServletResponse response,
+        UriComponentsBuilder uriBuilder
+    ) throws IOException {
+        boolean queriesCreated = createdAfter != null || createdBefore != null;
+        boolean queriesModified = modifiedAfter != null || modifiedBefore != null;
+        if (queriesCreated && createdAfter == null) {
+            createdAfter = Instant.EPOCH;
+        }
+        if (queriesCreated && createdBefore == null) {
+            createdBefore = Instant.now().plus(1, ChronoUnit.DAYS);
+        }
+        if (queriesModified && modifiedAfter == null) {
+            modifiedAfter = Instant.EPOCH;
+        }
+        if (queriesModified && modifiedBefore == null) {
+            modifiedBefore = Instant.now().plus(1, ChronoUnit.DAYS);
+        }
+
+        Collection<KnownPid> resultCreatedTimestamp = new ArrayList<>();
+        Collection<KnownPid> resultModifiedTimestamp = new ArrayList<>();
+        if (queriesCreated) {
+            resultCreatedTimestamp = this.localPidStorage
+                .findDistinctPidsByCreatedBetween(createdAfter, createdBefore);
+        }
+        if (queriesModified) {
+            resultModifiedTimestamp = this.localPidStorage
+                .findDistinctPidsByModifiedBetween(modifiedAfter, modifiedBefore);
+        }
+        if (queriesCreated && queriesModified) {
+            resultCreatedTimestamp.retainAll(resultModifiedTimestamp);
+            return ResponseEntity.ok().body(resultCreatedTimestamp);
+        } else if (queriesCreated) {
+            return ResponseEntity.ok().body(resultCreatedTimestamp);
+        } else if (queriesModified) {
+            return ResponseEntity.ok().body(resultModifiedTimestamp);
+        }
+        return ResponseEntity.ok().body(new ArrayList<>());
     }
 
     private boolean validateRecord(PIDRecord record) throws DataTypeException, IOException {

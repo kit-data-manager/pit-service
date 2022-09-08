@@ -2,6 +2,7 @@ package edu.kit.datamanager.pit.web;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -16,7 +17,9 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.context.WebApplicationContext;
 
 import edu.kit.datamanager.pit.domain.PIDRecord;
@@ -24,6 +27,7 @@ import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
 import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
+import edu.kit.datamanager.pit.web.impl.TypingRESTResourceImpl;
 
 // org.springframework.mock is for unit testing
 // Source: https://docs.spring.io/spring-framework/docs/current/reference/html/testing.html
@@ -34,6 +38,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
@@ -42,6 +47,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
 
 // Might be needed for WebApp testing according to https://www.baeldung.com/integration-testing-in-spring
 //@WebAppConfiguration
@@ -67,6 +81,13 @@ public class RestWithInMemoryTest {
 
     @Autowired
     private KnownPidsDao knownPidsDao;
+
+    @Autowired
+    private TypingRESTResourceImpl restImpl;
+
+    private static final Instant NOW = Instant.now().plus(1, ChronoUnit.MINUTES).truncatedTo(ChronoUnit.MILLIS);
+    private static final Instant YESTERDAY = NOW.minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
+    private static final Instant TOMORROW = NOW.plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
     
     @BeforeEach
     public void setup() throws Exception {
@@ -183,6 +204,132 @@ public class RestWithInMemoryTest {
                 .andDo(MockMvcResultHandlers.print())
                 .andReturn();
         return result.getResponse().getStatus() == 200;
+    }
+
+    @Test
+    void testKnownPidFailure() throws Exception {
+        this.mockMvc.perform(get("/api/v1/pit/known-pid/fake/pid"))
+            .andDo(MockMvcResultHandlers.print())
+            .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    @Test
+    void testKnownPidSuccess() throws Exception {
+        PIDRecord r = this.createSomeRecord();
+        // we know it is in the local database:
+        assertEquals(1, this.knownPidsDao.count());
+        // so we should be able to retrieve it via the REST api:
+        this.mockMvc.perform(get("/api/v1/pit/known-pid/" + r.getPid()))
+            .andDo(MockMvcResultHandlers.print())
+            .andExpect(MockMvcResultMatchers.status().is2xxSuccessful());
+    }
+
+    @Test
+    void testKnownPidIntervalFailure() throws Exception {
+        this.mockMvc.perform(get("/api/v1/pit/known-pid/fake/pid").header("created_after", Instant.now()))
+            .andDo(MockMvcResultHandlers.print())
+            .andExpect(MockMvcResultMatchers.status().isNotFound());
+    }
+
+    /**
+     * This test ensures that the different combinations of parameters can be given
+     * to this endpoint.
+     * 
+     * @throws Exception on failed assumptions
+     */
+    @Test
+    void testKnownPidIntervalSuccessWithCreatedInterval() throws Exception {
+        PIDRecord r = this.createSomeRecord();
+        PIDRecord r2 = this.createSomeRecord();
+        assertEquals(2, this.knownPidsDao.count());
+        assertNotEquals(r.getPid(), r2.getPid());
+        
+        List<KnownPid> pidinfos = queryKnownPIDs(YESTERDAY, TOMORROW, null, null);
+        
+        assertEquals(2, pidinfos.size());
+        assertEquals(r.getPid(), pidinfos.get(0).getPid());
+        assertEquals(r2.getPid(), pidinfos.get(1).getPid());
+        
+        pidinfos = queryKnownPIDs(null, TOMORROW, null, null);
+        
+        assertEquals(2, pidinfos.size());
+        assertEquals(r.getPid(), pidinfos.get(0).getPid());
+        assertEquals(r2.getPid(), pidinfos.get(1).getPid());
+
+        pidinfos = queryKnownPIDs(YESTERDAY, null, null, null);
+        
+        assertEquals(2, pidinfos.size());
+        assertEquals(r.getPid(), pidinfos.get(0).getPid());
+        assertEquals(r2.getPid(), pidinfos.get(1).getPid());
+
+        pidinfos = queryKnownPIDs(null, null, null, TOMORROW);
+        
+        assertEquals(2, pidinfos.size());
+        assertEquals(r.getPid(), pidinfos.get(0).getPid());
+        assertEquals(r2.getPid(), pidinfos.get(1).getPid());
+
+        pidinfos = queryKnownPIDs(null, null, YESTERDAY, null);
+        
+        assertEquals(2, pidinfos.size());
+        assertEquals(r.getPid(), pidinfos.get(0).getPid());
+        assertEquals(r2.getPid(), pidinfos.get(1).getPid());
+
+        pidinfos = queryKnownPIDs(null, NOW.minusSeconds(60), null, null);
+        assertEquals(0, pidinfos.size());
+    }
+
+    /**
+     * Wrapper to query known PIDs via API given time intervals for the creation
+     * timestamp and modification timestamp. This is a reusable etst component.
+     * 
+     * @param createdAfter   lower end for the creation timestamp interval
+     * @param createdBefore  upper end for the creation timestamp interval
+     * @param modifiedAfter  lower end for the modification timestamp interval
+     * @param modifiedBefore upper end for the modification timestamp interval
+     * @return the result of the query
+     * @throws Exception on failed assumptions
+     */
+    private List<KnownPid> queryKnownPIDs(Instant createdAfter, Instant createdBefore, Instant modifiedAfter, Instant modifiedBefore)
+            throws Exception {
+        MockHttpServletRequestBuilder request =  get("/api/v1/pit/known-pid/");
+        if (createdAfter != null) {
+            request.param("created_after", String.valueOf(createdAfter));
+        }
+        if (createdBefore != null) {
+            request.param("created_before", String.valueOf(createdBefore));
+        }
+        if (modifiedAfter != null) {
+            request.param("modified_after", String.valueOf(modifiedAfter));
+        }
+        if (modifiedBefore != null) {
+            request.param("modified_before", String.valueOf(modifiedBefore));
+        }
+        MvcResult result = this.mockMvc.perform(request)
+            .andDo(MockMvcResultHandlers.print())
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andReturn();
+
+        String body = result.getResponse().getContentAsString();
+        List<KnownPid> pidinfos = Arrays.asList(this.mapper.readerForArrayOf(KnownPid.class).readValue(body));
+        return pidinfos;
+    }
+
+    /**
+     * The same as `queryKnownPIDs()` but instead of mocking the REST API, it is
+     * directly calling the function. Can be used to debug tests. This is a reusable
+     * test component.
+     * 
+     * @param createdAfter   lower end for the creation timestamp interval
+     * @param createdBefore  upper end for the creation timestamp interval
+     * @param modifiedAfter  lower end for the modification timestamp interval
+     * @param modifiedBefore upper end for the modification timestamp interval
+     * @return the result of the query
+     * @throws Exception on failed assumptions
+     */
+    private List<KnownPid> queryKnownPIDsViaJava(Instant createdAfter, Instant createdBefore, Instant modifiedAfter, Instant modifiedBefore) throws IOException {
+        ResponseEntity<Collection<KnownPid>> response = this.restImpl.findByInterval(createdAfter, createdBefore, modifiedAfter, modifiedBefore, Pageable.ofSize(10), null, null, null);
+        Collection<KnownPid> pidinfos = response.getBody();
+        return new ArrayList<>(pidinfos);
     }
 
     /**
