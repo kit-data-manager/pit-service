@@ -35,8 +35,8 @@ public class OpenApiDefinitions{
   public OpenAPI customOpenAPI(){
     return new OpenAPI()
             .components(new Components())
-            .info(new Info().title("PIT Service - RESTful API").
-                    description("The KIT DM 2.0 PIT Service is a service for obtaining and validating PID Infortion Types and Kernel Information Profiles, as defined by the Research Data Alliance.").
+            .info(new Info().title("Typed PID Maker - RESTful API").
+                    description("The KIT DM 2.0 Typed PID Maker is a service for obtaining and validating PID Infortion Types and Kernel Information Profiles, as defined by the Research Data Alliance.").
                     version("0.1").
                     contact(
                             new Contact().
