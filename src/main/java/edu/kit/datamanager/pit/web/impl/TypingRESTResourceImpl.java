@@ -557,7 +557,6 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
     @Override
     public ResponseEntity<KnownPid> findByPid(
-            //String pid,
             WebRequest request,
             HttpServletResponse response,
             UriComponentsBuilder uriBuilder

@@ -73,7 +73,7 @@ public class KnownPid implements Serializable {
             return true;
         if (obj == null)
             return false;
-        if (getClass() != obj.getClass())
+        if (!(obj instanceof KnownPid))
             return false;
         KnownPid other = (KnownPid) obj;
         if (created == null) {
