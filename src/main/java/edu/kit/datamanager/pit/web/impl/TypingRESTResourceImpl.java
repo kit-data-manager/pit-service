@@ -33,6 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -595,25 +596,26 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             modifiedBefore = Instant.now().plus(1, ChronoUnit.DAYS);
         }
 
-        Collection<KnownPid> resultCreatedTimestamp = new ArrayList<>();
-        Collection<KnownPid> resultModifiedTimestamp = new ArrayList<>();
+        Page<KnownPid> resultCreatedTimestamp = Page.empty();
+        Page<KnownPid> resultModifiedTimestamp = Page.empty();
         if (queriesCreated) {
             resultCreatedTimestamp = this.localPidStorage
-                .findDistinctPidsByCreatedBetween(createdAfter, createdBefore);
+                .findDistinctPidsByCreatedBetween(createdAfter, createdBefore, pageable);
         }
         if (queriesModified) {
             resultModifiedTimestamp = this.localPidStorage
-                .findDistinctPidsByModifiedBetween(modifiedAfter, modifiedBefore);
+                .findDistinctPidsByModifiedBetween(modifiedAfter, modifiedBefore, pageable);
         }
         if (queriesCreated && queriesModified) {
-            resultCreatedTimestamp.retainAll(resultModifiedTimestamp);
-            return ResponseEntity.ok().body(resultCreatedTimestamp);
+            final Page<KnownPid> tmp = resultModifiedTimestamp;
+            resultCreatedTimestamp.filter((x) -> tmp.getContent().contains(x));
+            return ResponseEntity.ok().body(resultCreatedTimestamp.getContent());
         } else if (queriesCreated) {
-            return ResponseEntity.ok().body(resultCreatedTimestamp);
+            return ResponseEntity.ok().body(resultCreatedTimestamp.getContent());
         } else if (queriesModified) {
-            return ResponseEntity.ok().body(resultModifiedTimestamp);
+            return ResponseEntity.ok().body(resultModifiedTimestamp.getContent());
         }
-        return ResponseEntity.ok().body(new ArrayList<>());
+        return ResponseEntity.ok().body(new ArrayList<KnownPid>());
     }
 
     private boolean validateRecord(PIDRecord record) throws DataTypeException, IOException {

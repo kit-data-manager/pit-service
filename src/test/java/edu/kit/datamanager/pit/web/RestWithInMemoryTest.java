@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 
 // Might be needed for WebApp testing according to https://www.baeldung.com/integration-testing-in-spring
@@ -244,38 +245,65 @@ public class RestWithInMemoryTest {
         assertEquals(2, this.knownPidsDao.count());
         assertNotEquals(r.getPid(), r2.getPid());
         
-        List<KnownPid> pidinfos = queryKnownPIDs(YESTERDAY, TOMORROW, null, null);
+        List<KnownPid> pidinfos = queryKnownPIDs(YESTERDAY, TOMORROW, null, null, Optional.empty());
         
         assertEquals(2, pidinfos.size());
         assertEquals(r.getPid(), pidinfos.get(0).getPid());
         assertEquals(r2.getPid(), pidinfos.get(1).getPid());
         
-        pidinfos = queryKnownPIDs(null, TOMORROW, null, null);
-        
-        assertEquals(2, pidinfos.size());
-        assertEquals(r.getPid(), pidinfos.get(0).getPid());
-        assertEquals(r2.getPid(), pidinfos.get(1).getPid());
-
-        pidinfos = queryKnownPIDs(YESTERDAY, null, null, null);
+        pidinfos = queryKnownPIDs(null, TOMORROW, null, null, Optional.empty());
         
         assertEquals(2, pidinfos.size());
         assertEquals(r.getPid(), pidinfos.get(0).getPid());
         assertEquals(r2.getPid(), pidinfos.get(1).getPid());
 
-        pidinfos = queryKnownPIDs(null, null, null, TOMORROW);
+        pidinfos = queryKnownPIDs(YESTERDAY, null, null, null, Optional.empty());
         
         assertEquals(2, pidinfos.size());
         assertEquals(r.getPid(), pidinfos.get(0).getPid());
         assertEquals(r2.getPid(), pidinfos.get(1).getPid());
 
-        pidinfos = queryKnownPIDs(null, null, YESTERDAY, null);
+        pidinfos = queryKnownPIDs(null, null, null, TOMORROW, Optional.empty());
         
         assertEquals(2, pidinfos.size());
         assertEquals(r.getPid(), pidinfos.get(0).getPid());
         assertEquals(r2.getPid(), pidinfos.get(1).getPid());
 
-        pidinfos = queryKnownPIDs(null, NOW.minusSeconds(60), null, null);
+        pidinfos = queryKnownPIDs(null, null, YESTERDAY, null, Optional.empty());
+        
+        assertEquals(2, pidinfos.size());
+        assertEquals(r.getPid(), pidinfos.get(0).getPid());
+        assertEquals(r2.getPid(), pidinfos.get(1).getPid());
+
+        pidinfos = queryKnownPIDs(null, NOW.minusSeconds(60), null, null, Optional.empty());
         assertEquals(0, pidinfos.size());
+    }
+
+    /**
+     * This test documents the way pagination can be used with the API. If this test
+     * fails/changes, it likely must be released as a new major release.
+     * 
+     * @throws Exception on failed assumptions
+     */
+    @Test
+    void testKnownPidIntervalWithPaging() throws Exception {
+        // see also https://www.baeldung.com/rest-api-pagination-in-spring
+        PIDRecord r = this.createSomeRecord();
+        PIDRecord r2 = this.createSomeRecord();
+        assertEquals(2, this.knownPidsDao.count());
+        assertNotEquals(r.getPid(), r2.getPid());
+        List<KnownPid> pidinfos = queryKnownPIDs(YESTERDAY, TOMORROW, null, null, Optional.empty());
+        assertEquals(2, pidinfos.size());
+
+        Pageable pageable = Pageable.ofSize(1).first();
+        pidinfos = queryKnownPIDs(YESTERDAY, TOMORROW, null, null, Optional.of(pageable));
+        assertEquals(1, pidinfos.size());
+        assertEquals(r.getPid(), pidinfos.get(0).getPid());
+
+        pageable = pageable.next();
+        pidinfos = queryKnownPIDs(YESTERDAY, TOMORROW, null, null, Optional.of(pageable));
+        assertEquals(1, pidinfos.size());
+        assertEquals(r2.getPid(), pidinfos.get(0).getPid());
     }
 
     /**
@@ -286,12 +314,23 @@ public class RestWithInMemoryTest {
      * @param createdBefore  upper end for the creation timestamp interval
      * @param modifiedAfter  lower end for the modification timestamp interval
      * @param modifiedBefore upper end for the modification timestamp interval
+     * @param pageable       an optional parameter to indicate the page which should
+     *                       be returned
      * @return the result of the query
      * @throws Exception on failed assumptions
      */
-    private List<KnownPid> queryKnownPIDs(Instant createdAfter, Instant createdBefore, Instant modifiedAfter, Instant modifiedBefore)
-            throws Exception {
+    private List<KnownPid> queryKnownPIDs(
+        Instant createdAfter,
+        Instant createdBefore,
+        Instant modifiedAfter,
+        Instant modifiedBefore,
+        Optional<Pageable> pageable
+    ) throws Exception {
         MockHttpServletRequestBuilder request =  get("/api/v1/pit/known-pid/");
+        if (pageable.isPresent()) {
+            request.param("page", String.valueOf(pageable.get().getPageNumber()));
+            request.param("size", String.valueOf(pageable.get().getPageSize()));
+        }
         if (createdAfter != null) {
             request.param("created_after", String.valueOf(createdAfter));
         }
@@ -326,8 +365,23 @@ public class RestWithInMemoryTest {
      * @return the result of the query
      * @throws Exception on failed assumptions
      */
-    private List<KnownPid> queryKnownPIDsViaJava(Instant createdAfter, Instant createdBefore, Instant modifiedAfter, Instant modifiedBefore) throws IOException {
-        ResponseEntity<Collection<KnownPid>> response = this.restImpl.findByInterval(createdAfter, createdBefore, modifiedAfter, modifiedBefore, Pageable.ofSize(10), null, null, null);
+    private List<KnownPid> queryKnownPIDsViaJava(
+        Instant createdAfter,
+        Instant createdBefore,
+        Instant modifiedAfter,
+        Instant modifiedBefore,
+        Optional<Pageable> pageable
+    ) throws IOException {
+        ResponseEntity<Collection<KnownPid>> response = this.restImpl.findByInterval(
+            createdAfter,
+            createdBefore,
+            modifiedAfter,
+            modifiedBefore,
+            pageable.get(),
+            null,
+            null,
+            null
+        );
         Collection<KnownPid> pidinfos = response.getBody();
         return new ArrayList<>(pidinfos);
     }
