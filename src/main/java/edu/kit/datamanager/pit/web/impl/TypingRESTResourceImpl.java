@@ -608,8 +608,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
         if (queriesCreated && queriesModified) {
             final Page<KnownPid> tmp = resultModifiedTimestamp;
-            resultCreatedTimestamp.filter((x) -> tmp.getContent().contains(x));
-            return ResponseEntity.ok().body(resultCreatedTimestamp.getContent());
+            Collection<KnownPid> intersection = resultCreatedTimestamp.filter((x) -> tmp.getContent().contains(x)).toList();
+            return ResponseEntity.ok().body(intersection);
         } else if (queriesCreated) {
             return ResponseEntity.ok().body(resultCreatedTimestamp.getContent());
         } else if (queriesModified) {
