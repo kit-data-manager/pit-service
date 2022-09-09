@@ -279,6 +279,35 @@ public class RestWithInMemoryTest {
         assertEquals(0, pidinfos.size());
     }
 
+    @Test
+    void testKnownPidIntervalSuccessIntervallMadness() throws Exception {
+        PIDRecord r1 = this.createSomeRecord();
+        PIDRecord r2 = this.createSomeRecord();
+        assertEquals(2, this.knownPidsDao.count());
+        assertNotEquals(r1.getPid(), r2.getPid());
+        
+        List<KnownPid> pidinfos = queryKnownPIDs(YESTERDAY, TOMORROW, null, null, Optional.empty());
+        
+        assertEquals(2, pidinfos.size());
+        KnownPid r1Info = pidinfos.get(0);
+        KnownPid r2Info = pidinfos.get(1);
+        assertEquals(r1.getPid(), r1Info.getPid());
+        assertEquals(r2.getPid(), r2Info.getPid());
+
+        // we now limit the interval to the first one, so the second should not be included
+        pidinfos = queryKnownPIDs(YESTERDAY, r1Info.getCreated().plus(3, ChronoUnit.MILLIS), null, null, Optional.empty());
+        
+        assertEquals(1, pidinfos.size());
+        assertEquals(r1.getPid(), pidinfos.get(0).getPid());
+
+        // now the creation interval will include both, but the modified interval only the second.
+        this.createSomeRecord();  // add some record to see if the interval does not enclose it, because it is modified too late.
+        pidinfos = queryKnownPIDs(YESTERDAY, TOMORROW, r1Info.getModified().plus(2, ChronoUnit.MILLIS), r2Info.getModified().plus(3, ChronoUnit.MILLIS), Optional.empty());
+        
+        assertEquals(1, pidinfos.size());
+        assertEquals(r2.getPid(), pidinfos.get(0).getPid());
+    }
+
     /**
      * This test documents the way pagination can be used with the API. If this test
      * fails/changes, it likely must be released as a new major release.
