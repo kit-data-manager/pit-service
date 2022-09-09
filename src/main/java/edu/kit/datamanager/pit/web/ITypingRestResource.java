@@ -227,18 +227,14 @@ public interface ITypingRestResource {
 
 
     /**
-     * Requests a PID from the local store. If this PID is known, it will be returned
-     * together with the timestamps of creation and modification executed on this
-     * PID by this service.
+     * Requests a PID from the local store. If this PID is known, it will be
+     * returned together with the timestamps of creation and modification executed
+     * on this PID by this service.
      * 
      * This store is not a cache! Instead, the service remembers every PID which it
      * created (and resolved, depending on the configuration parameter
      * `pit.storage.strategy` of the service) on request.
      * 
-     * @param pid        the PID to request timestamps for.
-     * @param request
-     * @param response
-     * @param uriBuilder
      * @return the known PID and its timestamps.
      * @throws IOException
      */
@@ -264,10 +260,6 @@ public interface ITypingRestResource {
     )
 @GetMapping(path = "/known-pid/**")
     public ResponseEntity<KnownPid> findByPid(
-            //@Parameter(name = "pid", description = "The PID to request timestamps for.")
-            //@PathVariable(name = "pid", required = true)
-            //String pid,
-            
             final WebRequest request,
             
             final HttpServletResponse response,
@@ -286,15 +278,14 @@ public interface ITypingRestResource {
       * resolved, depending on the configuration parameter `pit.storage.strategy` of
       * the service) on request.
       * 
-      * @param createdAfter defines the earliest date for the creation timestamp.
-      * @param createdBefore defines the latest date for the creation timestamp.
-      * @param modifiedAfter defines the earliest date for the modification timestamp.
+      * @param createdAfter   defines the earliest date for the creation timestamp.
+      * @param createdBefore  defines the latest date for the creation timestamp.
+      * @param modifiedAfter  defines the earliest date for the modification
+      *                       timestamp.
       * @param modifiedBefore defines the latest date for the modification timestamp.
-      * @param pageable defines page size and page to navigate through large lists.
-      * @param request
-      * @param response
-      * @param uriBuilder
-      * @return
+      * @param pageable       defines page size and page to navigate through large
+      *                       lists.
+      * @return the PIDs matching all given contraints.
       */
     @Operation(
         summary = "Return a list of known PIDs and their timestamps, filtered by the given criterial.",
