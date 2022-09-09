@@ -194,3 +194,8 @@ jacocoTestReport {
     }
 }
 
+release {
+    git {
+        requireBranch.set("master")
+    }
+}
