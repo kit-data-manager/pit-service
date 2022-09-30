@@ -6,7 +6,7 @@ ARG SERVICE_DIRECTORY=/typid
 ####################################################
 
 # Create a clean, minimal image
-FROM openjdk:17-bullseye as typed-pid-maker
+FROM eclipse-temurin:17 as typed-pid-maker
 LABEL maintainer="webmaster@datamanager.kit.edu"
 LABEL stage=run
 
