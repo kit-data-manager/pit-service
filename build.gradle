@@ -54,7 +54,7 @@ configurations {
 }
 
 ext {
-    springDocVersion  = '1.6.11'
+    springDocVersion  = '1.6.12'
 }
 
 dependencies {
