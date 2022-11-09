@@ -34,7 +34,6 @@ public class KnownPidsDaoTest {
 
     @Autowired
     private KnownPidsDao knownPidsDao;
-    private KnownPidsDao instance;
 
     private static final Instant NOW = Instant.now();
 
@@ -57,7 +56,6 @@ public class KnownPidsDaoTest {
     @BeforeEach
     public void setUp() {
         prepareDataBase();
-        instance = knownPidsDao;
     }
 
     @AfterEach
@@ -81,7 +79,7 @@ public class KnownPidsDaoTest {
 
     @Test
     void testEntryWasOverridden() {
-        Optional<KnownPid> entry = instance.findByPid("too_late");
+        Optional<KnownPid> entry = knownPidsDao.findByPid("too_late");
         assertTrue(entry.isPresent());
         System.out.println("Found: " + entry.get().toString());
         assertEquals(TOO_LATE, entry.get().getCreated());
@@ -90,7 +88,7 @@ public class KnownPidsDaoTest {
 
     @Test
     void testCountDistinctPidsByCreatedBetween() {
-        long num = instance.countDistinctPidsByCreatedBetween(MIN, MAX);
+        long num = knownPidsDao.countDistinctPidsByCreatedBetween(MIN, MAX);
         assertEquals(3, num);
     }
 
@@ -99,24 +97,24 @@ public class KnownPidsDaoTest {
         // First, let us define a long time span by one year before and after
         Instant MAX = TOO_LATE.plus(357, ChronoUnit.DAYS);
         Instant MIN = TOO_SOON.minus(357, ChronoUnit.DAYS);
-        long numOfAll = instance.count();
+        long numOfAll = knownPidsDao.count();
         assertEquals(7, numOfAll);
-        long num = instance.countDistinctPidsByCreatedBetween(MIN, MAX);
+        long num = knownPidsDao.countDistinctPidsByCreatedBetween(MIN, MAX);
         assertEquals(numOfAll, num);
         // Seems like some component does not support Instant.MIN or Instant.MAX:
         assertThrows(
             DateTimeException.class,
-            () -> instance.countDistinctPidsByCreatedBetween(Instant.MIN, MAX));
+            () -> knownPidsDao.countDistinctPidsByCreatedBetween(Instant.MIN, MAX));
         assertThrows(
             DateTimeException.class,
-            () -> instance.countDistinctPidsByCreatedBetween(MIN, Instant.MAX));
+            () -> knownPidsDao.countDistinctPidsByCreatedBetween(MIN, Instant.MAX));
         // It also does not support null:
-        num = instance.countDistinctPidsByCreatedBetween(null, MAX);
+        num = knownPidsDao.countDistinctPidsByCreatedBetween(null, MAX);
         assertEquals(0, num);
-        num = instance.countDistinctPidsByCreatedBetween(MIN, null);
+        num = knownPidsDao.countDistinctPidsByCreatedBetween(MIN, null);
         assertEquals(0, num);
         // Now, let us define a long time span the probably minimum supported by the DAO, Instant.Epoch:
-        num = instance.countDistinctPidsByCreatedBetween(Instant.EPOCH, MAX);
+        num = knownPidsDao.countDistinctPidsByCreatedBetween(Instant.EPOCH, MAX);
         assertEquals(numOfAll, num);
         // This means, to define a Minimum, we should use Instant.EPOCH,
         // and for a maximum we should use something in the future from Instant.now().
@@ -124,19 +122,19 @@ public class KnownPidsDaoTest {
 
     @Test
     void testCountDistinctPidsByModifiedBetween() {
-        long num = instance.countDistinctPidsByModifiedBetween(MIN, MAX);
+        long num = knownPidsDao.countDistinctPidsByModifiedBetween(MIN, MAX);
         assertEquals(3, num);
     }
 
     @Test
     void testFindByPid() {
-        Optional<KnownPid> entry = instance.findByPid("now");
+        Optional<KnownPid> entry = knownPidsDao.findByPid("now");
         assertTrue(entry.isPresent());
     }
 
     @Test
     void testFindDistinctPidsByCreated() {
-        Collection<KnownPid> siblings = instance.findDistinctPidsByCreated(TOO_LATE);
+        Collection<KnownPid> siblings = knownPidsDao.findDistinctPidsByCreated(TOO_LATE);
         assertEquals(2, siblings.size());
     }
 
@@ -145,7 +143,7 @@ public class KnownPidsDaoTest {
         Pageable page = PageRequest.ofSize(1).first();
         Page<KnownPid> page_siblings;
         do {
-            page_siblings = instance.findDistinctPidsByCreated(TOO_LATE, page);
+            page_siblings = knownPidsDao.findDistinctPidsByCreated(TOO_LATE, page);
             assertEquals(2, page_siblings.getTotalElements());
             assertEquals(2, page_siblings.getTotalPages());
             assertEquals(1, page_siblings.getNumberOfElements());
@@ -155,7 +153,7 @@ public class KnownPidsDaoTest {
 
     @Test
     void testFindDistinctPidsByCreatedBetween() {
-        Collection<KnownPid> pids = instance.findDistinctPidsByCreatedBetween(MIN, MAX);
+        Collection<KnownPid> pids = knownPidsDao.findDistinctPidsByCreatedBetween(MIN, MAX);
         assertEquals(3, pids.size());
     }
 
@@ -164,7 +162,7 @@ public class KnownPidsDaoTest {
         Pageable page = PageRequest.ofSize(1).first();
         Page<KnownPid> page_siblings;
         do {
-            page_siblings = instance.findDistinctPidsByCreatedBetween(MIN, MAX, page);
+            page_siblings = knownPidsDao.findDistinctPidsByCreatedBetween(MIN, MAX, page);
             assertEquals(3, page_siblings.getTotalElements());
             assertEquals(3, page_siblings.getTotalPages());
             assertEquals(1, page_siblings.getNumberOfElements());
@@ -174,7 +172,7 @@ public class KnownPidsDaoTest {
 
     @Test
     void testFindDistinctPidsByModified() {
-        Collection<KnownPid> pids = instance.findDistinctPidsByModified(TOO_SOON);
+        Collection<KnownPid> pids = knownPidsDao.findDistinctPidsByModified(TOO_SOON);
         assertEquals(2, pids.size());
     }
 
@@ -183,7 +181,7 @@ public class KnownPidsDaoTest {
         Pageable page = PageRequest.ofSize(1).first();
         Page<KnownPid> page_siblings;
         do {
-            page_siblings = instance.findDistinctPidsByModifiedBetween(MIN, MAX, page);
+            page_siblings = knownPidsDao.findDistinctPidsByModifiedBetween(MIN, MAX, page);
             assertEquals(3, page_siblings.getTotalElements());
             assertEquals(3, page_siblings.getTotalPages());
             assertEquals(1, page_siblings.getNumberOfElements());
@@ -193,7 +191,7 @@ public class KnownPidsDaoTest {
 
     @Test
     void testFindDistinctPidsByModifiedBetween() {
-        Collection<KnownPid> pids = instance.findDistinctPidsByModifiedBetween(MIN, MAX);
+        Collection<KnownPid> pids = knownPidsDao.findDistinctPidsByModifiedBetween(MIN, MAX);
         assertEquals(3, pids.size());
     }
 
@@ -202,7 +200,7 @@ public class KnownPidsDaoTest {
         Pageable page = PageRequest.ofSize(1).first();
         Page<KnownPid> page_siblings;
         do {
-            page_siblings = instance.findDistinctPidsByModifiedBetween(MIN, MAX, page);
+            page_siblings = knownPidsDao.findDistinctPidsByModifiedBetween(MIN, MAX, page);
             assertEquals(3, page_siblings.getTotalElements());
             assertEquals(3, page_siblings.getTotalPages());
             assertEquals(1, page_siblings.getNumberOfElements());
