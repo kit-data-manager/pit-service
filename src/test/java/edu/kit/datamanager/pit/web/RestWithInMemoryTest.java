@@ -231,6 +231,16 @@ public class RestWithInMemoryTest {
             .andDo(MockMvcResultHandlers.print())
             .andExpect(MockMvcResultMatchers.status().isNotFound());
     }
+    
+    @Test
+    void testKnownPidsQueryAll() throws Exception {
+        this.createSomeRecord();
+        this.createSomeRecord();
+        assertEquals(2, this.knownPidsDao.count());
+
+        List<KnownPid> pidinfos = queryKnownPIDs(null, null, null, null, Optional.of(Pageable.ofSize(2)));
+        assertEquals(2, pidinfos.size());
+    }
 
     /**
      * This test ensures that the different combinations of parameters can be given

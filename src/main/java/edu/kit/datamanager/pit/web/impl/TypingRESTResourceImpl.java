@@ -615,7 +615,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         } else if (queriesModified) {
             return ResponseEntity.ok().body(resultModifiedTimestamp.getContent());
         }
-        return ResponseEntity.ok().body(new ArrayList<KnownPid>());
+        return ResponseEntity.ok().body(this.localPidStorage.findAll());
     }
 
     private boolean validateRecord(PIDRecord record) throws DataTypeException, IOException {
