@@ -4,7 +4,6 @@ import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -404,11 +403,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         LOG.info("Creating PID");
         boolean valid = false;
         try {
-            if (applicationProps.getValidationStrategy() == ValidationStrategy.EMBEDDED_STRICT) {
-                valid = this.validateRecord(record);
-            }
+            valid = this.executeValidationStrategy(record);
         } catch (DataTypeException e) {
-            throw new RecordValidationException("(no PID registered yet)", e.getMessage());
+            throw new RecordValidationException("(no PID has been registered)", e.getMessage());
         }
         String profileKey = applicationProps.getProfileKey();
         boolean missingProfile = !record.hasProperty(profileKey)
@@ -464,9 +461,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         record.setPid(pid);
         boolean valid = false;
         try {
-            if (applicationProps.getValidationStrategy() == ValidationStrategy.EMBEDDED_STRICT) {
-                valid = this.validateRecord(record);
-            }
+            valid = this.executeValidationStrategy(record);
         } catch (DataTypeException e) {
             throw new RecordValidationException(pid, e.getMessage());
         }
@@ -618,7 +613,15 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return ResponseEntity.ok().body(this.localPidStorage.findAll());
     }
 
-    private boolean validateRecord(PIDRecord record) throws DataTypeException, IOException {
+    private boolean executeValidationStrategy(PIDRecord pidr) throws DataTypeException, IOException {
+        boolean valid = applicationProps.getValidationStrategy() == ValidationStrategy.NONE_DEBUG;
+        if (applicationProps.getValidationStrategy() == ValidationStrategy.EMBEDDED_STRICT) {
+            valid = this.validateEmbeddedStrict(pidr);
+        }
+        return valid;
+    }
+
+    private boolean validateEmbeddedStrict(PIDRecord record) throws DataTypeException, IOException {
         // TODO should be part of TypeValidationUtils / typing service or wherever
         // typing strategies will be in future.
         String profileKey = applicationProps.getProfileKey();
