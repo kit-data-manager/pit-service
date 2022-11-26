@@ -4,7 +4,7 @@ import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import edu.kit.datamanager.pit.common.DataTypeException;
@@ -21,6 +21,7 @@ import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.util.TypeValidationUtils;
 import edu.kit.datamanager.pit.web.ITypingRestResource;
+import edu.kit.datamanager.pit.web.TabulatorPaginationFormat;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.entities.messaging.PidRecordMessage;
 import edu.kit.datamanager.util.AuthenticationHelper;
@@ -33,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -565,19 +567,15 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return ResponseEntity.notFound().build();
     }
 
-    @Override
-    public ResponseEntity<Collection<KnownPid>> findByInterval(
+    public Page<KnownPid> findAllPage(
         Instant createdAfter,
         Instant createdBefore,
         Instant modifiedAfter,
         Instant modifiedBefore,
-        Pageable pageable,
-        WebRequest request,
-        HttpServletResponse response,
-        UriComponentsBuilder uriBuilder
-    ) throws IOException {
-        boolean queriesCreated = createdAfter != null || createdBefore != null;
-        boolean queriesModified = modifiedAfter != null || modifiedBefore != null;
+        Pageable pageable
+    ) {
+        final boolean queriesCreated = createdAfter != null || createdBefore != null;
+        final boolean queriesModified = modifiedAfter != null || modifiedBefore != null;
         if (queriesCreated && createdAfter == null) {
             createdAfter = Instant.EPOCH;
         }
@@ -603,14 +601,14 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
         if (queriesCreated && queriesModified) {
             final Page<KnownPid> tmp = resultModifiedTimestamp;
-            Collection<KnownPid> intersection = resultCreatedTimestamp.filter((x) -> tmp.getContent().contains(x)).toList();
-            return ResponseEntity.ok().body(intersection);
+            final List<KnownPid> intersection = resultCreatedTimestamp.filter((x) -> tmp.getContent().contains(x)).toList();
+            return new PageImpl<>(intersection);
         } else if (queriesCreated) {
-            return ResponseEntity.ok().body(resultCreatedTimestamp.getContent());
+            return resultCreatedTimestamp;
         } else if (queriesModified) {
-            return ResponseEntity.ok().body(resultModifiedTimestamp.getContent());
+            return resultModifiedTimestamp;
         }
-        return ResponseEntity.ok().body(this.localPidStorage.findAll());
+        return new PageImpl<>(this.localPidStorage.findAll());
     }
 
     private boolean executeValidationStrategy(PIDRecord pidr) throws DataTypeException, IOException {
@@ -646,6 +644,37 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public ResponseEntity<List<KnownPid>> findAll(
+            Instant createdAfter,
+            Instant createdBefore,
+            Instant modifiedAfter,
+            Instant modifiedBefore,
+            Pageable pageable,
+            WebRequest request,
+            HttpServletResponse response,
+            UriComponentsBuilder uriBuilder) throws IOException
+    {
+        Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
+        return ResponseEntity.ok().body(page.getContent());
+    }
+
+    @Override
+    public ResponseEntity<TabulatorPaginationFormat<KnownPid>> findAllForTabular(
+            Instant createdAfter,
+            Instant createdBefore,
+            Instant modifiedAfter,
+            Instant modifiedBefore,
+            Pageable pageable,
+            WebRequest request,
+            HttpServletResponse response,
+            UriComponentsBuilder uriBuilder) throws IOException
+    {
+        Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
+        TabulatorPaginationFormat<KnownPid> tabPage = new TabulatorPaginationFormat<>(page);
+        return ResponseEntity.ok().body(tabPage);
     }
 
     // /**

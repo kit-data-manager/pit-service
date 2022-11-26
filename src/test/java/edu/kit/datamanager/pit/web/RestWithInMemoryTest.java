@@ -53,7 +53,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -411,7 +410,7 @@ public class RestWithInMemoryTest {
         Instant modifiedBefore,
         Optional<Pageable> pageable
     ) throws IOException {
-        ResponseEntity<Collection<KnownPid>> response = this.restImpl.findByInterval(
+        ResponseEntity<List<KnownPid>> response = this.restImpl.findAll(
             createdAfter,
             createdBefore,
             modifiedAfter,
@@ -421,8 +420,7 @@ public class RestWithInMemoryTest {
             null,
             null
         );
-        Collection<KnownPid> pidinfos = response.getBody();
-        return new ArrayList<>(pidinfos);
+        return new ArrayList<>(response.getBody());
     }
 
     /**
