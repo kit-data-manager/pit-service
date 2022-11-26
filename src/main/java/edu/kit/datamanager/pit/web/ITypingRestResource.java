@@ -30,7 +30,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Collection;
+import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -267,35 +267,32 @@ public interface ITypingRestResource {
             final UriComponentsBuilder uriBuilder
      ) throws IOException;
 
-
-     /**
-      * Return a list of known PIDs and their timestamps (creation and modification),
-      * filtered by the given criterial. If no criteria is given, all known PIDs can
-      * be received (by paging, if the number is too large).
-      * 
-      * Known PIDs are defined as being stored in a local store. This store is not a
-      * cache! Instead, the service remembers every PID which it created (and
-      * resolved, depending on the configuration parameter `pit.storage.strategy` of
-      * the service) on request.
-      * 
-      * @param createdAfter   defines the earliest date for the creation timestamp.
-      * @param createdBefore  defines the latest date for the creation timestamp.
-      * @param modifiedAfter  defines the earliest date for the modification
-      *                       timestamp.
-      * @param modifiedBefore defines the latest date for the modification timestamp.
-      * @param pageable       defines page size and page to navigate through large
-      *                       lists.
-      * @return the PIDs matching all given contraints.
-      */
+    /**
+     * Returns all known PIDs, limited by the given page size and number.
+     * Several filtering criteria are also available.
+     * 
+     * Known PIDs are defined as being stored in a local store. This store is not a
+     * cache! Instead, the service remembers every PID which it created (and
+     * resolved, depending on the configuration parameter `pit.storage.strategy` of
+     * the service) on request.
+     * 
+     * @param createdAfter   defines the earliest date for the creation timestamp.
+     * @param createdBefore  defines the latest date for the creation timestamp.
+     * @param modifiedAfter  defines the earliest date for the modification
+     *                       timestamp.
+     * @param modifiedBefore defines the latest date for the modification timestamp.
+     * @param pageable       defines page size and page to navigate through large
+     *                       lists.
+     * @return the PIDs matching all given contraints.
+     */
     @Operation(
-        summary = "Return a list of known PIDs and their timestamps, filtered by the given criterial.",
-        description = "Return a list of known PIDs and their timestamps (creation and modification),"
-        + " filtered by the given criterial. If no criteria is given, all known PIDs can"
-        + " be received (by paging, if the number is too large)."
-        + " Known PIDs are defined as being stored in a local store. This store is not a"
-        + " cache! Instead, the service remembers every PID which it created (and"
-        + " resolved, depending on the configuration parameter `pit.storage.strategy` of"
-        + " the service) on request.",
+        summary = "Returns all known PIDs.",
+        description = "Returns all known PIDs, limited by the given page size and number."
+            + "Several filtering criteria are also available. Known PIDs are defined as "
+            + "being stored in a local store. This store is not a cache! Instead, the "
+            + "service remembers every PID which it created (and resolved, depending on "
+            + "the configuration parameter `pit.storage.strategy` of the service) on"
+            + "request.",
         responses = {
             @ApiResponse(
                 responseCode = "200",
@@ -306,12 +303,11 @@ public interface ITypingRestResource {
     )
     @GetMapping(path = "/known-pid")
     @PageableAsQueryParam
-    public ResponseEntity<Collection<KnownPid>> findByInterval(
-
+    public ResponseEntity<List<KnownPid>> findAll(
             @Parameter(name = "created_after", description = "The UTC time of the earliest creation timestamp of a returned PID.", required = false)
             @RequestParam(name = "created_after", required = false)
             Instant createdAfter,
-            
+
             @Parameter(name = "created_before", description = "The UTC time of the latest creation timestamp of a returned PID.", required = false)
             @RequestParam(name = "created_before", required = false)
             Instant createdBefore,
@@ -323,7 +319,60 @@ public interface ITypingRestResource {
             @Parameter(name = "modified_before", description = "The UTC time of the latest modification timestamp of a returned PID.", required = false)
             @RequestParam(name = "modified_before", required = false)
             Instant modifiedBefore,
+
+            @Parameter(hidden = true)
+            @PageableDefault(sort = {"modified"}, direction = Sort.Direction.ASC)
+            Pageable pageable,
             
+            WebRequest request,
+            
+            HttpServletResponse response,
+            
+            UriComponentsBuilder uriBuilder
+    ) throws IOException;
+
+    /**
+     * Like findAll, but the return value is formatted for the tabulator
+     * javascript library.
+     * 
+     * @param createdAfter   defines the earliest date for the creation timestamp.
+     * @param createdBefore  defines the latest date for the creation timestamp.
+     * @param modifiedAfter  defines the earliest date for the modification
+     *                       timestamp.
+     * @param modifiedBefore defines the latest date for the modification timestamp.
+     * @param pageable       defines page size and page to navigate through large
+     *                       lists.
+     * @return the PIDs matching all given contraints.
+     */
+      @Operation(
+        summary = "Like findAll, but the return value is formatted for the tabulator javascript library.",
+        responses = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "If the request was valid. May return an empty list.",
+                content = @Content(schema = @Schema(implementation = TabulatorPaginationFormat.class))
+            )
+        }
+    )
+    @GetMapping(path = "/known-pid", produces={"application/tabulator+json"}, headers = "Accept=application/tabulator+json")
+    @PageableAsQueryParam
+    public ResponseEntity<TabulatorPaginationFormat<KnownPid>> findAllForTabular(
+            @Parameter(name = "created_after", description = "The UTC time of the earliest creation timestamp of a returned PID.", required = false)
+            @RequestParam(name = "created_after", required = false)
+            Instant createdAfter,
+
+            @Parameter(name = "created_before", description = "The UTC time of the latest creation timestamp of a returned PID.", required = false)
+            @RequestParam(name = "created_before", required = false)
+            Instant createdBefore,
+
+            @Parameter(name = "modified_after", description = "The UTC time of the earliest modification timestamp of a returned PID.", required = false)
+            @RequestParam(name = "modified_after", required = false)
+            Instant modifiedAfter,
+            
+            @Parameter(name = "modified_before", description = "The UTC time of the latest modification timestamp of a returned PID.", required = false)
+            @RequestParam(name = "modified_before", required = false)
+            Instant modifiedBefore,
+
             @Parameter(hidden = true)
             @PageableDefault(sort = {"modified"}, direction = Sort.Direction.ASC)
             Pageable pageable,
