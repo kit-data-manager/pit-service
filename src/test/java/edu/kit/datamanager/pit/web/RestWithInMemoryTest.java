@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import javax.servlet.ServletContext;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -378,6 +379,43 @@ public class RestWithInMemoryTest {
         assertEquals(r2.getPid(), pidinfos.get(0).getPid());
     }
 
+    @Test
+    void testTabulatorFormat() throws Exception {
+        PIDRecord r = this.createSomeRecord();
+        PIDRecord r2 = this.createSomeRecord();
+        assertEquals(2, this.knownPidsDao.count());
+        assertNotEquals(r.getPid(), r2.getPid());
+        JsonNode pidinfos = queryKnownPIDsInTabulatorFormat(YESTERDAY, TOMORROW, null, null, Optional.empty());
+        System.out.println(pidinfos);
+        assertEquals(2, pidinfos.get("data").size());
+
+        Pageable pageable = Pageable.ofSize(1).first();
+        pidinfos = queryKnownPIDsInTabulatorFormat(YESTERDAY, TOMORROW, null, null, Optional.of(pageable));
+        assertEquals(1, pidinfos.get("data").size());
+        assertEquals(
+            r.getPid(),
+            pidinfos
+                .get("data")
+                .get(0)
+                .get("pid")
+                .toString()
+                .replace("\"", "")
+        );
+
+        pageable = pageable.next();
+        pidinfos = queryKnownPIDsInTabulatorFormat(YESTERDAY, TOMORROW, null, null, Optional.of(pageable));
+        assertEquals(1, pidinfos.get("data").size());
+        assertEquals(
+            r2.getPid(),
+            pidinfos
+                .get("data")
+                .get(0)
+                .get("pid")
+                .toString()
+                .replace("\"", "")
+        );
+    }
+
     /**
      * Wrapper to query known PIDs via API given time intervals for the creation
      * timestamp and modification timestamp. This is a reusable etst component.
@@ -423,6 +461,41 @@ public class RestWithInMemoryTest {
         String body = result.getResponse().getContentAsString();
         List<KnownPid> pidinfos = Arrays.asList(this.mapper.readerForArrayOf(KnownPid.class).readValue(body));
         return pidinfos;
+    }
+
+    private JsonNode queryKnownPIDsInTabulatorFormat(
+        Instant createdAfter,
+        Instant createdBefore,
+        Instant modifiedAfter,
+        Instant modifiedBefore,
+        Optional<Pageable> pageable
+    ) throws Exception {
+        MockHttpServletRequestBuilder request =  get("/api/v1/pit/known-pid/");
+        if (pageable.isPresent()) {
+            request.param("page", String.valueOf(pageable.get().getPageNumber()));
+            request.param("size", String.valueOf(pageable.get().getPageSize()));
+        }
+        if (createdAfter != null) {
+            request.param("created_after", String.valueOf(createdAfter));
+        }
+        if (createdBefore != null) {
+            request.param("created_before", String.valueOf(createdBefore));
+        }
+        if (modifiedAfter != null) {
+            request.param("modified_after", String.valueOf(modifiedAfter));
+        }
+        if (modifiedBefore != null) {
+            request.param("modified_before", String.valueOf(modifiedBefore));
+        }
+        request.accept("application/tabulator+json");
+
+        MvcResult result = this.mockMvc.perform(request)
+            .andDo(MockMvcResultHandlers.print())
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andReturn();
+
+        String body = result.getResponse().getContentAsString();
+        return this.mapper.readTree(body);
     }
 
     /**
