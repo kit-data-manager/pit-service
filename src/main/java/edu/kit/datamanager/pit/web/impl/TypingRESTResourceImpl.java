@@ -30,6 +30,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.http.client.cache.HeaderConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -658,6 +659,12 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             UriComponentsBuilder uriBuilder) throws IOException
     {
         Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
+        response.addHeader(
+            HeaderConstants.CONTENT_RANGE,
+            ControllerUtils.getContentRangeHeader(
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements()));
         return ResponseEntity.ok().body(page.getContent());
     }
 
@@ -673,6 +680,12 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             UriComponentsBuilder uriBuilder) throws IOException
     {
         Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
+        response.addHeader(
+            HeaderConstants.CONTENT_RANGE,
+            ControllerUtils.getContentRangeHeader(
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements()));
         TabulatorPaginationFormat<KnownPid> tabPage = new TabulatorPaginationFormat<>(page);
         return ResponseEntity.ok().body(tabPage);
     }
