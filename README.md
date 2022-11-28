@@ -2,9 +2,17 @@
 
 ![License](https://img.shields.io/github/license/kit-data-manager/pit-service.svg) [![Java CI with Gradle](https://github.com/kit-data-manager/pit-service/actions/workflows/gradle.yml/badge.svg)](https://github.com/kit-data-manager/pit-service/actions/workflows/gradle.yml)
 
-This project provides a service for dealing with PID Information Types and Kernel Information Profiles according to the recommendations of the Research Data Alliance. In the RDA context, this kind of service is called a "PIT service".
-Depending on the configuration it allows minting PIDs from different services, to lookup PIDs with a specific record entry and to validate PIDs according to profile information
-contained in the PID record.
+The Typed PID Maker enables the creation, maintenance, and validation of PIDs. It ensures the PID contains typed, machine-actionable information using validation. This is especially helpful in the context of FAIR Digital Objects (FAIR DOs / FDOs). To make this work, our validation strategy requires a reference to a registered Kernel Information Profile within the PID record, as defined by the [recommendations of the Research Data Alliance (RDA)](https://doi.org/10.15497/rda00031). [In the RDA context, this kind of service is called a "PIT service"](https://doi.org/10.15497/FDAA09D5-5ED0-403D-B97A-2675E1EBE786). We use Handle PIDs, which can be created using a Handle Prefix (not included). For testing or other local purposes, we support sandboxed PIDs, which require no external service.
+
+## Features
+
+- ✅ Create PIDs containing typed key-value-pairs for easy, fast, and automated decision-making.
+- ✅ Maintain the information within these PIDs.
+- ✅ Validate PIDs.
+- ✅ Resolve PIDs.
+- ✅ Store the created PIDs in your database.
+  - ✅ Pagination support
+  - ✅ Tabulator.js support
 
 ## How to build
 
@@ -18,7 +26,7 @@ After obtaining the sources change to the folder where the sources are located p
 user@localhost:/home/user/typed-pid-maker$ ./gradlew build
 > Configure project :
 Using release profile for building notification-service
-<-------------> 0% EXECUTING [0s]
+<-------------> 42% EXECUTING [0s]
 [...]
 user@localhost:/home/user/typed-pid-maker$
 ```
