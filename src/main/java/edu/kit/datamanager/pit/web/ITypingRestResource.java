@@ -286,13 +286,13 @@ public interface ITypingRestResource {
      * @return the PIDs matching all given contraints.
      */
     @Operation(
-        summary = "Returns all known PIDs.",
-        description = "Returns all known PIDs, limited by the given page size and number."
+        summary = "Returns all known PIDs. Supports paging, filtering criteria, and different formats.",
+        description = "Returns all known PIDs, limited by the given page size and number. "
             + "Several filtering criteria are also available. Known PIDs are defined as "
             + "being stored in a local store. This store is not a cache! Instead, the "
             + "service remembers every PID which it created (and resolved, depending on "
-            + "the configuration parameter `pit.storage.strategy` of the service) on"
-            + "request.",
+            + "the configuration parameter `pit.storage.strategy` of the service) on "
+            + "request. Use the Accept header to adjust the format.",
         responses = {
             @ApiResponse(
                 responseCode = "200",
@@ -345,7 +345,13 @@ public interface ITypingRestResource {
      * @return the PIDs matching all given contraints.
      */
       @Operation(
-        summary = "Like findAll, but the return value is formatted for the tabulator javascript library.",
+        summary = "Returns all known PIDs. Supports paging, filtering criteria, and different formats.",
+        description = "Returns all known PIDs, limited by the given page size and number. "
+            + "Several filtering criteria are also available. Known PIDs are defined as "
+            + "being stored in a local store. This store is not a cache! Instead, the "
+            + "service remembers every PID which it created (and resolved, depending on "
+            + "the configuration parameter `pit.storage.strategy` of the service) on "
+            + "request. Use the Accept header to adjust the format.",
         responses = {
             @ApiResponse(
                 responseCode = "200",
