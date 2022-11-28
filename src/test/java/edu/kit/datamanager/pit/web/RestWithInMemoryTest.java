@@ -137,7 +137,41 @@ public class RestWithInMemoryTest {
         // we store PIDs only if the PID was created successfully
         assertEquals(0, this.knownPidsDao.count());
 
-        // Nothing is registered, our local storags contains no PIDs
+    @Test
+    public void testNontypeRecord() throws Exception {
+        PIDRecord r = new PIDRecord();
+        r.addEntry("unregisteredType", "for Testing", "hello");
+        this.mockMvc
+            .perform(
+                post("/api/v1/pit/pid/")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .characterEncoding("utf-8")
+                    .content(new ObjectMapper().writeValueAsString(r))
+                    .accept(MediaType.ALL)
+            )
+            .andDo(MockMvcResultHandlers.print())
+            .andExpect(MockMvcResultMatchers.status().isConflict());
+        
+        // we store PIDs only if the PID was created successfully
+        assertEquals(0, this.knownPidsDao.count());
+    }
+
+    @Test
+    public void testInvalidRecordWithProfile() throws Exception {
+        PIDRecord r = new PIDRecord();
+        r.addEntry("21.T11148/076759916209e5d62bd5", "for Testing", "21.T11148/301c6f04763a16f0f72a");
+        this.mockMvc
+            .perform(
+                post("/api/v1/pit/pid/")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .characterEncoding("utf-8")
+                    .content(new ObjectMapper().writeValueAsString(r))
+                    .accept(MediaType.ALL)
+            )
+            .andDo(MockMvcResultHandlers.print())
+            .andExpect(MockMvcResultMatchers.status().isConflict());
+        
+        // we store PIDs only if the PID was created successfully
         assertEquals(0, this.knownPidsDao.count());
     }
 
