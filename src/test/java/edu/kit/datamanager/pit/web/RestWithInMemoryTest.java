@@ -135,8 +135,10 @@ public class RestWithInMemoryTest {
             )
             .andDo(MockMvcResultHandlers.print())
             .andExpect(MockMvcResultMatchers.status().isConflict());
+        
         // we store PIDs only if the PID was created successfully
         assertEquals(0, this.knownPidsDao.count());
+    }
 
     @Test
     public void testNontypeRecord() throws Exception {
@@ -418,7 +420,7 @@ public class RestWithInMemoryTest {
 
     /**
      * Wrapper to query known PIDs via API given time intervals for the creation
-     * timestamp and modification timestamp. This is a reusable etst component.
+     * timestamp and modification timestamp. This is a reusable test component.
      * 
      * @param createdAfter   lower end for the creation timestamp interval
      * @param createdBefore  upper end for the creation timestamp interval
