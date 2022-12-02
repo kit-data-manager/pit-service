@@ -15,6 +15,7 @@ import edu.kit.datamanager.pit.configuration.ApplicationProperties.ValidationStr
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.SimplePidRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
@@ -552,6 +553,17 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             storeLocally(pid, false);
         }
         return ResponseEntity.ok().body(record);
+    }
+
+    @Override
+    public ResponseEntity<SimplePidRecord> getSimpleRecord (
+            final WebRequest request,
+            final HttpServletResponse response,
+            final UriComponentsBuilder uriBuilder
+    ) throws IOException {
+        ResponseEntity<PIDRecord> oldFormat = this.getRecord(request, response, uriBuilder);
+        SimplePidRecord newFormat = new SimplePidRecord(oldFormat.getBody());
+        return ResponseEntity.ok(newFormat);
     }
 
     @Override

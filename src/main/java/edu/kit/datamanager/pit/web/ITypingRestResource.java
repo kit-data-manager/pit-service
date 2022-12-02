@@ -19,7 +19,7 @@ import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.common.InconsistentRecordsException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
-
+import edu.kit.datamanager.pit.domain.SimplePidRecord;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -225,6 +225,24 @@ public interface ITypingRestResource {
             final UriComponentsBuilder uriBuilder
     ) throws IOException;
 
+    /**
+     * Get the record of the given PID.
+     *
+     * @return the record.
+     *
+     * @throws IOException
+     */
+    @GetMapping(path = "/pid/**", produces={SimplePidRecord.CONTENT_TYPE}, headers = "Accept=" + SimplePidRecord.CONTENT_TYPE)
+    @Operation(summary = "Get the record of the given PID.", description = "Get the record to the given PID, if it exists.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Found", content = @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))),
+        @ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = "text/plain"))
+    })
+    public ResponseEntity<SimplePidRecord> getSimpleRecord (
+            final WebRequest request,
+            final HttpServletResponse response,
+            final UriComponentsBuilder uriBuilder
+    ) throws IOException;
 
     /**
      * Requests a PID from the local store. If this PID is known, it will be
