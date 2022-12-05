@@ -90,7 +90,7 @@ dependencies {
     //implementation("com.monitorjbl:spring-json-view:1.1.0")
 	implementation("com.github.everit-org.json-schema:org.everit.json.schema:1.14.1")
     
-    implementation('org.apache.httpcomponents:httpclient:4.5.13')
+    implementation('org.apache.httpcomponents:httpclient:4.5.14')
     implementation('org.apache.httpcomponents:httpclient-cache:4.5.13')
 
     implementation("net.handle:handle-client:9.3.0")
