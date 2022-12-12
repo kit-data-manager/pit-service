@@ -21,7 +21,7 @@ public class SimplePidRecord {
      * Converts a given PIDRecord representation into a SimplePidRecord
      * representation.
      * 
-     * @param rec
+     * @param rec a given PID record to convert.
      */
     public SimplePidRecord(PIDRecord rec) {
         this.pid = rec.getPid();
