@@ -197,12 +197,12 @@ public class ApiMockUtils {
      *                   if this happens.
      */
     public static String resolveRecord(MockMvc mockMvc, String pid, String contentType) throws Exception {
-        var get = get("/api/v1/pit/pid/".concat(pid));
+        MockHttpServletRequestBuilder request = get("/api/v1/pit/pid/".concat(pid));
         if (contentType != null && !contentType.isEmpty()) {
-            get = get.contentType(contentType);
+            request = request.accept(contentType);
         }
         MvcResult resolved = mockMvc
-            .perform(get)
+            .perform(request)
             .andDo(MockMvcResultHandlers.print())
             .andExpect(MockMvcResultMatchers.status().isOk())
             .andReturn();
