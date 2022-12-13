@@ -32,6 +32,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.http.client.cache.HeaderConstants;
+import org.apache.http.entity.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -552,6 +553,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         if (applicationProps.getStorageStrategy().storesResolved()) {
             storeLocally(pid, false);
         }
+        response.setContentType(ContentType.APPLICATION_JSON.toString());
         return ResponseEntity.ok().body(record);
     }
 
@@ -563,6 +565,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     ) throws IOException {
         ResponseEntity<PIDRecord> oldFormat = this.getRecord(request, response, uriBuilder);
         SimplePidRecord newFormat = new SimplePidRecord(oldFormat.getBody());
+        response.setContentType(SimplePidRecord.CONTENT_TYPE);
         return ResponseEntity.ok(newFormat);
     }
 
