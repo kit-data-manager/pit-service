@@ -5,6 +5,11 @@ public class SimplePair {
 
     private String value;
 
+    /**
+     * Required for (de-)serialization.
+     */
+    SimplePair() {}
+
     SimplePair(String key, String value) {
         this.key = key;
         this.value = value;

@@ -10,12 +10,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class SimplePidRecord {
 
     @JsonIgnore
-    public static final String CONTENT_TYPE = "application/vnd.datamanager.pid.simple";
+    public static final String CONTENT_TYPE = "application/vnd.datamanager.pid.simple+json";
 
     private String pid;
 
     @JsonProperty("record")
     private List<SimplePair> pairs;
+
+    /**
+     * Required for (de-)serialization.
+     */
+    public SimplePidRecord() {}
 
     /**
      * Converts a given PIDRecord representation into a SimplePidRecord
