@@ -446,6 +446,18 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
+    public ResponseEntity<SimplePidRecord> createPIDFromSimpleFormat(
+            final SimplePidRecord rec,
+            final WebRequest request,
+            final HttpServletResponse response,
+            final UriComponentsBuilder uriBuilder
+    ) throws IOException {
+        ResponseEntity<PIDRecord> oldFormat = this.createPID(new PIDRecord(rec), request, response, uriBuilder);
+        SimplePidRecord simpleFormat = new SimplePidRecord(oldFormat.getBody());
+        return ResponseEntity.status(HttpStatus.CREATED.value()).body(simpleFormat);
+    }
+
+    @Override
     public ResponseEntity<PIDRecord> updatePID(
             PIDRecord record,
             final WebRequest request,

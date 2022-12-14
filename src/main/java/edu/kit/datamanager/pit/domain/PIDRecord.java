@@ -30,6 +30,13 @@ public class PIDRecord {
         this.entries = new HashMap<>();
     }
 
+    public PIDRecord(SimplePidRecord rec) {
+        this.entries = new HashMap<>();
+        for (SimplePair pair : rec.getPairs()) {
+            this.addEntry(pair.getKey(), "", pair.getValue());
+        }
+    }
+
     // Convenience setter / builder method.
     public PIDRecord withPID(String pid) {
         this.setPid(pid);

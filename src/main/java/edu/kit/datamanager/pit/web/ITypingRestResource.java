@@ -35,8 +35,10 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springdoc.core.converters.models.PageableAsQueryParam;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -145,7 +147,7 @@ public interface ITypingRestResource {
      *
      * @throws IOException
      */
-    @RequestMapping(path = "/pid/", method = RequestMethod.POST)
+    @PostMapping(path = "/pid/", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
     @Operation(summary = "Create a new PID record", description = "Create a new PID record using the record information from the request body.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "Created", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PIDRecord.class))),
@@ -153,6 +155,35 @@ public interface ITypingRestResource {
         @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
     })
     public ResponseEntity<PIDRecord> createPID(@RequestBody final PIDRecord record,
+            final WebRequest request,
+            final HttpServletResponse response,
+            final UriComponentsBuilder uriBuilder
+    ) throws IOException;
+
+    /**
+     * Create a new PID using the record information provided in the request
+     * body. The record is expected to contain the identifier of the matching
+     * profile. Before creating the record, the record information will be
+     * validated against the profile.
+     *
+     * @param rec The PID record.
+     *
+     * @return either 200 or 404, indicating whether the profile is registered
+     * or not registered
+     *
+     * @throws IOException
+     */
+    @PostMapping(path = "/pid/", consumes={SimplePidRecord.CONTENT_TYPE}, produces={SimplePidRecord.CONTENT_TYPE})
+    @Operation(summary = "Create a new PID record", description = "Create a new PID record using the record information from the request body.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Created", content = @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))),
+        @ApiResponse(responseCode = "409", description = "Validation failed (conflict). See body for details.", content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
+    })
+    public ResponseEntity<SimplePidRecord> createPIDFromSimpleFormat(
+            @RequestBody
+            final SimplePidRecord rec,
+            
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder
