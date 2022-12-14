@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
+import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -41,6 +42,16 @@ public class ApiMockUtils {
      */
     public static ObjectMapper getJsonMapper() {
         return Application.jsonObjectMapper();
+    }
+
+    /**
+     * A fast way to get a valid PIDRecord instance.
+     * 
+     * @return a valid PIDRecord instance.
+     * @throws JacksonException on error.
+     */
+    public static PIDRecord getSomePidRecordInstance() throws JacksonException {
+        return getJsonMapper().readValue(JSON_RECORD, PIDRecord.class);
     }
 
     /**
@@ -134,8 +145,7 @@ public class ApiMockUtils {
      * @param record the record, containing the information as it should be after
      *               the update.
      * @return the record as it is after the update.
-     * @throws Exception if any assumption breaks. Do not catch, let your test fail
-     *                   if this happens.
+     * @throws Exception if any assumption breaks.
      */
     public static PIDRecord updateRecord(MockMvc mockMvc, PIDRecord record) throws Exception {
         assertFalse(record.getPid().isEmpty());
@@ -162,8 +172,7 @@ public class ApiMockUtils {
      * @param mockMvc instance that mocks the REST API.
      * @param pid the PID to resolve
      * @return the resolved record of the given PID.
-     * @throws Exception if any assumption breaks. Do not catch, let your test fail
-     *                   if this happens.
+     * @throws Exception if any assumption breaks.
      */
     public static PIDRecord resolveRecord(MockMvc mockMvc, String pid) throws Exception {
         String resolvedBody = ApiMockUtils.resolveRecord(mockMvc, pid, null);
@@ -177,8 +186,7 @@ public class ApiMockUtils {
      * @param mockMvc instance that mocks the REST API.
      * @param pid the PID to resolve
      * @return the resolved record of the given PID.
-     * @throws Exception if any assumption breaks. Do not catch, let your test fail
-     *                   if this happens.
+     * @throws Exception if any assumption breaks.
      */
     public static SimplePidRecord resolveSimpleRecord(MockMvc mockMvc, String pid) throws Exception {
         String resolvedBody = ApiMockUtils.resolveRecord(mockMvc, pid, SimplePidRecord.CONTENT_TYPE);
@@ -193,10 +201,9 @@ public class ApiMockUtils {
      * @param createdPid the PID to resolve.
      * @param contentType the content type for the request.
      * @return the resolved record of the given PID.
-     * @throws Exception if any assumption breaks. Do not catch, let your test fail
-     *                   if this happens.
+     * @throws Exception if any assumption breaks.
      */
-    public static String resolveRecord(MockMvc mockMvc, String pid, String contentType) throws Exception {
+    private static String resolveRecord(MockMvc mockMvc, String pid, String contentType) throws Exception {
         MockHttpServletRequestBuilder request = get("/api/v1/pit/pid/".concat(pid));
         if (contentType != null && !contentType.isEmpty()) {
             request = request.accept(contentType);
@@ -210,30 +217,51 @@ public class ApiMockUtils {
     }
 
     /**
-     * Creates a record and does make some generic tests. This is a reusable test
-     * component.
+     * Creates a record and does make some generic tests.
      * 
+     * @param mockMvc instance that mocks the REST API.
      * @return The created PID record.
-     * @throws Exception if any assumption breaks. Do not catch, let your test fail
-     *                   if this happens.
+     * @throws Exception if any assumption breaks.
      */
     public static PIDRecord createSomeRecord(MockMvc mockMvc) throws Exception {
-        MvcResult created = mockMvc
-                .perform(
-                    post("/api/v1/pit/pid/")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .characterEncoding("utf-8")
-                        .content(JSON_RECORD)
-                        .accept(MediaType.ALL)
-                )
-                .andDo(MockMvcResultHandlers.print())
-                .andExpect(MockMvcResultMatchers.status().isCreated())
-                .andReturn();
-            
-        String createdBody = created.getResponse().getContentAsString();
+        String createdBody = ApiMockUtils.createRecord(mockMvc, ApiMockUtils.JSON_RECORD, null, null);
         PIDRecord createdRecord = getJsonMapper().readValue(createdBody, PIDRecord.class);
         String createdPid = createdRecord.getPid();
         assertFalse(createdPid.isEmpty());
         return createdRecord;
+    }
+
+    /**
+     * Generic method to do a "create" request.
+     * 
+     * @param mockMvc instance that mocks the REST API
+     * @param acceptContentType if empty or null, defaults to ALL
+     * @param bodyContentType if empty or null, defaults to JSON
+     * @return the body of the response as string.
+     * @throws Exception on any error.
+     */
+    public static String createRecord(MockMvc mockMvc, String body, String bodyContentType, String acceptContentType) throws Exception {
+        MockHttpServletRequestBuilder request = post("/api/v1/pit/pid/")
+            .contentType(MediaType.APPLICATION_JSON)
+            .characterEncoding("utf-8")
+            .content(body);
+            boolean hasAcceptContentType = acceptContentType != null && !acceptContentType.isEmpty();
+            boolean hasBodyContentType = bodyContentType != null && !bodyContentType.isEmpty();
+        if (hasAcceptContentType) {
+            request = request.accept(acceptContentType);
+        } else {
+            request = request.accept(MediaType.ALL);
+        }
+        if (hasBodyContentType) {
+            request = request.contentType(bodyContentType);
+        } else {
+            request = request.contentType(MediaType.APPLICATION_JSON);
+        }
+        MvcResult created = mockMvc
+            .perform(request)
+            .andDo(MockMvcResultHandlers.print())
+            .andExpect(MockMvcResultMatchers.status().isCreated())
+            .andReturn();
+        return created.getResponse().getContentAsString();
     }
 }
