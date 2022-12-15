@@ -56,7 +56,7 @@ public class ApiMockUtils {
 
     /**
      * Wrapper to query known PIDs via API given time intervals for the creation
-     * timestamp and modification timestamp. This is a reusable test component.
+     * timestamp and modification timestamp.
      * 
      * @param createdAfter   lower end for the creation timestamp interval
      * @param createdBefore  upper end for the creation timestamp interval
@@ -139,8 +139,7 @@ public class ApiMockUtils {
     }
 
     /**
-     * Updates a PID record and makes some generic tests. This is a reusable test
-     * component.
+     * Updates a PID record and makes some generic tests.
      * 
      * @param record the record, containing the information as it should be after
      *               the update.
@@ -224,7 +223,7 @@ public class ApiMockUtils {
      * @throws Exception if any assumption breaks.
      */
     public static PIDRecord createSomeRecord(MockMvc mockMvc) throws Exception {
-        String createdBody = ApiMockUtils.createRecord(mockMvc, ApiMockUtils.JSON_RECORD, null, null);
+        String createdBody = ApiMockUtils.createRecord(mockMvc, ApiMockUtils.JSON_RECORD, MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE);
         PIDRecord createdRecord = getJsonMapper().readValue(createdBody, PIDRecord.class);
         String createdPid = createdRecord.getPid();
         assertFalse(createdPid.isEmpty());
@@ -235,8 +234,9 @@ public class ApiMockUtils {
      * Generic method to do a "create" request.
      * 
      * @param mockMvc instance that mocks the REST API
-     * @param acceptContentType if empty or null, defaults to ALL
-     * @param bodyContentType if empty or null, defaults to JSON
+     * @param body the PID record to create
+     * @param bodyContentType type of the body
+     * @param acceptContentType type to expect
      * @return the body of the response as string.
      * @throws Exception on any error.
      */
@@ -245,8 +245,8 @@ public class ApiMockUtils {
             .contentType(MediaType.APPLICATION_JSON)
             .characterEncoding("utf-8")
             .content(body);
-            boolean hasAcceptContentType = acceptContentType != null && !acceptContentType.isEmpty();
-            boolean hasBodyContentType = bodyContentType != null && !bodyContentType.isEmpty();
+        boolean hasAcceptContentType = acceptContentType != null && !acceptContentType.isEmpty();
+        boolean hasBodyContentType = bodyContentType != null && !bodyContentType.isEmpty();
         if (hasAcceptContentType) {
             request = request.accept(acceptContentType);
         } else {

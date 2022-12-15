@@ -24,7 +24,7 @@ import edu.kit.datamanager.pit.domain.SimplePidRecord;
 // Set the in-memory implementation
 @TestPropertySource("/test/application-test.properties")
 @ActiveProfiles("test")
-public class SimpleJSONFormatTest {
+class SimpleJSONFormatTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
@@ -36,8 +36,11 @@ public class SimpleJSONFormatTest {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
     }
 
+    /**
+     * Test: Resolve PID
+     */
     @Test
-    public void testResolvePid() throws Exception {
+    void testResolvePid() throws Exception {
         PIDRecord complexFormat = ApiMockUtils.createSomeRecord(this.mockMvc);
         assertNotNull(complexFormat);
 
@@ -53,12 +56,14 @@ public class SimpleJSONFormatTest {
     }
 
     /**
+     * Test: Create PID
+     * 
      * Input: simple json
      * Accept: simple json
      * Expect: simple json, HTTP 201
      */
     @Test
-    public void testCreatePidFromSimpleAndAcceptSimple() throws Exception {
+    void testCreatePidFromSimpleAndAcceptSimple() throws Exception {
         SimplePidRecord input = new SimplePidRecord(ApiMockUtils.getSomePidRecordInstance());
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
         String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, SimplePidRecord.CONTENT_TYPE, SimplePidRecord.CONTENT_TYPE);
@@ -67,43 +72,49 @@ public class SimpleJSONFormatTest {
     }
 
     /**
+     * Test: Create PID
+     * 
      * Input: simple json
      * Accept: any
      * Expect: simple json, HTTP 201
      */
     @Test
-    public void testCreatePidFromSimpleAndAcceptAll() throws Exception {
+    void testCreatePidFromSimpleAndAcceptAll() throws Exception {
         SimplePidRecord input = new SimplePidRecord(ApiMockUtils.getSomePidRecordInstance());
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
-        String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, SimplePidRecord.CONTENT_TYPE, MediaType.ALL.toString());
+        String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, SimplePidRecord.CONTENT_TYPE, MediaType.ALL_VALUE);
         SimplePidRecord sim = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
         assertNotNull(sim);
     }
 
     /**
+     * Test: Create PID
+     * 
      * Input: (complex) json
      * Accept: json
      * Expect: (complex) json, HTTP 201
     */
     @Test
-    public void testCreatePidFromComplexAndAcceptJson() throws Exception {
+    void testCreatePidFromComplexAndAcceptJson() throws Exception {
         PIDRecord input = ApiMockUtils.getSomePidRecordInstance();
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
-        String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, MediaType.APPLICATION_JSON.toString(), MediaType.APPLICATION_JSON.toString());
+        String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_JSON_VALUE);
         SimplePidRecord sim = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
         assertNotNull(sim);
     }
 
     /**
+     * Test: Create PID
+     * 
      * Input: (complex) json
      * Accept: any
      * Expect: (complex) json, HTTP 201
      */
     @Test
-    public void testCreatePidFromComplexAndAcceptAll() throws Exception {
+    void testCreatePidFromComplexAndAcceptAll() throws Exception {
         PIDRecord input = ApiMockUtils.getSomePidRecordInstance();
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
-        String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, MediaType.APPLICATION_JSON.toString(), MediaType.ALL.toString());
+        String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE);
         SimplePidRecord sim = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
         assertNotNull(sim);
     }
