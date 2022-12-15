@@ -139,7 +139,7 @@ public class ApiMockUtils {
     }
 
     /**
-     * Updates a PID record and makes some generic tests.
+     * Updates a PID record.
      * 
      * @param record the record, containing the information as it should be after
      *               the update.
@@ -147,22 +147,47 @@ public class ApiMockUtils {
      * @throws Exception if any assumption breaks.
      */
     public static PIDRecord updateRecord(MockMvc mockMvc, PIDRecord record) throws Exception {
-        assertFalse(record.getPid().isEmpty());
+        String body = updateRecord(
+            mockMvc,
+            record.getPid(),
+            getJsonMapper().writeValueAsString(record),
+            MediaType.APPLICATION_JSON_VALUE,
+            MediaType.ALL_VALUE
+        );
+        PIDRecord updatedRecord = getJsonMapper().readValue(body, PIDRecord.class);
+        return updatedRecord;
+    }
+
+    /**
+     * Updates a PID record.
+     * 
+     * @param mockMvc instance that mocks the REST API.
+     * @param pid the PID to update.
+     * @param body the updated pid record to send.
+     * @param bodyContentType type of the body.
+     * @param acceptContentType type to expect.
+     * @return the response body.
+     * @throws Exception if response is not OK (HTTP 200).
+     */
+    public static String updateRecord(MockMvc mockMvc, String pid, String body, String bodyContentType, String acceptContentType) throws Exception {
+        assertFalse(pid.isEmpty());
+        MockHttpServletRequestBuilder request = put("/api/v1/pit/pid/" + pid)
+            .characterEncoding("utf-8")
+            .content(body);
+        boolean hasAcceptContentType = acceptContentType != null && !acceptContentType.isEmpty();
+        boolean hasBodyContentType = bodyContentType != null && !bodyContentType.isEmpty();
+        if (hasAcceptContentType) {
+            request = request.accept(acceptContentType);
+        }
+        if (hasBodyContentType) {
+            request = request.contentType(bodyContentType);
+        }
         MvcResult updated = mockMvc
-                .perform(
-                    put("/api/v1/pit/pid/" + record.getPid())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .characterEncoding("utf-8")
-                        .content(getJsonMapper().writeValueAsString(record))
-                        .accept(MediaType.ALL)
-                )
+                .perform(request)
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andReturn();
-            
-        String body = updated.getResponse().getContentAsString();
-        PIDRecord updatedRecord = getJsonMapper().readValue(body, PIDRecord.class);
-        return updatedRecord;
+        return updated.getResponse().getContentAsString();
     }
 
     /**
