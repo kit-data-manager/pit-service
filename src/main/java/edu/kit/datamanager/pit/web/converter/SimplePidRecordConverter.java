@@ -47,7 +47,7 @@ import edu.kit.datamanager.pit.domain.SimplePidRecord;
  */
 public class SimplePidRecordConverter implements HttpMessageConverter<PIDRecord> {
 
-    private Logger LOGGER = LoggerFactory.getLogger(SimplePidRecordConverter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SimplePidRecordConverter.class);
 
     private boolean isValidMediaType(MediaType arg1) {
         return arg1.toString().contains(SimplePidRecord.CONTENT_TYPE_PURE);
@@ -78,7 +78,7 @@ public class SimplePidRecordConverter implements HttpMessageConverter<PIDRecord>
     @Override
     public PIDRecord read(Class<? extends PIDRecord> arg0, HttpInputMessage arg1)
             throws IOException, HttpMessageNotReadableException {
-        LOGGER.trace("Resing HttpInputMessage for JOLT transformation.");
+        LOGGER.trace("Read simple message from client and convert to PIDRecord.");
         try (InputStreamReader reader = new InputStreamReader(arg1.getBody(), StandardCharsets.UTF_8)) {
             String data = new BufferedReader(reader).lines().collect(Collectors.joining("\n"));
             return new PIDRecord(Application.jsonObjectMapper().readValue(data, SimplePidRecord.class));
@@ -88,6 +88,7 @@ public class SimplePidRecordConverter implements HttpMessageConverter<PIDRecord>
     @Override
     public void write(PIDRecord arg0, MediaType arg1, HttpOutputMessage arg2)
             throws IOException, HttpMessageNotWritableException {
+        LOGGER.trace("Write PIDRecord to simple format for client.");
         SimplePidRecord sim = new SimplePidRecord(arg0);
         byte[] simSerialized = Application.jsonObjectMapper().writeValueAsBytes(sim);
         arg2.getBody().write(simSerialized);
