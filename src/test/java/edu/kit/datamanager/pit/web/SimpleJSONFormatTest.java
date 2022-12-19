@@ -78,16 +78,16 @@ class SimpleJSONFormatTest {
      * 
      * Input: simple json
      * Accept: any
-     * Expect: simple json, HTTP 201
+     * Expect: (complex) json, HTTP 201
      */
     @Test
     void testCreatePidFromSimpleAndAcceptAll() throws Exception {
         SimplePidRecord input = new SimplePidRecord(ApiMockUtils.getSomePidRecordInstance());
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
         String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, SimplePidRecord.CONTENT_TYPE, MediaType.ALL_VALUE);
-        SimplePidRecord sim = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
-        assertNotNull(sim);
-        assertNotNull(sim.getPairs());
+        PIDRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
+        assertNotNull(modified);
+        assertTrue(modified.getEntries().size() > 0);
     }
 
     /**
@@ -169,7 +169,7 @@ class SimpleJSONFormatTest {
      * 
      * Input: simple json
      * Accept: json
-     * Expect: simple json, HTTP 200
+     * Expect: (complex) json, HTTP 200
      */
     @Test
     void testUpdatePidFromSimpleAndAcceptJson() throws Exception {
@@ -180,9 +180,9 @@ class SimpleJSONFormatTest {
         SimplePidRecord simple = new SimplePidRecord(original);
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(simple);
         String responseBody = ApiMockUtils.updateRecord(mockMvc, simple.getPid(), requestBody, SimplePidRecord.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-        SimplePidRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
+        PIDRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
         assertNotNull(modified);
-        assertNotNull(modified.getPairs());
+        assertTrue(modified.getEntries().size() > 0);
     }
 
     /**
@@ -211,7 +211,7 @@ class SimpleJSONFormatTest {
      * 
      * Input: simple json
      * Accept: any
-     * Expect: simple json, HTTP 200
+     * Expect: (complex) json, HTTP 200
      */
     @Test
     void testUpdatePidFromSimpleAndAcceptAll() throws Exception {
@@ -222,9 +222,9 @@ class SimpleJSONFormatTest {
         SimplePidRecord simple = new SimplePidRecord(original);
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(simple);
         String responseBody = ApiMockUtils.updateRecord(mockMvc, simple.getPid(), requestBody, SimplePidRecord.CONTENT_TYPE, MediaType.ALL_VALUE);
-        SimplePidRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
-        assertNotNull(modified.getPairs());
+        PIDRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
         assertNotNull(modified);
+        assertTrue(modified.getEntries().size() > 0);
     }
 
     /**
