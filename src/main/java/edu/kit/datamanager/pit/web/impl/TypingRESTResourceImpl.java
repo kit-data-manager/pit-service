@@ -446,18 +446,6 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
-    public ResponseEntity<SimplePidRecord> createPIDFromSimpleFormat(
-            final SimplePidRecord rec,
-            final WebRequest request,
-            final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder
-    ) throws IOException {
-        ResponseEntity<PIDRecord> oldFormat = this.createPID(new PIDRecord(rec), request, response, uriBuilder);
-        SimplePidRecord simpleFormat = new SimplePidRecord(oldFormat.getBody());
-        return ResponseEntity.status(HttpStatus.CREATED.value()).body(simpleFormat);
-    }
-
-    @Override
     public ResponseEntity<PIDRecord> updatePID(
             PIDRecord record,
             final WebRequest request,
@@ -561,24 +549,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
         String pid = getContentPathFromRequest("pid", request);
-        PIDRecord record = this.typingService.queryAllProperties(pid);
+        PIDRecord rec = this.typingService.queryAllProperties(pid);
         if (applicationProps.getStorageStrategy().storesResolved()) {
             storeLocally(pid, false);
         }
-        response.setContentType(ContentType.APPLICATION_JSON.toString());
-        return ResponseEntity.ok().body(record);
-    }
-
-    @Override
-    public ResponseEntity<SimplePidRecord> getSimpleRecord (
-            final WebRequest request,
-            final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder
-    ) throws IOException {
-        ResponseEntity<PIDRecord> oldFormat = this.getRecord(request, response, uriBuilder);
-        SimplePidRecord newFormat = new SimplePidRecord(oldFormat.getBody());
-        response.setContentType(SimplePidRecord.CONTENT_TYPE);
-        return ResponseEntity.ok(newFormat);
+        return ResponseEntity.ok().body(rec);
     }
 
     @Override

@@ -143,48 +143,43 @@ public interface ITypingRestResource {
      *
      * @param record The PID record.
      *
-     * @return either 200 or 404, indicating whether the profile is registered
-     * or not registered
+     * @return either 201 and a record representation, 409 on validation fail
+     *         (conflict) or 500 on other server errors.
      *
      * @throws IOException
      */
-    @PostMapping(path = "/pid/", consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
-    @Operation(summary = "Create a new PID record", description = "Create a new PID record using the record information from the request body.")
+    @PostMapping(
+        path = "/pid/",
+        consumes = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE},
+        produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
+    )
+    @Operation(
+        summary = "Create a new PID record",
+        description = "Create a new PID record using the record information from the request body."
+    )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+        description = "The body containing all PID record values as they should be in the new PIDs record.",
+        required = true,
+        content = {
+            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
+            @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
+        }
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Created", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PIDRecord.class))),
+        @ApiResponse(
+            responseCode = "201",
+            description = "Created",
+            content = {
+                @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
+                @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
+        }),
         @ApiResponse(responseCode = "409", description = "Validation failed (conflict). See body for details.", content = @Content(mediaType = "text/plain")),
         @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
     })
-    public ResponseEntity<PIDRecord> createPID(@RequestBody final PIDRecord record,
-            final WebRequest request,
-            final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder
-    ) throws IOException;
-
-    /**
-     * Create a new PID using the record information provided in the request
-     * body. The record is expected to contain the identifier of the matching
-     * profile. Before creating the record, the record information will be
-     * validated against the profile.
-     *
-     * @param rec The PID record.
-     *
-     * @return either 200 or 404, indicating whether the profile is registered
-     * or not registered
-     *
-     * @throws IOException
-     */
-    @PostMapping(path = "/pid/", consumes={SimplePidRecord.CONTENT_TYPE}, produces={SimplePidRecord.CONTENT_TYPE})
-    @Operation(summary = "Create a new PID record", description = "Create a new PID record using the record information from the request body.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Created", content = @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))),
-        @ApiResponse(responseCode = "409", description = "Validation failed (conflict). See body for details.", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
-    })
-    public ResponseEntity<SimplePidRecord> createPIDFromSimpleFormat(
+    public ResponseEntity<PIDRecord> createPID(
             @RequestBody
-            final SimplePidRecord rec,
-            
+            final PIDRecord rec,
+
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder
@@ -206,9 +201,26 @@ public interface ITypingRestResource {
         consumes = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE},
         produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
     )
-    @Operation(summary = "Update an existing PID record", description = "Update an existing PID record using the record information from the request body.")
+    @Operation(
+        summary = "Update an existing PID record",
+        description = "Update an existing PID record using the record information from the request body."
+    )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+        description = "The body containing all PID record values as they should be after the update.",
+        required = true,
+        content = {
+            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
+            @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
+        }
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Success.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PIDRecord.class))),
+        @ApiResponse(
+            responseCode = "200",
+            description = "Success.",
+            content = {
+                @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
+                @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
+            }),
         @ApiResponse(responseCode = "409", description = "Validation failed (conflict). See body for details.", content = @Content(mediaType = "text/plain")),
         @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
     })
@@ -252,32 +264,23 @@ public interface ITypingRestResource {
      *
      * @throws IOException
      */
-    @RequestMapping(path = "/pid/**", method = RequestMethod.GET)
+    @GetMapping(
+        path = "/pid/**",
+        produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
+    )
     @Operation(summary = "Get the record of the given PID.", description = "Get the record to the given PID, if it exists.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PIDRecord.class))),
+        @ApiResponse(
+            responseCode = "200",
+            description = "Found",
+            content = {
+                @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
+                @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
+            }
+        ),
         @ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = "text/plain"))
     })
     public ResponseEntity<PIDRecord> getRecord (
-            final WebRequest request,
-            final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder
-    ) throws IOException;
-
-    /**
-     * Get the record of the given PID.
-     *
-     * @return the record.
-     *
-     * @throws IOException
-     */
-    @GetMapping(path = "/pid/**", produces={SimplePidRecord.CONTENT_TYPE}, headers = "Accept=" + SimplePidRecord.CONTENT_TYPE)
-    @Operation(summary = "Get the record of the given PID.", description = "Get the record to the given PID, if it exists.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Found", content = @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))),
-        @ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = "text/plain"))
-    })
-    public ResponseEntity<SimplePidRecord> getSimpleRecord (
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder
