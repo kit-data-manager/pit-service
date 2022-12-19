@@ -102,9 +102,9 @@ class SimpleJSONFormatTest {
         PIDRecord input = ApiMockUtils.getSomePidRecordInstance();
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
         String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_JSON_VALUE);
-        SimplePidRecord sim = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
-        assertNotNull(sim);
-        assertNotNull(sim.getPairs());
+        PIDRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
+        assertNotNull(modified);
+        assertTrue(modified.getEntries().size() > 0);
     }
 
     /**
@@ -119,9 +119,9 @@ class SimpleJSONFormatTest {
         PIDRecord input = ApiMockUtils.getSomePidRecordInstance();
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
         String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE);
-        SimplePidRecord sim = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
-        assertNotNull(sim);
-        assertNotNull(sim.getPairs());
+        PIDRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
+        assertNotNull(modified);
+        assertTrue(modified.getEntries().size() > 0);
     }
 
     /**
@@ -181,8 +181,8 @@ class SimpleJSONFormatTest {
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(simple);
         String responseBody = ApiMockUtils.updateRecord(mockMvc, simple.getPid(), requestBody, SimplePidRecord.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
         SimplePidRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
-        assertNotNull(modified.getPairs());
         assertNotNull(modified);
+        assertNotNull(modified.getPairs());
     }
 
     /**
@@ -202,8 +202,8 @@ class SimpleJSONFormatTest {
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(simple);
         String responseBody = ApiMockUtils.updateRecord(mockMvc, simple.getPid(), requestBody, SimplePidRecord.CONTENT_TYPE, SimplePidRecord.CONTENT_TYPE);
         SimplePidRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
-        assertNotNull(modified.getPairs());
         assertNotNull(modified);
+        assertNotNull(modified.getPairs());
     }
 
     /**
