@@ -190,7 +190,7 @@ public interface ITypingRestResource {
      * body. The record is expected to contain the identifier of the matching
      * profile. Conditions for a valid record are the same as for creation.
      *
-     * @param record The PID record.
+     * @param rec The PID record.
      *
      * @return the record (on success).
      *
