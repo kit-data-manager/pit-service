@@ -141,7 +141,7 @@ public interface ITypingRestResource {
      * profile. Before creating the record, the record information will be
      * validated against the profile.
      *
-     * @param record The PID record.
+     * @param rec The PID record.
      *
      * @return either 201 and a record representation, 409 on validation fail
      *         (conflict) or 500 on other server errors.
