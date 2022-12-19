@@ -6,7 +6,7 @@ plugins {
     id "io.spring.dependency-management" version "1.1.0"
     // Lombok generates getter and setter and more. https://projectlombok.org/
     // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
-    id "io.freefair.lombok" version "6.6"
+    id "io.freefair.lombok" version "6.6.1"
     // Release tagging with `./gradlew release`
     // Check for new versions here: https://plugins.gradle.org/plugin/net.researchgate.release
     // Usage: https://github.com/researchgate/gradle-release
