@@ -2,6 +2,7 @@ package edu.kit.datamanager.pit.web;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,6 +70,7 @@ class SimpleJSONFormatTest {
         String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, SimplePidRecord.CONTENT_TYPE, SimplePidRecord.CONTENT_TYPE);
         SimplePidRecord sim = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
         assertNotNull(sim);
+        assertNotNull(sim.getPairs());
     }
 
     /**
@@ -85,6 +87,7 @@ class SimpleJSONFormatTest {
         String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, SimplePidRecord.CONTENT_TYPE, MediaType.ALL_VALUE);
         SimplePidRecord sim = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
         assertNotNull(sim);
+        assertNotNull(sim.getPairs());
     }
 
     /**
@@ -101,6 +104,7 @@ class SimpleJSONFormatTest {
         String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_JSON_VALUE);
         SimplePidRecord sim = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
         assertNotNull(sim);
+        assertNotNull(sim.getPairs());
     }
 
     /**
@@ -117,6 +121,7 @@ class SimpleJSONFormatTest {
         String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE);
         SimplePidRecord sim = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
         assertNotNull(sim);
+        assertNotNull(sim.getPairs());
     }
 
     /**
@@ -134,8 +139,9 @@ class SimpleJSONFormatTest {
         original.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(original);
         String responseBody = ApiMockUtils.updateRecord(mockMvc, original.getPid(), requestBody, MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE);
-        PIDRecord sim = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
-        assertNotNull(sim);
+        PIDRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
+        assertNotNull(modified);
+        assertTrue(modified.getEntries().size() > 0);
     }
 
     /**
@@ -155,6 +161,7 @@ class SimpleJSONFormatTest {
         String responseBody = ApiMockUtils.updateRecord(mockMvc, original.getPid(), requestBody, MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_JSON_VALUE);
         PIDRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
         assertNotNull(modified);
+        assertTrue(modified.getEntries().size() > 0);
     }
 
     /**
@@ -174,6 +181,7 @@ class SimpleJSONFormatTest {
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(simple);
         String responseBody = ApiMockUtils.updateRecord(mockMvc, simple.getPid(), requestBody, SimplePidRecord.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
         SimplePidRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
+        assertNotNull(modified.getPairs());
         assertNotNull(modified);
     }
 
@@ -194,6 +202,7 @@ class SimpleJSONFormatTest {
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(simple);
         String responseBody = ApiMockUtils.updateRecord(mockMvc, simple.getPid(), requestBody, SimplePidRecord.CONTENT_TYPE, SimplePidRecord.CONTENT_TYPE);
         SimplePidRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
+        assertNotNull(modified.getPairs());
         assertNotNull(modified);
     }
 
@@ -214,6 +223,29 @@ class SimpleJSONFormatTest {
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(simple);
         String responseBody = ApiMockUtils.updateRecord(mockMvc, simple.getPid(), requestBody, SimplePidRecord.CONTENT_TYPE, MediaType.ALL_VALUE);
         SimplePidRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
+        assertNotNull(modified.getPairs());
         assertNotNull(modified);
+    }
+
+    /**
+     * Test: Update PID
+     * 
+     * Input: simple json
+     * Accept: (complex) json
+     * Expect: complex json, HTTP 200
+     */
+    @Test
+    void testUpdatePidFromSimpleAndAcceptComplex() throws Exception {
+        PIDRecord original = ApiMockUtils.createSomeRecord(this.mockMvc);
+        // add digitalObjectLocation, which is a property supported by most profiles.
+        // in future, it would be more reliable to really ask the profile for the pid of this field.
+        original.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
+        SimplePidRecord simple = new SimplePidRecord(original);
+        assertNotNull(simple.getPairs());
+        String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(simple);
+        String responseBody = ApiMockUtils.updateRecord(mockMvc, simple.getPid(), requestBody, SimplePidRecord.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+        PIDRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
+        assertNotNull(modified);
+        assertTrue(modified.getEntries().size() > 0);
     }
 }
