@@ -10,6 +10,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class SimplePidRecord {
 
     @JsonIgnore
+    public static final String CONTENT_TYPE_PURE = "vnd.datamanager.pid.simple";
+    @JsonIgnore
     public static final String CONTENT_TYPE = "application/vnd.datamanager.pid.simple+json";
 
     private String pid;

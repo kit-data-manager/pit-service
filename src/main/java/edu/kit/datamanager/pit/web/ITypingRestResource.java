@@ -39,6 +39,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -200,14 +201,21 @@ public interface ITypingRestResource {
      *
      * @throws IOException
      */
-    @RequestMapping(path = "/pid/**", method = RequestMethod.PUT)
+    @PutMapping(
+        path = "/pid/**",
+        consumes = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE},
+        produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
+    )
     @Operation(summary = "Update an existing PID record", description = "Update an existing PID record using the record information from the request body.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Success.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PIDRecord.class))),
         @ApiResponse(responseCode = "409", description = "Validation failed (conflict). See body for details.", content = @Content(mediaType = "text/plain")),
         @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
     })
-    public ResponseEntity<PIDRecord> updatePID(@RequestBody final PIDRecord record,
+    public ResponseEntity<PIDRecord> updatePID(
+            @RequestBody
+            final PIDRecord rec,
+
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder
