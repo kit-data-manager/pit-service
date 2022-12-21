@@ -1,4 +1,4 @@
-package edu.kit.datamanager.pit.domain.minimal;
+package edu.kit.datamanager.pit.pidsystem.impl.sandbox;
 
 import java.util.ArrayList;
 import java.util.HashMap;

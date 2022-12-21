@@ -1,4 +1,4 @@
-package edu.kit.datamanager.pit.domain.minimal;
+package edu.kit.datamanager.pit.pidsystem.impl.sandbox;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
