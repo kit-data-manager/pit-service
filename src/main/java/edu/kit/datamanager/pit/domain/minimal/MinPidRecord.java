@@ -1,8 +1,10 @@
 package edu.kit.datamanager.pit.domain.minimal;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -41,18 +43,18 @@ public class MinPidRecord {
     @Column(name = "pid")
     private String pid;
 
-    //@ElementCollection
     //@CollectionTable(
-    //    name = "min_record_entries",
-    //    joinColumns = @JoinColumn(name = "pid")
-    //)
-    //@Column(name = "min_entries")
-    //@NotNull(message = "A list of entries.")
-    @OneToMany(
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
-    )
-    private Set<MinPidRecordEntry> entries = new HashSet<>();
+        //    name = "min_record_entries",
+        //    joinColumns = @JoinColumn(name = "pid")
+        //)
+        //@Column(name = "min_entries")
+        //@NotNull(message = "A list of entries.")
+        //@OneToMany(
+            //    cascade = CascadeType.ALL,
+            //    orphanRemoval = true
+            //)
+    @ElementCollection
+    private Map<String, String> entries = new HashMap<>();
 
     /** For hibernate */
     MinPidRecord() {}
@@ -60,10 +62,11 @@ public class MinPidRecord {
     /** Protected constructor for testing purposes. */
     protected MinPidRecord(String pid, String hiddenIndentifier) {
         this.pid = pid;
-        MinPidRecordEntry hidden = new MinPidRecordEntry();
-        hidden.setKey(hiddenIndentifier);
-        hidden.setValue(hiddenIndentifier);
-        this.entries.add(hidden);
+        this.entries.put(hiddenIndentifier, hiddenIndentifier);
+        //MinPidRecordEntry hidden = new MinPidRecordEntry();
+        //hidden.setKey(hiddenIndentifier);
+        //hidden.setValue(hiddenIndentifier);
+        //this.entries.add(hidden);
     }
 
     MinPidRecord(PIDRecord other) {
@@ -72,7 +75,7 @@ public class MinPidRecord {
         List<PIDRecordEntry> tmp = new ArrayList<>();
         other.getEntries().values().stream().forEach(tmp::addAll);
         
-        this.entries = tmp.stream().map(MinPidRecordEntry::from).collect(Collectors.toSet());
+        //this.entries = tmp.stream().map(MinPidRecordEntry::from).collect(Collectors.to());
 
     }
 }
