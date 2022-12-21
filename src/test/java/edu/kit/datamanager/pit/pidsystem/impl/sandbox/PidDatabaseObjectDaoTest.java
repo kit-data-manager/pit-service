@@ -19,16 +19,16 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest
 @TestPropertySource("/test/application-test.properties")
 @ActiveProfiles("test")
-public class MinPidRecordDaoTest {
+public class PidDatabaseObjectDaoTest {
     @Autowired
-    private MinPidRecordDao dao;
+    private PidDatabaseObjectDao dao;
 
     @BeforeEach
     public void setUp() {
         // prepareDataBase();
-        MinPidRecord a = new MinPidRecord("first", "first");
-        MinPidRecord b = new MinPidRecord("second", "second");
-        MinPidRecord c = new MinPidRecord("second", "third");
+        PidDatabaseObject a = new PidDatabaseObject("first", "first");
+        PidDatabaseObject b = new PidDatabaseObject("second", "second");
+        PidDatabaseObject c = new PidDatabaseObject("second", "third");
         dao.deleteAll();
         dao.save(a);
         // this.dao.save(b);
@@ -49,7 +49,7 @@ public class MinPidRecordDaoTest {
         //this.dao.saveAndFlush(c);
 
         assertEquals(1, dao.count());
-        Optional<MinPidRecord> overrider = dao.findById("first");
+        Optional<PidDatabaseObject> overrider = dao.findById("first");
         assertTrue(overrider.isPresent());
         assertEquals("first", overrider.get().getEntries().entrySet().iterator().next().getKey());
     }

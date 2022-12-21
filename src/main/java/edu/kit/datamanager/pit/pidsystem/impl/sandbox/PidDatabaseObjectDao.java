@@ -11,6 +11,6 @@ import edu.kit.datamanager.pit.pidlog.KnownPid;
  * Object to access PID records from the database.
  * Intended to be used only for sandboxed PIDs.
  */
-public interface MinPidRecordDao extends JpaRepository<MinPidRecord, String>, JpaSpecificationExecutor<MinPidRecord> {
-    Optional<MinPidRecord> findByPid(String pid);
+public interface PidDatabaseObjectDao extends JpaRepository<PidDatabaseObject, String>, JpaSpecificationExecutor<PidDatabaseObject> {
+    Optional<PidDatabaseObject> findByPid(String pid);
 }

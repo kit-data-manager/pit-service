@@ -37,7 +37,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @Entity
 //@Table(name = "min_pid_records")
-public class MinPidRecord {
+public class PidDatabaseObject {
 
     @Id
     @Column(name = "pid")
@@ -57,10 +57,10 @@ public class MinPidRecord {
     private Map<String, String> entries = new HashMap<>();
 
     /** For hibernate */
-    MinPidRecord() {}
+    PidDatabaseObject() {}
 
     /** Protected constructor for testing purposes. */
-    protected MinPidRecord(String pid, String hiddenIndentifier) {
+    protected PidDatabaseObject(String pid, String hiddenIndentifier) {
         this.pid = pid;
         this.entries.put(hiddenIndentifier, hiddenIndentifier);
         //MinPidRecordEntry hidden = new MinPidRecordEntry();
@@ -69,7 +69,7 @@ public class MinPidRecord {
         //this.entries.add(hidden);
     }
 
-    MinPidRecord(PIDRecord other) {
+    PidDatabaseObject(PIDRecord other) {
         this.pid = other.getPid();
 
         List<PIDRecordEntry> tmp = new ArrayList<>();
