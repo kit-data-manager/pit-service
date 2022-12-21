@@ -8,8 +8,6 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
-import org.springframework.transaction.annotation.Transactional;
-
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.PIDRecordEntry;
 import lombok.Data;
@@ -25,7 +23,6 @@ import lombok.EqualsAndHashCode;
 @Entity
 @Data
 @EqualsAndHashCode(callSuper = false)
-@Transactional
 public class PidDatabaseObject {
     
     @Id
@@ -39,7 +36,7 @@ public class PidDatabaseObject {
     private List<String> values = new ArrayList<>();
 
     /** For hibernate */
-    PidDatabaseObject() {}
+    public PidDatabaseObject() {}
 
     /** Protected constructor for testing purposes. */
     protected PidDatabaseObject(String pid, String hiddenIndentifier) {
