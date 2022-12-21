@@ -54,7 +54,7 @@ public class PidDatabaseObject {
             //    orphanRemoval = true
             //)
     @ElementCollection
-    private Map<String, String> entries = new HashMap<>();
+    private Map<String, ArrayList<String>> entries = new HashMap<>();
 
     /** For hibernate */
     PidDatabaseObject() {}
@@ -62,7 +62,9 @@ public class PidDatabaseObject {
     /** Protected constructor for testing purposes. */
     protected PidDatabaseObject(String pid, String hiddenIndentifier) {
         this.pid = pid;
-        this.entries.put(hiddenIndentifier, hiddenIndentifier);
+        ArrayList<String> values = new ArrayList<>();
+        values.add(hiddenIndentifier);
+        this.entries.put(hiddenIndentifier, values);
         //MinPidRecordEntry hidden = new MinPidRecordEntry();
         //hidden.setKey(hiddenIndentifier);
         //hidden.setValue(hiddenIndentifier);
