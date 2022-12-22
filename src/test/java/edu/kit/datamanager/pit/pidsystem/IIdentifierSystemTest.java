@@ -34,23 +34,24 @@ public class IIdentifierSystemTest {
         handleProtocolInstance.init();
         IIdentifierSystem handleProtocol = handleProtocolInstance;
 
-        IIdentifierSystem inMemory = new InMemoryIdentifierSystem();
-        PIDRecord inMemoryPidRecord = new PIDRecord();
-        inMemoryPidRecord.addEntry(
-            // this is actually a registered type, but not in a data type registry, but inline in the PID record.
+        PIDRecord rec = new PIDRecord();
+        rec.addEntry(
+            // this is actually a registered type, but not in a data type registry, but inline in the PID system.
             "10320/loc",
             "",
             "<locations>\n<location href=\"http://dtr-test.pidconsortium.eu/objects/21.T11148/076759916209e5d62bd5\" weight=\"1\" view=\"json\" />\n"
-                + "<location href=\"http://dtr-test.pidconsortium.eu/#objects/21.T11148/076759916209e5d62bd5\" weight=\"0\" view=\"ui\" />\n"
-                + "</locations>"
+            + "<location href=\"http://dtr-test.pidconsortium.eu/#objects/21.T11148/076759916209e5d62bd5\" weight=\"0\" view=\"ui\" />\n"
+            + "</locations>"
         );
-        String inMemoryPID = inMemory.registerPID(inMemoryPidRecord);
+
+        IIdentifierSystem inMemory = new InMemoryIdentifierSystem();
+        String inMemoryPid = inMemory.registerPID(rec);
 
         // TODO initiate REST impl
 
         return Stream.of(
             Arguments.of(handleProtocol, "21.T11148/076759916209e5d62bd5", "21.T11148/NONEXISTENT123"),
-            Arguments.of(inMemory, inMemoryPID, "sandboxed/NONEXISTENT")
+            Arguments.of(inMemory, inMemoryPid, "sandboxed/NONEXISTENT")
         );
     }
 
