@@ -6,6 +6,9 @@
 package edu.kit.datamanager.pit.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import edu.kit.datamanager.pit.pidsystem.impl.sandbox.PidDatabaseObject;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -16,31 +19,59 @@ import java.util.Set;
 import lombok.Data;
 
 /**
- *
- * @author Torridity
+ * The internal representation for a PID record, offering methods to manipulate
+ * the record.
+ * 
+ * While other representations exist, they are only used for easier database
+ * communication or representation for the outside. In contrast, this is the
+ * internal representation offering methods for manipulation.
  */
 @Data
 public class PIDRecord {
 
     private String pid;
 
-    private Map<String, List<PIDRecordEntry>> entries;
+    private Map<String, List<PIDRecordEntry>> entries = new HashMap<>();
 
-    public PIDRecord() {
-        this.entries = new HashMap<>();
+    /**
+     * Creates an empty record without PID.
+     */
+    public PIDRecord() {}
+
+    /**
+     * Creates a record with the same content as the given representation.
+     * 
+     * @param dbo the given record representation.
+     */
+    public PIDRecord(PidDatabaseObject dbo) {
+        this.setPid(dbo.getPid());
+        dbo.getEntries().entrySet().stream().forEach(entry -> {
+            String key = entry.getKey();
+            entry
+                .getValue() // ArrayList<String>
+                .stream()
+                .forEach( value -> this.addEntry(key, "", value) );
+        });
     }
 
-    // Convenience setter / builder method.
+    /**
+     * Convenience setter / builder method.
+     * 
+     * @param pid the pid to set in this object.
+     * @return this object (builder method).
+     */
     public PIDRecord withPID(String pid) {
         this.setPid(pid);
         return this;
     }
-/**
- * Add an entry to the this class
- * @param propertyIdentifier
- * @param propertyName
- * @param propertyValue
- */
+
+    /**
+     * Adds a new key-name-value triplet.
+     * 
+     * @param propertyIdentifier the key/type PID.
+     * @param propertyName the human-readable name for the given key/type.
+     * @param propertyValue the value to this key/type.
+     */
     public void addEntry(String propertyIdentifier, String propertyName, String propertyValue) {
         if (propertyIdentifier.isEmpty()) {
             throw new IllegalArgumentException("The identifier of a property may not be empty!");
@@ -56,12 +87,13 @@ public class PIDRecord {
         }
         entryList.add(entry);
     }
-    /**
-     * set the value for property Identifier and Check Exception 
-     * @param propertyIdentifier
-     * @param name
-     */
 
+    /**
+     * Sets the name for a given key/type in all available pairs.
+     * 
+     * @param propertyIdentifier the key/type.
+     * @param name the new name.
+     */
     @JsonIgnore
     public void setPropertyName(String propertyIdentifier, String name) {
           List<PIDRecordEntry> pe = entries.get(propertyIdentifier);
@@ -72,12 +104,14 @@ public class PIDRecord {
             entry.setName(name);
         }
     }
-    /**
-     * Check keyvalue by Hashmap
-     * @param propertyIdentifier
-     * @return
-     */
 
+    /**
+     * Check if there is a pair or triplet containing the given property (key/type)
+     * is availeble in this record.
+     * 
+     * @param propertyIdentifier the key/type to search for.
+     * @return true, if the property/key/type is present.
+     */
     public boolean hasProperty(String propertyIdentifier) {
         return entries.containsKey(propertyIdentifier);
     }
@@ -116,10 +150,12 @@ public class PIDRecord {
         }
         return conf;
     }
-/**
- * Get the PropertyIdentifier in th Entries
- * @return
- */
+
+    /**
+     * Get all properties contained in this record.
+     * 
+     * @return al contained properties.
+     */
     @JsonIgnore
     public Set<String> getPropertyIdentifiers() {
         return entries.keySet();
@@ -136,12 +172,13 @@ public class PIDRecord {
         }
         return entry.get(0).getValue();
     }
-    /**
-     * To get the value of property Identifier and check the entries and through Excpetion 
-     * @param propertyIdentifier
-     * @return
-     */
 
+    /**
+     * Get all values of a given property.
+     * 
+     * @param propertyIdentifier the given property identifier.
+     * @return all values of the given property.
+     */
     public String[] getPropertyValues(String propertyIdentifier) {
         List<PIDRecordEntry> entry = entries.get(propertyIdentifier);
         if (entry == null) {
