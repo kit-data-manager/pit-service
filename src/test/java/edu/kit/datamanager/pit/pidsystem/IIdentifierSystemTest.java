@@ -27,7 +27,7 @@ import net.handle.hdllib.HandleException;
  */
 public class IIdentifierSystemTest {
 
-    static Stream<Arguments> implProvider() throws HandleException, IOException {
+    private static Stream<Arguments> implProvider() throws HandleException, IOException {
         HandleProtocolProperties props = new HandleProtocolProperties();
         props.setCredentials(null);
         HandleProtocolAdapter handleProtocolInstance = new HandleProtocolAdapter(props);
@@ -57,19 +57,19 @@ public class IIdentifierSystemTest {
 
     @ParameterizedTest
     @MethodSource("implProvider")
-    void isIdentifierRegisteredTrue(IIdentifierSystem impl, String pid) throws IOException {
+    public void isIdentifierRegisteredTrue(IIdentifierSystem impl, String pid) throws IOException {
         assertTrue(impl.isIdentifierRegistered(pid));
     }
 
     @ParameterizedTest
     @MethodSource("implProvider")
-    void isIdentifierRegisteredFalse(IIdentifierSystem impl, String pid, String pid_nonexist) throws IOException {
+    public void isIdentifierRegisteredFalse(IIdentifierSystem impl, String pid, String pid_nonexist) throws IOException {
         assertFalse(impl.isIdentifierRegistered(pid_nonexist));
     }
 
     @ParameterizedTest
     @MethodSource("implProvider")
-    void queryAllPropertiesExample(IIdentifierSystem impl, String pid) throws IOException {
+    public void queryAllPropertiesExample(IIdentifierSystem impl, String pid) throws IOException {
         PIDRecord result = impl.queryAllProperties(pid);
         assertEquals(result.getPid(), pid);
         assertTrue(result.getPropertyIdentifiers().contains("10320/loc"));
@@ -78,25 +78,25 @@ public class IIdentifierSystemTest {
 
     @ParameterizedTest
     @MethodSource("implProvider")
-    void queryAllPropertiesOfNonexistent(IIdentifierSystem impl, String _pid, String pid_nonexist) throws IOException {
+    public void queryAllPropertiesOfNonexistent(IIdentifierSystem impl, String _pid, String pid_nonexist) throws IOException {
         PIDRecord result = impl.queryAllProperties(pid_nonexist);
         assertNull(result);
     }
 
     @ParameterizedTest
     @MethodSource("implProvider")
-    void querySingleProperty(IIdentifierSystem impl, String pid) throws IOException {
+    public void querySingleProperty(IIdentifierSystem impl, String pid) throws IOException {
         TypeDefinition type = new TypeDefinition();
         type.setIdentifier("10320/loc");
         type.setDescription("FakeType for testing. Actually describing the location in some handle specific format, and no registered type");
         String property = impl.queryProperty(pid, type);
-        assertTrue(property.contains("<location href=\"http://dtr-test.pidconsortium.eu/objects/21.T11148/076759916209e5d62bd5\" weight=\"1\" view=\"json\" />"));
-        assertTrue(property.contains("<location href=\"http://dtr-test.pidconsortium.eu/#objects/21.T11148/076759916209e5d62bd5\" weight=\"0\" view=\"ui\" />"));
+        assertTrue(property.contains("objects/21.T11148/076759916209e5d62bd5\" weight=\"1\" view=\"json\""));
+        assertTrue(property.contains("#objects/21.T11148/076759916209e5d62bd5\" weight=\"0\" view=\"ui\""));
     }
 
     @ParameterizedTest
     @MethodSource("implProvider")
-    void queryNonexistentProperty(IIdentifierSystem impl, String pid) throws IOException {
+    public void queryNonexistentProperty(IIdentifierSystem impl, String pid) throws IOException {
         TypeDefinition type = new TypeDefinition();
         type.setIdentifier("Nonexistent_Property");
         type.setDescription("FakeType for testing. Does not exist and query should fail somehow.");
@@ -106,7 +106,7 @@ public class IIdentifierSystemTest {
 
     @ParameterizedTest
     @MethodSource("implProvider")
-    void queryPropertyOfNonexistent(IIdentifierSystem impl, String pid, String pid_nonexist) throws IOException {
+    public void queryPropertyOfNonexistent(IIdentifierSystem impl, String pid, String pid_nonexist) throws IOException {
         assertThrows(IOException.class, () -> {
             TypeDefinition type = new TypeDefinition();
             type.setIdentifier("Nonexistent_Property");
