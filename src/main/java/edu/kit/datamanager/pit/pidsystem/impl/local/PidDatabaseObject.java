@@ -1,4 +1,4 @@
-package edu.kit.datamanager.pit.pidsystem.impl.sandbox;
+package edu.kit.datamanager.pit.pidsystem.impl.local;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,6 +8,7 @@ import java.util.Map;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 
 import edu.kit.datamanager.pit.domain.PIDRecord;
@@ -25,14 +26,13 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode
 @Data
 @Entity
-//@Table(name = "min_pid_records")
 public class PidDatabaseObject {
 
     @Id
     @Column(name = "pid")
     private String pid;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private Map<String, ArrayList<String>> entries = new HashMap<>();
 
     /** For hibernate */

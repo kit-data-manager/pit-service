@@ -1,4 +1,4 @@
-package edu.kit.datamanager.pit.pidsystem.impl.sandbox;
+package edu.kit.datamanager.pit.pidsystem.impl.local;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

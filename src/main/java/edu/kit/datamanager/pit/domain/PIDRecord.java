@@ -7,7 +7,7 @@ package edu.kit.datamanager.pit.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import edu.kit.datamanager.pit.pidsystem.impl.sandbox.PidDatabaseObject;
+import edu.kit.datamanager.pit.pidsystem.impl.local.PidDatabaseObject;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -137,7 +137,7 @@ public class PIDRecord {
      *
      * @param typeDef the given type or profile definition.
      * @return true if all mandatory properties of the type are present.
-      */
+     */
     public boolean checkTypeConformance(edu.kit.datamanager.pit.domain.TypeDefinition typeDef) {
         // TODO Validation should be externalized, so validation strategies can be exchanged.
         // TODO Validation should be kept in one place, e.g. a special module.
