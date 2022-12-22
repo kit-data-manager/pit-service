@@ -282,6 +282,12 @@ public class RestWithInMemoryTest {
     @Test
     void testKnownPidIntervalSuccessIntervallMadness() throws Exception {
         PIDRecord r1 = this.createSomeRecord();
+        
+        // do some simple assertions for a little more delay between the creation times of the records.
+        // unfortunately we do not seem to be able to wait() within tests.
+        assertEquals(r1.getPid(), this.knownPidsDao.findById(r1.getPid()).get().getPid());
+        assertEquals(1, this.knownPidsDao.count());
+
         PIDRecord r2 = this.createSomeRecord();
         assertEquals(2, this.knownPidsDao.count());
         assertNotEquals(r1.getPid(), r2.getPid());
