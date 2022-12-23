@@ -16,7 +16,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
  * The internal representation for a PID record, offering methods to manipulate
@@ -26,7 +28,9 @@ import lombok.Data;
  * communication or representation for the outside. In contrast, this is the
  * internal representation offering methods for manipulation.
  */
-@Data
+@ToString
+@Getter
+@Setter
 public class PIDRecord {
 
     private String pid;
@@ -197,5 +201,52 @@ public class PIDRecord {
             values.add(e.getValue());
         }
         return values.toArray(new String[] {});
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((pid == null) ? 0 : pid.hashCode());
+        result = prime * result + ((entries == null) ? 0 : entries.hashCode());
+        return result;
+    }
+
+    /**
+     * Checks if two PIDRecords are equivalent.
+     * 
+     * - Ignores the name attribute: Only keys and values matter.
+     * - Ignores order of keys or values
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {return true;}
+        if (obj == null) {return false;}
+        if (getClass() != obj.getClass()) {return false;}
+
+        PIDRecord other = (PIDRecord) obj;
+        if (pid == null) {
+            if (other.pid != null) {return false;}
+        } else if (!pid.equals(other.pid)) {
+            return false;
+        }
+
+        if (entries == null) {
+            return other.entries == null;
+        } else {
+            // Equal means:
+            // 1. have the same set of keys
+            boolean isEqual = this.entries.keySet().equals(other.getEntries().keySet());
+            if (!isEqual) {return false;}
+            // 2. for each key, have the same values (order does not matter)
+            isEqual &= this.entries.values().stream()
+                .flatMap(List<PIDRecordEntry>::stream)
+                .filter(entry -> other.entries.get(entry.getKey()).stream()
+                    .filter(otherEntry -> otherEntry.getValue().equals(entry.getValue()))
+                    .count() == 0 // keep key-value-pairs with values not present in `other`.
+                )
+                .count() == 0; // there should be no pairs with values which are not available in `other`.
+            return isEqual;
+        }
     }
 }
