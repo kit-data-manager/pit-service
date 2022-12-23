@@ -6,6 +6,9 @@
 package edu.kit.datamanager.pit.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import edu.kit.datamanager.pit.pidsystem.impl.local.PidDatabaseObject;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -13,21 +16,46 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
- *
- * @author Torridity
+ * The internal representation for a PID record, offering methods to manipulate
+ * the record.
+ * 
+ * While other representations exist, they are only used for easier database
+ * communication or representation for the outside. In contrast, this is the
+ * internal representation offering methods for manipulation.
  */
-@Data
+@ToString
+@Getter
+@Setter
 public class PIDRecord {
 
     private String pid;
 
-    private Map<String, List<PIDRecordEntry>> entries;
+    private Map<String, List<PIDRecordEntry>> entries = new HashMap<>();
 
-    public PIDRecord() {
-        this.entries = new HashMap<>();
+    /**
+     * Creates an empty record without PID.
+     */
+    public PIDRecord() {}
+
+    /**
+     * Creates a record with the same content as the given representation.
+     * 
+     * @param dbo the given record representation.
+     */
+    public PIDRecord(PidDatabaseObject dbo) {
+        this.setPid(dbo.getPid());
+        dbo.getEntries().entrySet().stream().forEach(entry -> {
+            String key = entry.getKey();
+            entry
+                .getValue() // ArrayList<String>
+                .stream()
+                .forEach( value -> this.addEntry(key, "", value) );
+        });
     }
 
     public PIDRecord(SimplePidRecord rec) {
@@ -37,17 +65,24 @@ public class PIDRecord {
         }
     }
 
-    // Convenience setter / builder method.
+    /**
+     * Convenience setter / builder method.
+     * 
+     * @param pid the pid to set in this object.
+     * @return this object (builder method).
+     */
     public PIDRecord withPID(String pid) {
         this.setPid(pid);
         return this;
     }
-/**
- * Add an entry to the this class
- * @param propertyIdentifier
- * @param propertyName
- * @param propertyValue
- */
+
+    /**
+     * Adds a new key-name-value triplet.
+     * 
+     * @param propertyIdentifier the key/type PID.
+     * @param propertyName the human-readable name for the given key/type.
+     * @param propertyValue the value to this key/type.
+     */
     public void addEntry(String propertyIdentifier, String propertyName, String propertyValue) {
         if (propertyIdentifier.isEmpty()) {
             throw new IllegalArgumentException("The identifier of a property may not be empty!");
@@ -63,12 +98,13 @@ public class PIDRecord {
         }
         entryList.add(entry);
     }
-    /**
-     * set the value for property Identifier and Check Exception 
-     * @param propertyIdentifier
-     * @param name
-     */
 
+    /**
+     * Sets the name for a given key/type in all available pairs.
+     * 
+     * @param propertyIdentifier the key/type.
+     * @param name the new name.
+     */
     @JsonIgnore
     public void setPropertyName(String propertyIdentifier, String name) {
           List<PIDRecordEntry> pe = entries.get(propertyIdentifier);
@@ -79,12 +115,14 @@ public class PIDRecord {
             entry.setName(name);
         }
     }
-    /**
-     * Check keyvalue by Hashmap
-     * @param propertyIdentifier
-     * @return
-     */
 
+    /**
+     * Check if there is a pair or triplet containing the given property (key/type)
+     * is availeble in this record.
+     * 
+     * @param propertyIdentifier the key/type to search for.
+     * @return true, if the property/key/type is present.
+     */
     public boolean hasProperty(String propertyIdentifier) {
         return entries.containsKey(propertyIdentifier);
     }
@@ -110,7 +148,7 @@ public class PIDRecord {
      *
      * @param typeDef the given type or profile definition.
      * @return true if all mandatory properties of the type are present.
-      */
+     */
     public boolean checkTypeConformance(edu.kit.datamanager.pit.domain.TypeDefinition typeDef) {
         // TODO Validation should be externalized, so validation strategies can be exchanged.
         // TODO Validation should be kept in one place, e.g. a special module.
@@ -123,10 +161,12 @@ public class PIDRecord {
         }
         return conf;
     }
-/**
- * Get the PropertyIdentifier in th Entries
- * @return
- */
+
+    /**
+     * Get all properties contained in this record.
+     * 
+     * @return al contained properties.
+     */
     @JsonIgnore
     public Set<String> getPropertyIdentifiers() {
         return entries.keySet();
@@ -143,12 +183,13 @@ public class PIDRecord {
         }
         return entry.get(0).getValue();
     }
-    /**
-     * To get the value of property Identifier and check the entries and through Excpetion 
-     * @param propertyIdentifier
-     * @return
-     */
 
+    /**
+     * Get all values of a given property.
+     * 
+     * @param propertyIdentifier the given property identifier.
+     * @return all values of the given property.
+     */
     public String[] getPropertyValues(String propertyIdentifier) {
         List<PIDRecordEntry> entry = entries.get(propertyIdentifier);
         if (entry == null) {
@@ -160,5 +201,52 @@ public class PIDRecord {
             values.add(e.getValue());
         }
         return values.toArray(new String[] {});
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((pid == null) ? 0 : pid.hashCode());
+        result = prime * result + ((entries == null) ? 0 : entries.hashCode());
+        return result;
+    }
+
+    /**
+     * Checks if two PIDRecords are equivalent.
+     * 
+     * - Ignores the name attribute: Only keys and values matter.
+     * - Ignores order of keys or values
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {return true;}
+        if (obj == null) {return false;}
+        if (getClass() != obj.getClass()) {return false;}
+
+        PIDRecord other = (PIDRecord) obj;
+        if (pid == null) {
+            if (other.pid != null) {return false;}
+        } else if (!pid.equals(other.pid)) {
+            return false;
+        }
+
+        if (entries == null) {
+            return other.entries == null;
+        } else {
+            // Equal means:
+            // 1. have the same set of keys
+            boolean isEqual = this.entries.keySet().equals(other.getEntries().keySet());
+            if (!isEqual) {return false;}
+            // 2. for each key, have the same values (order does not matter)
+            isEqual &= this.entries.values().stream()
+                .flatMap(List<PIDRecordEntry>::stream)
+                .filter(entry -> other.entries.get(entry.getKey()).stream()
+                    .filter(otherEntry -> otherEntry.getValue().equals(entry.getValue()))
+                    .count() == 0 // keep key-value-pairs with values not present in `other`.
+                )
+                .count() == 0; // there should be no pairs with values which are not available in `other`.
+            return isEqual;
+        }
     }
 }
