@@ -14,7 +14,6 @@ authors:
 title: "Typed PID Maker"
 type: software
 abstract: The Typed PID Maker is the entry point to integrate digital resources into the FAIR DO ecosystem. It allows to create PIDs for resources and to provide them with the necessary metadata to ensure that the resources can be found.
-version: 0.4.0
 date-released: 2020-10-01
 url: "https://github.com/kit-data-manager/pit-service"
 repository-code: "https://github.com/kit-data-manager/pit-service"
