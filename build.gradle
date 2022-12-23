@@ -1,9 +1,9 @@
 plugins {
     // Spring boot & dependency management:
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
-    id 'org.springframework.boot' version '2.7.4'
+    id 'org.springframework.boot' version '2.7.5'
     // https://docs.spring.io/dependency-management-plugin/docs/current-SNAPSHOT/reference/html/
-    id "io.spring.dependency-management" version "1.0.14.RELEASE"
+    id "io.spring.dependency-management" version "1.1.0"
     // Lombok generates getter and setter and more. https://projectlombok.org/
     // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
     id "io.freefair.lombok" version "6.5.1"
@@ -20,7 +20,7 @@ plugins {
     // Adds coveralls task for CI to send results to the coveralls service.
     id "com.github.kt3k.coveralls" version "2.12.0"
     //id "com.github.kt3k.coveralls" version "2.12.0" 
-    id "org.owasp.dependencycheck" version "7.2.1"
+    id "org.owasp.dependencycheck" version "7.3.2"
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
 }
 
@@ -54,18 +54,18 @@ configurations {
 }
 
 ext {
-    springDocVersion  = '1.6.11'
+    springDocVersion  = '1.6.13'
 }
 
 dependencies {
     // Due to the spring boot gradle plugin, we can omit versions in org.springframework.*
     // dependencies. It will automatically choose the fitting ones.
-    implementation("edu.kit.datamanager:service-base:1.0.4")
-    implementation("edu.kit.datamanager:repo-core:1.0.3")
+    implementation("edu.kit.datamanager:service-base:1.0.7")
+    implementation("edu.kit.datamanager:repo-core:1.0.4")
     // com.google.common, LoadingCache
-    implementation "com.github.google.guava:guava:v31.1"
+    implementation("com.google.guava:guava:31.1-jre")
     // Required by Spring/Javers at runtime
-    implementation 'com.google.code.gson:gson:2.9.1'
+    implementation 'com.google.code.gson:gson:2.10'
 
     // spring core, e.g. @EnableJpaRepositories
     implementation "org.springframework:spring-core"

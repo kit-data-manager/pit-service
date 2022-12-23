@@ -54,6 +54,13 @@ public class PIDRecord {
         });
     }
 
+    public PIDRecord(SimplePidRecord rec) {
+        this.entries = new HashMap<>();
+        for (SimplePair pair : rec.getPairs()) {
+            this.addEntry(pair.getKey(), "", pair.getValue());
+        }
+    }
+
     /**
      * Convenience setter / builder method.
      * 

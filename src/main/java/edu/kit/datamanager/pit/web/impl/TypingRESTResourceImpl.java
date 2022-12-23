@@ -4,8 +4,7 @@ import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import edu.kit.datamanager.pit.common.DataTypeException;
@@ -16,12 +15,14 @@ import edu.kit.datamanager.pit.configuration.ApplicationProperties.ValidationStr
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.SimplePidRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.util.TypeValidationUtils;
 import edu.kit.datamanager.pit.web.ITypingRestResource;
+import edu.kit.datamanager.pit.web.TabulatorPaginationFormat;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.entities.messaging.PidRecordMessage;
 import edu.kit.datamanager.util.AuthenticationHelper;
@@ -30,10 +31,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.http.client.cache.HeaderConstants;
+import org.apache.http.entity.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -404,11 +408,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         LOG.info("Creating PID");
         boolean valid = false;
         try {
-            if (applicationProps.getValidationStrategy() == ValidationStrategy.EMBEDDED_STRICT) {
-                valid = this.validateRecord(record);
-            }
+            valid = this.executeValidationStrategy(record);
         } catch (DataTypeException e) {
-            throw new RecordValidationException("(no PID registered yet)", e.getMessage());
+            throw new RecordValidationException("(no PID has been registered)", e.getMessage());
         }
         String profileKey = applicationProps.getProfileKey();
         boolean missingProfile = !record.hasProperty(profileKey)
@@ -464,9 +466,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         record.setPid(pid);
         boolean valid = false;
         try {
-            if (applicationProps.getValidationStrategy() == ValidationStrategy.EMBEDDED_STRICT) {
-                valid = this.validateRecord(record);
-            }
+            valid = this.executeValidationStrategy(record);
         } catch (DataTypeException e) {
             throw new RecordValidationException(pid, e.getMessage());
         }
@@ -549,11 +549,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
         String pid = getContentPathFromRequest("pid", request);
-        PIDRecord record = this.typingService.queryAllProperties(pid);
+        PIDRecord rec = this.typingService.queryAllProperties(pid);
         if (applicationProps.getStorageStrategy().storesResolved()) {
             storeLocally(pid, false);
         }
-        return ResponseEntity.ok().body(record);
+        return ResponseEntity.ok().body(rec);
     }
 
     @Override
@@ -570,19 +570,15 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return ResponseEntity.notFound().build();
     }
 
-    @Override
-    public ResponseEntity<Collection<KnownPid>> findByInterval(
+    public Page<KnownPid> findAllPage(
         Instant createdAfter,
         Instant createdBefore,
         Instant modifiedAfter,
         Instant modifiedBefore,
-        Pageable pageable,
-        WebRequest request,
-        HttpServletResponse response,
-        UriComponentsBuilder uriBuilder
-    ) throws IOException {
-        boolean queriesCreated = createdAfter != null || createdBefore != null;
-        boolean queriesModified = modifiedAfter != null || modifiedBefore != null;
+        Pageable pageable
+    ) {
+        final boolean queriesCreated = createdAfter != null || createdBefore != null;
+        final boolean queriesModified = modifiedAfter != null || modifiedBefore != null;
         if (queriesCreated && createdAfter == null) {
             createdAfter = Instant.EPOCH;
         }
@@ -608,17 +604,25 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
         if (queriesCreated && queriesModified) {
             final Page<KnownPid> tmp = resultModifiedTimestamp;
-            Collection<KnownPid> intersection = resultCreatedTimestamp.filter((x) -> tmp.getContent().contains(x)).toList();
-            return ResponseEntity.ok().body(intersection);
+            final List<KnownPid> intersection = resultCreatedTimestamp.filter((x) -> tmp.getContent().contains(x)).toList();
+            return new PageImpl<>(intersection);
         } else if (queriesCreated) {
-            return ResponseEntity.ok().body(resultCreatedTimestamp.getContent());
+            return resultCreatedTimestamp;
         } else if (queriesModified) {
-            return ResponseEntity.ok().body(resultModifiedTimestamp.getContent());
+            return resultModifiedTimestamp;
         }
-        return ResponseEntity.ok().body(new ArrayList<KnownPid>());
+        return new PageImpl<>(this.localPidStorage.findAll());
     }
 
-    private boolean validateRecord(PIDRecord record) throws DataTypeException, IOException {
+    private boolean executeValidationStrategy(PIDRecord pidr) throws DataTypeException, IOException {
+        boolean valid = applicationProps.getValidationStrategy() == ValidationStrategy.NONE_DEBUG;
+        if (applicationProps.getValidationStrategy() == ValidationStrategy.EMBEDDED_STRICT) {
+            valid = this.validateEmbeddedStrict(pidr);
+        }
+        return valid;
+    }
+
+    private boolean validateEmbeddedStrict(PIDRecord record) throws DataTypeException, IOException {
         // TODO should be part of TypeValidationUtils / typing service or wherever
         // typing strategies will be in future.
         String profileKey = applicationProps.getProfileKey();
@@ -643,6 +647,49 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public ResponseEntity<List<KnownPid>> findAll(
+            Instant createdAfter,
+            Instant createdBefore,
+            Instant modifiedAfter,
+            Instant modifiedBefore,
+            Pageable pageable,
+            WebRequest request,
+            HttpServletResponse response,
+            UriComponentsBuilder uriBuilder) throws IOException
+    {
+        Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
+        response.addHeader(
+            HeaderConstants.CONTENT_RANGE,
+            ControllerUtils.getContentRangeHeader(
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements()));
+        return ResponseEntity.ok().body(page.getContent());
+    }
+
+    @Override
+    public ResponseEntity<TabulatorPaginationFormat<KnownPid>> findAllForTabular(
+            Instant createdAfter,
+            Instant createdBefore,
+            Instant modifiedAfter,
+            Instant modifiedBefore,
+            Pageable pageable,
+            WebRequest request,
+            HttpServletResponse response,
+            UriComponentsBuilder uriBuilder) throws IOException
+    {
+        Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
+        response.addHeader(
+            HeaderConstants.CONTENT_RANGE,
+            ControllerUtils.getContentRangeHeader(
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements()));
+        TabulatorPaginationFormat<KnownPid> tabPage = new TabulatorPaginationFormat<>(page);
+        return ResponseEntity.ok().body(tabPage);
     }
 
     // /**

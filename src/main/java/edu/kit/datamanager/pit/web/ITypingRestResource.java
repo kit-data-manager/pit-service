@@ -19,7 +19,7 @@ import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.common.InconsistentRecordsException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
-
+import edu.kit.datamanager.pit.domain.SimplePidRecord;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -30,13 +30,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Collection;
+import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
 import org.springdoc.core.converters.models.PageableAsQueryParam;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -138,21 +141,45 @@ public interface ITypingRestResource {
      * profile. Before creating the record, the record information will be
      * validated against the profile.
      *
-     * @param record The PID record.
+     * @param rec The PID record.
      *
-     * @return either 200 or 404, indicating whether the profile is registered
-     * or not registered
+     * @return either 201 and a record representation, 409 on validation fail
+     *         (conflict) or 500 on other server errors.
      *
      * @throws IOException
      */
-    @RequestMapping(path = "/pid/", method = RequestMethod.POST)
-    @Operation(summary = "Create a new PID record", description = "Create a new PID record using the record information from the request body.")
+    @PostMapping(
+        path = "/pid/",
+        consumes = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE},
+        produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
+    )
+    @Operation(
+        summary = "Create a new PID record",
+        description = "Create a new PID record using the record information from the request body."
+    )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+        description = "The body containing all PID record values as they should be in the new PIDs record.",
+        required = true,
+        content = {
+            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
+            @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
+        }
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Created", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PIDRecord.class))),
+        @ApiResponse(
+            responseCode = "201",
+            description = "Created",
+            content = {
+                @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
+                @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
+        }),
         @ApiResponse(responseCode = "409", description = "Validation failed (conflict). See body for details.", content = @Content(mediaType = "text/plain")),
         @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
     })
-    public ResponseEntity<PIDRecord> createPID(@RequestBody final PIDRecord record,
+    public ResponseEntity<PIDRecord> createPID(
+            @RequestBody
+            final PIDRecord rec,
+
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder
@@ -163,20 +190,44 @@ public interface ITypingRestResource {
      * body. The record is expected to contain the identifier of the matching
      * profile. Conditions for a valid record are the same as for creation.
      *
-     * @param record The PID record.
+     * @param rec The PID record.
      *
      * @return the record (on success).
      *
      * @throws IOException
      */
-    @RequestMapping(path = "/pid/**", method = RequestMethod.PUT)
-    @Operation(summary = "Update an existing PID record", description = "Update an existing PID record using the record information from the request body.")
+    @PutMapping(
+        path = "/pid/**",
+        consumes = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE},
+        produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
+    )
+    @Operation(
+        summary = "Update an existing PID record",
+        description = "Update an existing PID record using the record information from the request body."
+    )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+        description = "The body containing all PID record values as they should be after the update.",
+        required = true,
+        content = {
+            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
+            @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
+        }
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Success.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PIDRecord.class))),
+        @ApiResponse(
+            responseCode = "200",
+            description = "Success.",
+            content = {
+                @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
+                @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
+            }),
         @ApiResponse(responseCode = "409", description = "Validation failed (conflict). See body for details.", content = @Content(mediaType = "text/plain")),
         @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
     })
-    public ResponseEntity<PIDRecord> updatePID(@RequestBody final PIDRecord record,
+    public ResponseEntity<PIDRecord> updatePID(
+            @RequestBody
+            final PIDRecord rec,
+
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder
@@ -213,10 +264,20 @@ public interface ITypingRestResource {
      *
      * @throws IOException
      */
-    @RequestMapping(path = "/pid/**", method = RequestMethod.GET)
+    @GetMapping(
+        path = "/pid/**",
+        produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
+    )
     @Operation(summary = "Get the record of the given PID.", description = "Get the record to the given PID, if it exists.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PIDRecord.class))),
+        @ApiResponse(
+            responseCode = "200",
+            description = "Found",
+            content = {
+                @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
+                @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
+            }
+        ),
         @ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = "text/plain"))
     })
     public ResponseEntity<PIDRecord> getRecord (
@@ -224,7 +285,6 @@ public interface ITypingRestResource {
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder
     ) throws IOException;
-
 
     /**
      * Requests a PID from the local store. If this PID is known, it will be
@@ -267,35 +327,32 @@ public interface ITypingRestResource {
             final UriComponentsBuilder uriBuilder
      ) throws IOException;
 
-
-     /**
-      * Return a list of known PIDs and their timestamps (creation and modification),
-      * filtered by the given criterial. If no criteria is given, all known PIDs can
-      * be received (by paging, if the number is too large).
-      * 
-      * Known PIDs are defined as being stored in a local store. This store is not a
-      * cache! Instead, the service remembers every PID which it created (and
-      * resolved, depending on the configuration parameter `pit.storage.strategy` of
-      * the service) on request.
-      * 
-      * @param createdAfter   defines the earliest date for the creation timestamp.
-      * @param createdBefore  defines the latest date for the creation timestamp.
-      * @param modifiedAfter  defines the earliest date for the modification
-      *                       timestamp.
-      * @param modifiedBefore defines the latest date for the modification timestamp.
-      * @param pageable       defines page size and page to navigate through large
-      *                       lists.
-      * @return the PIDs matching all given contraints.
-      */
+    /**
+     * Returns all known PIDs, limited by the given page size and number.
+     * Several filtering criteria are also available.
+     * 
+     * Known PIDs are defined as being stored in a local store. This store is not a
+     * cache! Instead, the service remembers every PID which it created (and
+     * resolved, depending on the configuration parameter `pit.storage.strategy` of
+     * the service) on request.
+     * 
+     * @param createdAfter   defines the earliest date for the creation timestamp.
+     * @param createdBefore  defines the latest date for the creation timestamp.
+     * @param modifiedAfter  defines the earliest date for the modification
+     *                       timestamp.
+     * @param modifiedBefore defines the latest date for the modification timestamp.
+     * @param pageable       defines page size and page to navigate through large
+     *                       lists.
+     * @return the PIDs matching all given contraints.
+     */
     @Operation(
-        summary = "Return a list of known PIDs and their timestamps, filtered by the given criterial.",
-        description = "Return a list of known PIDs and their timestamps (creation and modification),"
-        + " filtered by the given criterial. If no criteria is given, all known PIDs can"
-        + " be received (by paging, if the number is too large)."
-        + " Known PIDs are defined as being stored in a local store. This store is not a"
-        + " cache! Instead, the service remembers every PID which it created (and"
-        + " resolved, depending on the configuration parameter `pit.storage.strategy` of"
-        + " the service) on request.",
+        summary = "Returns all known PIDs. Supports paging, filtering criteria, and different formats.",
+        description = "Returns all known PIDs, limited by the given page size and number. "
+            + "Several filtering criteria are also available. Known PIDs are defined as "
+            + "being stored in a local store. This store is not a cache! Instead, the "
+            + "service remembers every PID which it created (and resolved, depending on "
+            + "the configuration parameter `pit.storage.strategy` of the service) on "
+            + "request. Use the Accept header to adjust the format.",
         responses = {
             @ApiResponse(
                 responseCode = "200",
@@ -306,12 +363,11 @@ public interface ITypingRestResource {
     )
     @GetMapping(path = "/known-pid")
     @PageableAsQueryParam
-    public ResponseEntity<Collection<KnownPid>> findByInterval(
-
+    public ResponseEntity<List<KnownPid>> findAll(
             @Parameter(name = "created_after", description = "The UTC time of the earliest creation timestamp of a returned PID.", required = false)
             @RequestParam(name = "created_after", required = false)
             Instant createdAfter,
-            
+
             @Parameter(name = "created_before", description = "The UTC time of the latest creation timestamp of a returned PID.", required = false)
             @RequestParam(name = "created_before", required = false)
             Instant createdBefore,
@@ -323,7 +379,66 @@ public interface ITypingRestResource {
             @Parameter(name = "modified_before", description = "The UTC time of the latest modification timestamp of a returned PID.", required = false)
             @RequestParam(name = "modified_before", required = false)
             Instant modifiedBefore,
+
+            @Parameter(hidden = true)
+            @PageableDefault(sort = {"modified"}, direction = Sort.Direction.ASC)
+            Pageable pageable,
             
+            WebRequest request,
+            
+            HttpServletResponse response,
+            
+            UriComponentsBuilder uriBuilder
+    ) throws IOException;
+
+    /**
+     * Like findAll, but the return value is formatted for the tabulator
+     * javascript library.
+     * 
+     * @param createdAfter   defines the earliest date for the creation timestamp.
+     * @param createdBefore  defines the latest date for the creation timestamp.
+     * @param modifiedAfter  defines the earliest date for the modification
+     *                       timestamp.
+     * @param modifiedBefore defines the latest date for the modification timestamp.
+     * @param pageable       defines page size and page to navigate through large
+     *                       lists.
+     * @return the PIDs matching all given contraints.
+     */
+      @Operation(
+        summary = "Returns all known PIDs. Supports paging, filtering criteria, and different formats.",
+        description = "Returns all known PIDs, limited by the given page size and number. "
+            + "Several filtering criteria are also available. Known PIDs are defined as "
+            + "being stored in a local store. This store is not a cache! Instead, the "
+            + "service remembers every PID which it created (and resolved, depending on "
+            + "the configuration parameter `pit.storage.strategy` of the service) on "
+            + "request. Use the Accept header to adjust the format.",
+        responses = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "If the request was valid. May return an empty list.",
+                content = @Content(schema = @Schema(implementation = TabulatorPaginationFormat.class))
+            )
+        }
+    )
+    @GetMapping(path = "/known-pid", produces={"application/tabulator+json"}, headers = "Accept=application/tabulator+json")
+    @PageableAsQueryParam
+    public ResponseEntity<TabulatorPaginationFormat<KnownPid>> findAllForTabular(
+            @Parameter(name = "created_after", description = "The UTC time of the earliest creation timestamp of a returned PID.", required = false)
+            @RequestParam(name = "created_after", required = false)
+            Instant createdAfter,
+
+            @Parameter(name = "created_before", description = "The UTC time of the latest creation timestamp of a returned PID.", required = false)
+            @RequestParam(name = "created_before", required = false)
+            Instant createdBefore,
+
+            @Parameter(name = "modified_after", description = "The UTC time of the earliest modification timestamp of a returned PID.", required = false)
+            @RequestParam(name = "modified_after", required = false)
+            Instant modifiedAfter,
+            
+            @Parameter(name = "modified_before", description = "The UTC time of the latest modification timestamp of a returned PID.", required = false)
+            @RequestParam(name = "modified_before", required = false)
+            Instant modifiedBefore,
+
             @Parameter(hidden = true)
             @PageableDefault(sort = {"modified"}, direction = Sort.Direction.ASC)
             Pageable pageable,
