@@ -72,7 +72,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         // everyone, even unauthenticated users may do HTTP OPTIONS on urls.
         .authorizeRequests()
         .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-        .antMatchers("/api/v1").authenticated()
+        .antMatchers("/api/v1/**").authenticated()
         .and()
         // do not store sessions (use stateless "sessions")
         .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
