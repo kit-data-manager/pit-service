@@ -15,6 +15,7 @@ The Typed PID Maker enables the creation, maintenance, and validation of PIDs. I
 - ✅ Store the created PIDs in your database.
   - ✅ Pagination support
   - ✅ Tabulator.js support
+- ✅ Authentication via [JWT](https://jwt.io/introduction) or [KeyCloak](https://www.keycloak.org/)
 
 ## How to build
 
