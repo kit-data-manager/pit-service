@@ -105,11 +105,6 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
 }
 
-release {
-    // define tag pattern (tags have to start with 'v')
-    tagTemplate = 'v${version}'
-}
-
 application {
     mainClass = 'edu.kit.datamanager.pit.Application'
 }
@@ -195,6 +190,8 @@ jacocoTestReport {
 }
 
 release {
+    // define tag pattern (tags have to start with 'v')
+    tagTemplate = 'v${version}'
     git {
         requireBranch.set("master")
     }
