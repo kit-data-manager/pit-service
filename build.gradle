@@ -48,11 +48,6 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 
- 
-configurations {
-    all*.exclude module : 'spring-boot-starter-logging'
-}
-
 ext {
     springDocVersion  = '1.6.14'
 }
