@@ -85,7 +85,7 @@ dependencies {
 
     // More flexibility when (de-)serializing json:
     //implementation("com.monitorjbl:spring-json-view:1.1.0")
-	implementation("com.github.everit-org.json-schema:org.everit.json.schema:1.14.1")
+	implementation("com.github.everit-org.json-schema:org.everit.json.schema:1.14.2")
     
     implementation('org.apache.httpcomponents:httpclient:4.5.14')
     implementation('org.apache.httpcomponents:httpclient-cache:4.5.14')
