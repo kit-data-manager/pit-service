@@ -14,11 +14,7 @@ public class PidSuffixGenPrefixed implements PidSuffixGenerator {
 
     public PidSuffixGenPrefixed(PidSuffixGenerator generator, String prefix) {
         this.generator = generator;
-        if (this.prefix.endsWith("/")) {
-            this.prefix = prefix;
-        } else {
-            this.prefix = prefix.concat("/");
-        }
+        this.prefix = prefix;
     }
 
     @Override
