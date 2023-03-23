@@ -92,8 +92,9 @@ public class Application {
     }
 
     @Bean
-    public ITypingService typingService(IIdentifierSystem identifierSystem, ApplicationProperties props) throws IOException {
-        return new TypingService(identifierSystem, typeRegistry(), typeCache(props));
+    public ITypingService typingService(IIdentifierSystem identifierSystem, ApplicationProperties props)
+            throws IOException {
+        return new TypingService(identifierSystem, typeRegistry(), typeLoader(props));
     }
 
     @Bean(name = "OBJECT_MAPPER_BEAN")
@@ -136,8 +137,18 @@ public class Application {
                 .build();
     }
 
+    /**
+     * This loader is a cache, which will retrieve `TypeDefinition`s, if required.
+     * 
+     * Therefore, it can be used instead of the ITypeRegistry implementations.
+     * Retrieve it using Autowire or from the application context.
+     * 
+     * @param props the applications properties set by the administration at the
+     *              start of this application.
+     * @return the cache
+     */
     @Bean
-    public LoadingCache<String, TypeDefinition> typeCache(ApplicationProperties props){
+    public LoadingCache<String, TypeDefinition> typeLoader(ApplicationProperties props) {
         int maximumsize = props.getMaximumSize();
         long expireafterwrite = props.getExpireAfterWrite();
         return CacheBuilder.newBuilder()
