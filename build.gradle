@@ -20,7 +20,7 @@ plugins {
     // Adds coveralls task for CI to send results to the coveralls service.
     id "com.github.kt3k.coveralls" version "2.12.2"
     //id "com.github.kt3k.coveralls" version "2.12.0" 
-    id "org.owasp.dependencycheck" version "8.1.2"
+    id "org.owasp.dependencycheck" version "8.2.1"
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
     // include build and git information via Spring Actuator
     id "com.gorylenko.gradle-git-properties" version "2.4.1"
