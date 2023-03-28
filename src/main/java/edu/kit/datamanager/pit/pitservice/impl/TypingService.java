@@ -225,7 +225,7 @@ public class TypingService implements ITypingService {
         if (includePropertyNames) {
             enrichPIDInformationRecord(result);
         }
-        result.checkTypeConformance(typeDef);
+        result.getMissingMandatoryTypesOf(typeDef);
         return result;
     }
 
@@ -256,7 +256,7 @@ public class TypingService implements ITypingService {
                 return null;
             }
             propertiesInTypes.addAll(typeDef.getAllProperties());
-            pidInfo.checkTypeConformance(typeDef);
+            pidInfo.getMissingMandatoryTypesOf(typeDef);
         }
         pidInfo.removePropertiesNotListed(propertiesInTypes);
         return pidInfo;

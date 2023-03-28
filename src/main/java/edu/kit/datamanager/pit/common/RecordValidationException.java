@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatus;
  * Indicates that a PID was given which could not be resolved to answer the
  * request properly.
  */
-@ResponseStatus(value = HttpStatus.CONFLICT)
+@ResponseStatus(value = HttpStatus.BAD_REQUEST)
 public class RecordValidationException extends IOException {
 
 	private static final long serialVersionUID = 1L;

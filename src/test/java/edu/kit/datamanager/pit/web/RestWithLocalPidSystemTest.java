@@ -27,7 +27,6 @@ import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
 import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 import edu.kit.datamanager.pit.pidsystem.impl.local.LocalPidSystem;
-import edu.kit.datamanager.pit.web.impl.TypingRESTResourceImpl;
 
 // org.springframework.mock is for unit testing
 // Source: https://docs.spring.io/spring-framework/docs/current/reference/html/testing.html
@@ -133,7 +132,7 @@ public class RestWithLocalPidSystemTest {
                     .accept(MediaType.ALL)
             )
             .andDo(MockMvcResultHandlers.print())
-            .andExpect(MockMvcResultMatchers.status().isConflict());
+            .andExpect(MockMvcResultMatchers.status().isBadRequest());
         // we store PIDs only if the PID was created successfully
         assertEquals(0, this.knownPidsDao.count());
 

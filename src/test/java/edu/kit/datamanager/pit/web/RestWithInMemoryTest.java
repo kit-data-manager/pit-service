@@ -124,7 +124,7 @@ public class RestWithInMemoryTest {
                     .accept(MediaType.ALL)
             )
             .andDo(MockMvcResultHandlers.print())
-            .andExpect(MockMvcResultMatchers.status().isConflict());
+            .andExpect(MockMvcResultMatchers.status().isBadRequest());
         
         // we store PIDs only if the PID was created successfully
         assertEquals(0, this.knownPidsDao.count());
@@ -143,7 +143,7 @@ public class RestWithInMemoryTest {
                     .accept(MediaType.ALL)
             )
             .andDo(MockMvcResultHandlers.print())
-            .andExpect(MockMvcResultMatchers.status().isConflict());
+            .andExpect(MockMvcResultMatchers.status().isBadRequest());
         
         // we store PIDs only if the PID was created successfully
         assertEquals(0, this.knownPidsDao.count());
@@ -162,7 +162,7 @@ public class RestWithInMemoryTest {
                     .accept(MediaType.ALL)
             )
             .andDo(MockMvcResultHandlers.print())
-            .andExpect(MockMvcResultMatchers.status().isConflict());
+            .andExpect(MockMvcResultMatchers.status().isBadRequest());
         
         // we store PIDs only if the PID was created successfully
         assertEquals(0, this.knownPidsDao.count());

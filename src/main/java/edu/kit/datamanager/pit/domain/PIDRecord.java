@@ -149,17 +149,16 @@ public class PIDRecord {
      * @param typeDef the given type or profile definition.
      * @return true if all mandatory properties of the type are present.
      */
-    public boolean checkTypeConformance(edu.kit.datamanager.pit.domain.TypeDefinition typeDef) {
+    public Collection<String> getMissingMandatoryTypesOf(TypeDefinition typeDef) {
         // TODO Validation should be externalized, so validation strategies can be exchanged.
         // TODO Validation should be kept in one place, e.g. a special module.
-        boolean conf = true;
+        Collection<String> missing = new ArrayList<>();
         for (String p : typeDef.getAllProperties()) {
             if (!typeDef.getSubTypes().get(p).isOptional() && !entries.containsKey(p)) {
-                conf = false;
-                break;
+                missing.add(p);
             }
         }
-        return conf;
+        return missing;
     }
 
     /**

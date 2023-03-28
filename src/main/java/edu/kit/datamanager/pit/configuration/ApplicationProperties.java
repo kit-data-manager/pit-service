@@ -16,12 +16,17 @@
 package edu.kit.datamanager.pit.configuration;
 
 import edu.kit.datamanager.configuration.GenericApplicationProperties;
+import edu.kit.datamanager.pit.pitservice.IValidationStrategy;
+import edu.kit.datamanager.pit.pitservice.impl.EmbeddedStrictValidatorStrategy;
+
 import java.net.URL;
+import java.util.Optional;
 
 import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.validation.annotation.Validated;
 
 /**
@@ -37,7 +42,7 @@ import org.springframework.validation.annotation.Validated;
  * 
  * @author Andreas Pfeil
  */
-@Component
+@Configuration
 @Validated
 public class ApplicationProperties extends GenericApplicationProperties {
 
@@ -60,6 +65,15 @@ public class ApplicationProperties extends GenericApplicationProperties {
   @Value("${pit.validation.strategy:embedded-strict}")
   @NotNull
   private ValidationStrategy validationStrategy = ValidationStrategy.EMBEDDED_STRICT;
+
+  @Bean
+  public Optional<IValidationStrategy> defaultValidationStrategy() {
+    Optional<IValidationStrategy> defaultStrategy = Optional.empty();
+    if (this.validationStrategy == ValidationStrategy.EMBEDDED_STRICT) {
+      defaultStrategy = Optional.of(new EmbeddedStrictValidatorStrategy());
+    }
+    return defaultStrategy;
+  }
 
   public enum StorageStrategy {
     // Only store PIDs which have been created or modified using this instance
