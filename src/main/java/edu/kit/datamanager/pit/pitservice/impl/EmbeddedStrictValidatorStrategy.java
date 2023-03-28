@@ -68,9 +68,9 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
     /**
      * Exceptions indicate failure. No Exceptions mean success.
      * 
-     * @param pidRecord
-     * @param profile
-     * @throws RecordValidationException
+     * @param pidRecord the PID record to validate.
+     * @param profile   the profile to validate against.
+     * @throws RecordValidationException with error message on validation errors.
      */
     private void strictProfileValidation(PIDRecord pidRecord, TypeDefinition profile) throws RecordValidationException {
         // if (profile.hasSchema()) {
