@@ -23,6 +23,8 @@ public class TypeValidationUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypeValidationUtils.class);
 
+    private TypeValidationUtils() {}
+
     /**
      * Check if all mandatory attributes are present. If not, throw an exception.
      * 
@@ -50,19 +52,19 @@ public class TypeValidationUtils {
      * - All properties of the record must be successfully validated according to
      * the profile subtypes (properties).
      * 
-     * @param record  the record to validate.
-     * @param profile the profile to validate against, defining the rules for the
-     *                record.
+     * @param pidRecord the record to validate.
+     * @param profile   the profile to validate against, defining the rules for the
+     *                  record.
      * @return true if all validations were successful, false otherwise.
      */
-    public static boolean isValid(PIDRecord record, TypeDefinition profile) {
+    public static boolean isValid(PIDRecord pidRecord, TypeDefinition profile) {
         LOG.trace("Validating PID record against type definition.");
         if (!pidRecord.getMissingMandatoryTypesOf(profile).isEmpty()) {
             LOG.warn("PID record does not contain all required elements of type definition.");
             // invalid according to type
             return false;
         }
-        for (String recordKey : record.getPropertyIdentifiers()) {
+        for (String recordKey : pidRecord.getPropertyIdentifiers()) {
             LOG.trace("Checking PID record key {}.", recordKey);
             TypeDefinition type = profile.getSubTypes().get(recordKey);
             if (type == null) {
@@ -70,7 +72,7 @@ public class TypeValidationUtils {
                 return false;
             }
 
-            String[] values = record.getPropertyValues(recordKey);
+            String[] values = pidRecord.getPropertyValues(recordKey);
             for (String value : values) {
                 if (value == null) {
                     LOG.error("'null' record value found for key {}.", recordKey);
