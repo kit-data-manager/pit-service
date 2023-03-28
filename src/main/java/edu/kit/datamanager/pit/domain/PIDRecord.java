@@ -143,19 +143,18 @@ public class PIDRecord {
     }
 
     /**
-     * Checks if all mandatory properties of a type (or profile) are available in
-     * this PID record.
-     *
-     * @param typeDef the given type or profile definition.
-     * @return true if all mandatory properties of the type are present.
+     * Returns all missing mandatory attributes from the given Profile, which are not
+     * present in this record.
+     * 
+     * @param profile the given Profile definition.
+     * @return all missing mandatory attributes.
      */
-    public Collection<String> getMissingMandatoryTypesOf(TypeDefinition typeDef) {
-        // TODO Validation should be externalized, so validation strategies can be exchanged.
-        // TODO Validation should be kept in one place, e.g. a special module.
+    public Collection<String> getMissingMandatoryTypesOf(TypeDefinition profile) {
         Collection<String> missing = new ArrayList<>();
-        for (String p : typeDef.getAllProperties()) {
-            if (!typeDef.getSubTypes().get(p).isOptional() && !entries.containsKey(p)) {
-                missing.add(p);
+        for (TypeDefinition td : profile.getSubTypes().values()) {
+            String typePid = td.getIdentifier();
+            if (!td.isOptional() && !this.entries.containsKey(typePid)) {
+                missing.add(typePid);
             }
         }
         return missing;
