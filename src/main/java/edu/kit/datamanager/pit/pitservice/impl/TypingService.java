@@ -3,6 +3,7 @@ package edu.kit.datamanager.pit.pitservice.impl;
 import com.google.common.cache.LoadingCache;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
+import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.common.TypeNotFoundException;
 
 import java.io.IOException;
@@ -12,12 +13,16 @@ import java.util.List;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
+import edu.kit.datamanager.pit.pitservice.IValidationStrategy;
+import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.InconsistentRecordsException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import java.util.concurrent.ExecutionException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Core implementation class that offers the combined higher-level services
@@ -32,11 +37,28 @@ public class TypingService implements ITypingService {
     protected final IIdentifierSystem identifierSystem;
     protected final ITypeRegistry typeRegistry;
 
-    public TypingService(IIdentifierSystem identifierSystem, ITypeRegistry typeRegistry, LoadingCache<String, TypeDefinition> typeCache) throws IOException {
+    /**
+     * A validation strategy. Will never be null.
+     * 
+     * ApplicationProperties::defaultValidationStrategy there is always either a
+     * default strategy or a noop strategy assigned. Therefore, autowiring will
+     * always work. Assigning null is done to avoid warnings on constructor.
+     */
+    @Autowired
+    protected IValidationStrategy defaultStrategy = null;
+
+    public TypingService(IIdentifierSystem identifierSystem, ITypeRegistry typeRegistry,
+            LoadingCache<String, TypeDefinition> typeCache) {
         super();
         this.identifierSystem = identifierSystem;
         this.typeRegistry = typeRegistry;
         this.typeCache = typeCache;
+    }
+
+    @Override
+    public void validate(PIDRecord pidRecord)
+            throws RecordValidationException, ExternalServiceException {
+        this.defaultStrategy.validate(pidRecord);
     }
 
     @Override

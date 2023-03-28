@@ -7,15 +7,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
-import edu.kit.datamanager.pit.common.DataTypeException;
 import edu.kit.datamanager.pit.common.InconsistentRecordsException;
+import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.TypeNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
-import edu.kit.datamanager.pit.configuration.ApplicationProperties.ValidationStrategy;
-import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
-import edu.kit.datamanager.pit.domain.SimplePidRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
@@ -32,7 +29,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.http.client.cache.HeaderConstants;
-import org.apache.http.entity.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -406,43 +402,28 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
         LOG.info("Creating PID");
-        boolean valid = false;
+
+        this.typingService.validate(record);
+
+        // register
+        String pid = this.typingService.registerPID(record);
+        // store result locally
+        if (applicationProps.getStorageStrategy().storesModified()) {
+            storeLocally(pid, true);
+        }
+        // distribute to other services
+        record.setPid(pid);
+        PidRecordMessage message = PidRecordMessage.creation(
+                pid,
+                "", // TODO parameter is depricated and will be removed soon.
+                AuthenticationHelper.getPrincipal(),
+                ControllerUtils.getLocalHostname());
         try {
-            valid = this.executeValidationStrategy(record);
-        } catch (DataTypeException e) {
-            throw new RecordValidationException("(no PID has been registered)", e.getMessage());
+            this.messagingService.send(message);
+        } catch (Exception e) {
+            LOG.error("Could not notify messaging service about the following message: {}", message.toString());
         }
-        String profileKey = applicationProps.getProfileKey();
-        boolean missingProfile = !record.hasProperty(profileKey)
-                || record.getPropertyValues(profileKey).length < 1;
-        if (valid) {
-            // register
-            String pid = this.typingService.registerPID(record);
-            // store result locally
-            if (applicationProps.getStorageStrategy().storesModified()) {
-                storeLocally(pid, true);
-            }
-            // distribute to other services
-            record.setPid(pid);
-            PidRecordMessage message = PidRecordMessage.creation(
-                    pid,
-                    "", // TODO parameter is depricated and will be removed soon.
-                    AuthenticationHelper.getPrincipal(),
-                    ControllerUtils.getLocalHostname());
-            try {
-                this.messagingService.send(message);
-            } catch (Exception e) {
-                LOG.error("Could not notify messaging service about the following message: {}", message.toString());
-            }
-            return ResponseEntity.status(HttpStatus.CREATED.value()).body(record);
-        } else if (missingProfile) {
-            // validation failed and profile is missing (this must therefore be the reason)
-            throw new RecordValidationException("(no PID registered yet)",
-                    "No profiles are specified in this record. Profile Key is " + profileKey);
-        } else {
-            // if validation failed
-            throw new RecordValidationException("(no PID registered yet)");
-        }
+        return ResponseEntity.status(HttpStatus.CREATED.value()).body(record);
     }
 
     @Override
@@ -464,16 +445,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
         // record validation
         record.setPid(pid);
-        boolean valid = false;
-        try {
-            valid = this.executeValidationStrategy(record);
-        } catch (DataTypeException e) {
-            throw new RecordValidationException(pid, e.getMessage());
-        }
-        if (!valid) {
-            // TODO give the user a reason why this failed.
-            throw new RecordValidationException(pid);
-        }
+        this.typingService.validate(record);
 
         // update and send message
         if (this.typingService.updatePID(record)) {
@@ -612,41 +584,6 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             return resultModifiedTimestamp;
         }
         return new PageImpl<>(this.localPidStorage.findAll());
-    }
-
-    private boolean executeValidationStrategy(PIDRecord pidr) throws DataTypeException, IOException {
-        boolean valid = applicationProps.getValidationStrategy() == ValidationStrategy.NONE_DEBUG;
-        if (applicationProps.getValidationStrategy() == ValidationStrategy.EMBEDDED_STRICT) {
-            valid = this.validateEmbeddedStrict(pidr);
-        }
-        return valid;
-    }
-
-    private boolean validateEmbeddedStrict(PIDRecord record) throws DataTypeException, IOException {
-        // TODO should be part of TypeValidationUtils / typing service or wherever
-        // typing strategies will be in future.
-        String profileKey = applicationProps.getProfileKey();
-        if (record.hasProperty(profileKey)) {
-            String[] profilePIDs = record.getPropertyValues(profileKey);
-            boolean valid = profilePIDs.length > 0;
-            for (String profilePID : profilePIDs) {
-                TypeDefinition profileDefinition = typingService.describeType(profilePID);
-                if (profileDefinition == null) {
-                    LOG.error("No type definition found for identifier {}.", profilePID);
-                    throw new DataTypeException(String.format("No type found for identifier {}.", profilePID));
-                }
-
-                LOG.debug("validating profile");
-                valid &= TypeValidationUtils.isValid(record, profileDefinition);
-                LOG.debug("validation done");
-                if (!valid) {
-                    break;
-                }
-            }
-            return valid;
-        } else {
-            return false;
-        }
     }
 
     @Override

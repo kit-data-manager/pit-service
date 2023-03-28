@@ -1,6 +1,8 @@
 package edu.kit.datamanager.pit.pitservice;
 
+import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.InconsistentRecordsException;
+import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import java.io.IOException;
@@ -14,6 +16,9 @@ import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
  *
  */
 public interface ITypingService extends IIdentifierSystem {
+
+    public void validate(PIDRecord pidRecord)
+            throws RecordValidationException, ExternalServiceException;
 
 //**
 //   * Retrieves a property definition
