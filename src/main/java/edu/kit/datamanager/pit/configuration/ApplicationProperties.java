@@ -18,9 +18,9 @@ package edu.kit.datamanager.pit.configuration;
 import edu.kit.datamanager.configuration.GenericApplicationProperties;
 import edu.kit.datamanager.pit.pitservice.IValidationStrategy;
 import edu.kit.datamanager.pit.pitservice.impl.EmbeddedStrictValidatorStrategy;
+import edu.kit.datamanager.pit.pitservice.impl.NoValidationStrategy;
 
 import java.net.URL;
-import java.util.Optional;
 
 import javax.validation.constraints.NotNull;
 
@@ -67,10 +67,10 @@ public class ApplicationProperties extends GenericApplicationProperties {
   private ValidationStrategy validationStrategy = ValidationStrategy.EMBEDDED_STRICT;
 
   @Bean
-  public Optional<IValidationStrategy> defaultValidationStrategy() {
-    Optional<IValidationStrategy> defaultStrategy = Optional.empty();
+  public IValidationStrategy defaultValidationStrategy() {
+    IValidationStrategy defaultStrategy = new NoValidationStrategy();
     if (this.validationStrategy == ValidationStrategy.EMBEDDED_STRICT) {
-      defaultStrategy = Optional.of(new EmbeddedStrictValidatorStrategy());
+      defaultStrategy = new EmbeddedStrictValidatorStrategy();
     }
     return defaultStrategy;
   }
