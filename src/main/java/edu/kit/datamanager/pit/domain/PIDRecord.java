@@ -223,8 +223,10 @@ public class PIDRecord {
             return false;
         }
 
-        if (entries == null) {
+        if (this.entries == null) {
             return other.entries == null;
+        } else if (other.entries == null) {
+            return this.entries == null;
         } else {
             // Equal means:
             // 1. have the same set of keys
