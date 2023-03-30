@@ -11,9 +11,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
 
 /**
  * The internal representation for a PID record, offering methods to manipulate
@@ -23,9 +20,6 @@ import lombok.ToString;
  * communication or representation for the outside. In contrast, this is the
  * internal representation offering methods for manipulation.
  */
-@ToString
-@Getter
-@Setter
 public class PIDRecord {
 
     private String pid = "";
@@ -69,6 +63,22 @@ public class PIDRecord {
     public PIDRecord withPID(String pid) {
         this.setPid(pid);
         return this;
+    }
+
+    public String getPid() {
+        return pid;
+    }
+
+    public void setPid(String pid) {
+        this.pid = pid;
+    }
+
+    public Map<String, List<PIDRecordEntry>> getEntries() {
+        return entries;
+    }
+
+    public void setEntries(Map<String, List<PIDRecordEntry>> entries) {
+        this.entries = entries;
     }
 
     /**
@@ -242,5 +252,10 @@ public class PIDRecord {
                 .count() == 0; // there should be no pairs with values which are not available in `other`.
             return isEqual;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "PIDRecord [pid=" + pid + ", entries=" + entries + "]";
     }
 }
