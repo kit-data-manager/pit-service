@@ -245,9 +245,13 @@ public class PIDRecord {
             // 2. for each key, have the same values (order does not matter)
             isEqual &= this.entries.values().stream()
                 .flatMap(List<PIDRecordEntry>::stream)
-                .filter(entry -> other.entries.get(entry.getKey()).stream()
-                    .filter(otherEntry -> otherEntry.getValue().equals(entry.getValue()))
-                    .count() == 0 // keep key-value-pairs with values not present in `other`.
+                .filter(entry -> other.entries
+                    .getOrDefault(entry.getKey(), new ArrayList<>())
+                    .stream()
+                        // keep key-value-pairs with values not present in `other`:
+                        .filter(otherEntry -> otherEntry.getValue().equals(entry.getValue()))
+                        // there should be none:
+                        .count() == 0
                 )
                 .count() == 0; // there should be no pairs with values which are not available in `other`.
             return isEqual;
