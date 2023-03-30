@@ -96,7 +96,7 @@ public class TypingService implements ITypingService {
         LOG.trace("Performing describeType({}).", typeIdentifier);
         try {
             LOG.trace("Querying for type with identifier {}.", typeIdentifier);
-            return typeCache.get(typeIdentifier);//typeRegistry.queryTypeDefinition(typeIdentifier);
+            return typeCache.get(typeIdentifier);
         } catch (ExecutionException ex) {
             LOG.error("Failed to query for type with identifier " + typeIdentifier + ".", ex);
             throw new InvalidConfigException("Typing service misconfigured.");
@@ -110,7 +110,7 @@ public class TypingService implements ITypingService {
         TypeDefinition typeDef = null;
         try {
             LOG.trace("Query for type with identifier {}.", typeIdentifier);
-            typeDef = typeCache.get(typeIdentifier);//typeRegistry.queryTypeDefinition(propertyIdentifier);
+            typeDef = typeCache.get(typeIdentifier);
         } catch (ExecutionException ex) {
             throw new InvalidConfigException("Typing service misconfigured.");
         }
@@ -174,7 +174,7 @@ public class TypingService implements ITypingService {
         TypeDefinition typeDef;
         try {
             LOG.trace("Querying for type with identifier {}.", propertyIdentifier);
-            typeDef = typeCache.get(propertyIdentifier);//typeRegistry.queryTypeDefinition(propertyIdentifier);
+            typeDef = typeCache.get(propertyIdentifier);
         } catch (ExecutionException ex) {
             LOG.error("Querying for type with identifier {}.", propertyIdentifier);
 
@@ -212,7 +212,7 @@ public class TypingService implements ITypingService {
             throws IOException, InconsistentRecordsException {
         TypeDefinition typeDef;
         try {
-            typeDef = typeCache.get(typeIdentifier);//typeRegistry.queryTypeDefinition(typeIdentifier);
+            typeDef = typeCache.get(typeIdentifier);
         } catch (ExecutionException ex) {
             throw new InvalidConfigException("Typing service misconfigured.");
         }
@@ -234,7 +234,7 @@ public class TypingService implements ITypingService {
         TypeDefinition typeDef;
 
         try {
-            typeDef = typeCache.get(typeIdentifier);// typeRegistry.queryTypeDefinition(typeIdentifier);
+            typeDef = typeCache.get(typeIdentifier);
         } catch (ExecutionException ex) {
             throw new InvalidConfigException("Typing service misconfigured.");
         }
@@ -270,7 +270,7 @@ public class TypingService implements ITypingService {
         for (String typeIdentifier : typeIdentifiers) {
             TypeDefinition typeDef = null;
             try {
-                typeDef = typeCache.get(typeIdentifier);//typeRegistry.queryTypeDefinition(typeIdentifier);
+                typeDef = typeCache.get(typeIdentifier);
             } catch (ExecutionException ex) {
                 throw new InvalidConfigException("Typing service misconfigured.");
             }
@@ -293,8 +293,8 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public boolean updatePID(PIDRecord record) throws IOException {
-        return this.identifierSystem.updatePID(record);
+    public boolean updatePID(PIDRecord pidRecord) throws IOException {
+        return this.identifierSystem.updatePID(pidRecord);
     }
 
 }

@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package edu.kit.datamanager.pit.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -33,7 +28,7 @@ import lombok.ToString;
 @Setter
 public class PIDRecord {
 
-    private String pid;
+    private String pid = "";
 
     private Map<String, List<PIDRecordEntry>> entries = new HashMap<>();
 
@@ -91,12 +86,10 @@ public class PIDRecord {
         entry.setKey(propertyIdentifier);
         entry.setName(propertyName);
         entry.setValue(propertyValue);
-        List<PIDRecordEntry> entryList = this.entries.get(propertyIdentifier);
-        if (entryList == null) {
-            entryList = new ArrayList<>();
-            entries.put(propertyIdentifier, entryList);
-        }
-        entryList.add(entry);
+
+        this.entries
+            .computeIfAbsent(propertyIdentifier, key -> new ArrayList<>())
+            .add(entry);
     }
 
     /**
@@ -107,11 +100,12 @@ public class PIDRecord {
      */
     @JsonIgnore
     public void setPropertyName(String propertyIdentifier, String name) {
-          List<PIDRecordEntry> pe = entries.get(propertyIdentifier);
-        if (pe == null) {
-            throw new IllegalArgumentException("Property identifier not listed in this record: " + propertyIdentifier);
+        List<PIDRecordEntry> propertyEntries = this.entries.get(propertyIdentifier);
+        if (propertyEntries == null) {
+            throw new IllegalArgumentException(
+                "Property identifier not listed in this record: " + propertyIdentifier);
         }
-        for (PIDRecordEntry entry : pe) {
+        for (PIDRecordEntry entry : propertyEntries) {
             entry.setName(name);
         }
     }
