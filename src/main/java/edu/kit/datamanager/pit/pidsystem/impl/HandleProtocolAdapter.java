@@ -2,6 +2,7 @@ package edu.kit.datamanager.pit.pidsystem.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.PrivateKey;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.PostConstruct;
+import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.stream.Streams;
 import org.slf4j.Logger;
@@ -43,6 +45,7 @@ import net.handle.hdllib.HandleResolver;
 import net.handle.hdllib.HandleValue;
 import net.handle.hdllib.PublicKeyAuthenticationInfo;
 import net.handle.hdllib.SiteInfo;
+import net.handle.hdllib.Util;
 
 /**
  * Uses the official java library to interact with the handle system using the
@@ -52,7 +55,7 @@ import net.handle.hdllib.SiteInfo;
 @ConditionalOnBean(HandleProtocolProperties.class)
 public class HandleProtocolAdapter implements IIdentifierSystem {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HandleProtocolProperties.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HandleProtocolAdapter.class);
 
     private static final byte[][][] BLACKLIST_NONTYPE_LISTS = {
             Common.SITE_INFO_AND_SERVICE_HANDLE_INCL_PREFIX_TYPES,
@@ -144,9 +147,9 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
 
     @Override
     public boolean isIdentifierRegistered(final String pid) throws IOException {
-        HandleValue[] record_properties = null;
+        HandleValue[] recordProperties = null;
         try {
-            record_properties = this.client.resolveHandle(pid, null, null);
+            recordProperties = this.client.resolveHandle(pid, null, null);
         } catch (HandleException e) {
             if (e.getCode() == HandleException.HANDLE_DOES_NOT_EXIST) {
                 return false;
@@ -154,21 +157,22 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
                 throw new IOException(e);
             }
         }
-        return record_properties != null && record_properties.length > 0;
+        return recordProperties != null && recordProperties.length > 0;
     }
 
     @Override
     public PIDRecord queryAllProperties(final String pid) throws IOException {
         Collection<HandleValue> allValues = this.queryAllHandleValues(pid);
-        if (allValues == null) {
+        if (allValues.isEmpty()) {
             return null;
         }
-        Collection<HandleValue> record_properties = Streams.stream(allValues.stream())
+        Collection<HandleValue> recordProperties = Streams.stream(allValues.stream())
                 .filter(value -> !this.isHandleInternalValue(value))
                 .collect(Collectors.toList());
-        return this.pidRecordFrom(record_properties).withPID(pid);
+        return this.pidRecordFrom(recordProperties).withPID(pid);
     }
 
+    @NotNull
     protected Collection<HandleValue> queryAllHandleValues(final String pid) throws IOException {
         try {
             HandleValue[] values = this.client.resolveHandle(pid, null, null);
@@ -177,7 +181,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
                     .collect(Collectors.toCollection(ArrayList::new));
         } catch (HandleException e) {
             if (e.getCode() == HandleException.HANDLE_DOES_NOT_EXIST) {
-                return null;
+                return new ArrayList<>();
             } else {
                 throw new IOException(e);
             }
@@ -203,39 +207,41 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public String registerPID(final PIDRecord record) throws IOException {
+    public String registerPID(final PIDRecord pidRecord) throws IOException {
         // Add admin value for configured user only
         // TODO add options to add additional adminValues e.g. for user lists?
         ArrayList<HandleValue> admin = new ArrayList<>();
         admin.add(this.adminValue);
-        ArrayList<HandleValue> record_values = this.handleValuesFrom(record, Optional.of(admin));
+        ArrayList<HandleValue> recordValues = this.handleValuesFrom(pidRecord, Optional.of(admin));
 
-        HandleValue[] values = record_values.toArray(new HandleValue[] {});
-        assert values.length >= record.getEntries().keySet().size();
+        HandleValue[] values = recordValues.toArray(new HandleValue[] {});
+        // sanity check
+        if (values.length >= pidRecord.getEntries().keySet().size()) {
+            throw new IOException("Error extracting values from record.");
+        }
 
         boolean success = false;
         while (!success) {
-            record.setPid(generateRandomPID());
+            pidRecord.setPid(generateRandomPID());
             try {
-                this.client.createHandle(record.getPid(), values);
+                this.client.createHandle(pidRecord.getPid(), values);
                 success = true;
             } catch (HandleException e) {
                 if (e.getCode() == HandleException.HANDLE_ALREADY_EXISTS) {
                     // try the loop again
                     success = false; // (just to make 100% sure the loop will run again)
-                    continue;
                 } else {
                     // On other errors, we throw an exception.
                     throw new IOException(e);
                 }
             }
         }
-        return record.getPid();
+        return pidRecord.getPid();
     }
 
     @Override
-    public boolean updatePID(PIDRecord record) throws IOException {
-        if (!this.isValidPID(record.getPid())) {
+    public boolean updatePID(PIDRecord pidRecord) throws IOException {
+        if (!this.isValidPID(pidRecord.getPid())) {
             return false;
         }
         // We need to override the old record as the user has no possibility to update
@@ -251,30 +257,30 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         // 4) then add, update, delete in this order.
 
         // index value
-        Map<Integer, HandleValue> recordOld = this.queryAllHandleValues(record.getPid())
+        Map<Integer, HandleValue> recordOld = this.queryAllHandleValues(pidRecord.getPid())
                 .stream()
                 .collect(Collectors.toMap(v -> v.getIndex(), v -> v));
         // Streams.stream makes a stream failable, i.e. allows filtering with
         // exceptions. A new Java version **might** solve this.
-        List<HandleValue> valuesToKeep = Streams.stream(this.queryAllHandleValues(record.getPid()).stream())
-                .filter(v -> this.isHandleInternalValue(v))
+        List<HandleValue> valuesToKeep = Streams.stream(this.queryAllHandleValues(pidRecord.getPid()).stream())
+                .filter(this::isHandleInternalValue)
                 .collect(Collectors.toList());
 
         // Merge requested record and things we want to keep.
-        Map<Integer, HandleValue> recordNew = handleValuesFrom(record, Optional.of(valuesToKeep))
+        Map<Integer, HandleValue> recordNew = handleValuesFrom(pidRecord, Optional.of(valuesToKeep))
                 .stream()
                 .collect(Collectors.toMap(v -> v.getIndex(), v -> v));
 
         try {
             HandleDiff diff = new HandleDiff(recordOld, recordNew);
             if (diff.added().length > 0) {
-                this.client.addHandleValues(record.getPid(), diff.added());
+                this.client.addHandleValues(pidRecord.getPid(), diff.added());
             }
             if (diff.updated().length > 0) {
-                this.client.updateHandleValues(record.getPid(), diff.updated());
+                this.client.updateHandleValues(pidRecord.getPid(), diff.updated());
             }
             if (diff.removed().length > 0) {
-                this.client.deleteHandleValues(record.getPid(), diff.removed());
+                this.client.deleteHandleValues(pidRecord.getPid(), diff.removed());
             }
         } catch (HandleException e) {
             if (e.getCode() == HandleException.HANDLE_DOES_NOT_EXIST) {
@@ -326,19 +332,19 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         PrivateKey key;
         {
             byte[] privateKeyBytes = this.extractPrivateKey(handleCredentials);
-            byte[] passphrase = handleCredentials.getPrivateKeyPassphrase().getBytes();
+            byte[] passphrase = handleCredentials.getPrivateKeyPassphrase().getBytes(Charset.defaultCharset());
             // decrypt the private key using the passphrase/cypher
             byte[] privateKeyDecrypted;
             try {
-                privateKeyDecrypted = net.handle.hdllib.Util.decrypt(privateKeyBytes, passphrase);
-                key = net.handle.hdllib.Util.getPrivateKeyFromBytes(privateKeyDecrypted, 0);
+                privateKeyDecrypted = Util.decrypt(privateKeyBytes, passphrase);
+                key = Util.getPrivateKeyFromBytes(privateKeyDecrypted, 0);
             } catch (Exception e) {
                 throw new InvalidConfigException("Private key decryption failed: " + e.getMessage());
             }
         }
 
         PublicKeyAuthenticationInfo auth = new PublicKeyAuthenticationInfo(
-                net.handle.hdllib.Util.encodeString(handleCredentials.getUserHandle()),
+                Util.encodeString(handleCredentials.getUserHandle()),
                 handleCredentials.getPrivateKeyIndex(),
                 key);
 
@@ -381,25 +387,28 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     /**
-     * Convert a `PIDRecord` instance to an array of `HandleValue`s
-     * It is the inverse method to `pidRecordFrom`.
+     * Convert a `PIDRecord` instance to an array of `HandleValue`s. It is the
+     * inverse method to `pidRecordFrom`.
      * 
-     * @param record the record containing values to convert / extract.
+     * @param pidRecord the record containing values to convert / extract.
+     * @param toMerge   an optional list to merge the result with.
      * @return HandleValues containing the same key-value pairs as the given record,
      *         but e.g. without the name.
      */
-    protected ArrayList<HandleValue> handleValuesFrom(final PIDRecord record,
-            final Optional<List<HandleValue>> toMerge) {
-        ArrayList<Integer> skipping_indices = new ArrayList<Integer>();
-        ArrayList<HandleValue> result = new ArrayList<HandleValue>();
+    protected ArrayList<HandleValue> handleValuesFrom(
+            final PIDRecord pidRecord,
+            final Optional<List<HandleValue>> toMerge)
+        {
+        ArrayList<Integer> skippingIndices = new ArrayList<>();
+        ArrayList<HandleValue> result = new ArrayList<>();
         if (toMerge.isPresent()) {
             for (HandleValue v : toMerge.get()) {
                 result.add(v);
-                skipping_indices.add(v.getIndex());
+                skippingIndices.add(v.getIndex());
             }
         }
-        HandleIndex index = new HandleIndex().skipping(skipping_indices);
-        Map<String, List<PIDRecordEntry>> entries = record.getEntries();
+        HandleIndex index = new HandleIndex().skipping(skippingIndices);
+        Map<String, List<PIDRecordEntry>> entries = pidRecord.getEntries();
 
         for (Entry<String, List<PIDRecordEntry>> entry : entries.entrySet()) {
             for (PIDRecordEntry val : entry.getValue()) {
@@ -413,14 +422,14 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
                 LOG.debug("Entry: ({}) {} <-> {}", i, key, val);
             }
         }
-        assert result.size() >= record.getEntries().keySet().size();
+        assert result.size() >= pidRecord.getEntries().keySet().size();
         return result;
     }
 
     protected static class HandleIndex {
         // handle record indices start at 1
         private int index = 1;
-        private List<Integer> skipping = new ArrayList<Integer>();
+        private List<Integer> skipping = new ArrayList<>();
 
         public final int nextIndex() {
             int result = index;
@@ -480,8 +489,16 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         return true;
     }
 
-    protected boolean isHandleInternalValue(HandleValue v) throws IOException {
-        boolean isInternalValue = false; // !this.isIdentifierRegistered(v.getTypeAsString());
+    /**
+     * Checks if a given value is considered an "internal" or "handle-native" value.
+     * 
+     * This may be used to filter out administrative information from a PID record.
+     * 
+     * @param v the value to check.
+     * @return true, if the value is conidered "handle-native".
+     */
+    protected boolean isHandleInternalValue(HandleValue v) {
+        boolean isInternalValue = false;
         for (byte[][] typeList : BLACKLIST_NONTYPE_LISTS) {
             for (byte[] typeCode : typeList) {
                 isInternalValue = isInternalValue || Arrays.equals(v.getType(), typeCode);
@@ -527,7 +544,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         private final Collection<HandleValue> toRemove = new ArrayList<>();
 
         HandleDiff(final Map<Integer, HandleValue> recordOld, final Map<Integer, HandleValue> recordNew)
-                throws Exception {
+                throws PidUpdateException {
             // old_indexes should only contain indexes we do not override/update anyway, so
             // we can delete them afterwards.
             for (Entry<Integer, HandleValue> old : recordOld.entrySet()) {
@@ -546,25 +563,25 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             }
 
             // runtime testing to avoid messing up record states.
-            String exception_msg = "DIFF NOT VALID. Type: %s. Value: %s";
+            String exceptionMsg = "DIFF NOT VALID. Type: %s. Value: %s";
             for (HandleValue v : toRemove) {
                 boolean valid = recordOld.containsValue(v) && !recordNew.containsKey(v.getIndex());
                 if (!valid) {
-                    String message = String.format(exception_msg, "Remove", v.toString());
+                    String message = String.format(exceptionMsg, "Remove", v.toString());
                     throw new PidUpdateException(message);
                 }
             }
             for (HandleValue v : toAdd) {
                 boolean valid = !recordOld.containsKey(v.getIndex()) && recordNew.containsValue(v);
                 if (!valid) {
-                    String message = String.format(exception_msg, "Add", v.toString());
+                    String message = String.format(exceptionMsg, "Add", v.toString());
                     throw new PidUpdateException(message);
                 }
             }
             for (HandleValue v : toUpdate) {
                 boolean valid = recordOld.containsKey(v.getIndex()) && recordNew.containsValue(v);
                 if (!valid) {
-                    String message = String.format(exception_msg, "Update", v.toString());
+                    String message = String.format(exceptionMsg, "Update", v.toString());
                     throw new PidUpdateException(message);
                 }
             }
