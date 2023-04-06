@@ -24,6 +24,8 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalNotification;
 
+import edu.kit.datamanager.pit.cli.CliTaskWriteFile;
+import edu.kit.datamanager.pit.cli.PidSource;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
@@ -37,6 +39,7 @@ import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.http.client.HttpClient;
@@ -50,6 +53,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Scope;
@@ -173,8 +177,69 @@ public class Application {
     }
 
     public static void main(String[] args) {
-        SpringApplication.run(Application.class, args);
+        ConfigurableApplicationContext context = SpringApplication.run(Application.class, args);
         System.out.println("Spring is running!");
+
+        final boolean cliArgsGiven = args != null && args.length != 0;
+        
+        final String writeFileCmd = "write-file";
+        final String bootstrapCmd = "bootstrap";
+        
+        final String sourceFromPrefix = "all-pids-from-prefix";
+        final String sourceKnownPids = "known-pids";
+
+        final String errorCommunication = "Communication error: {}";
+
+        if (cliArgsGiven) {
+            if (Arrays.equals(new String[] { bootstrapCmd, sourceFromPrefix }, args)) {
+                // new CliTaskBootstrap(context, PidSource.fromPrefix(context));
+
+            } else
+            if (Arrays.equals(new String[] { writeFileCmd, sourceFromPrefix }, args)) {
+                try {
+                    new CliTaskWriteFile(context, PidSource.fromPrefix(context)).process();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    LOG.error(errorCommunication, e.getMessage());
+                    exitApp(context, 1);
+                }
+                exitApp(context, 0);
+
+            } else
+            if (Arrays.equals(new String[] { writeFileCmd, sourceKnownPids }, args)) {
+                try {
+                    new CliTaskWriteFile(context, PidSource.fromKnown(context)).process();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    LOG.error(errorCommunication, e.getMessage());
+                    exitApp(context, 1);
+                }
+                exitApp(context, 0);
+
+            } else {
+                LOG.error("CLI usage incorrect. Usage:");
+                LOG.error("java -jar TypedPIDMaker.jar [ACTION] [SOURCE]");
+                LOG.error("java -jar TypedPIDMaker.jar bootstrap all-pids-from-prefix");
+                LOG.error("java -jar TypedPIDMaker.jar write-file all-pids-from-prefix");
+                LOG.error("java -jar TypedPIDMaker.jar write-file known-pids");
+                exitApp(context, 1);
+            }
+        }
+    }
+
+    private static void exitApp(ConfigurableApplicationContext context, int errCode) {
+        context.close();
+        try {
+            Thread.sleep(2 * 1000L);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        if (errCode != 0) {
+            LOG.error("Exited with error.");
+        } else {
+            LOG.info("Success");
+        }
+        System.exit(errCode);
     }
 
 }
