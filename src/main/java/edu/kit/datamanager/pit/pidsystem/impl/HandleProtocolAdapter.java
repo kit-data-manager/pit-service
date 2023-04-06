@@ -1,11 +1,9 @@
 package edu.kit.datamanager.pit.pidsystem.impl;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.security.PrivateKey;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -119,18 +117,8 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         } else {
             HandleCredentials credentials = props.getCredentials();
             // Check if key file is plausible, throw exceptions if something is wrong.
-            byte[] privateKey = extractPrivateKey(credentials);
-            // Passphrase may be null if key is not encrypted, this is fine.
-            byte[] passphrase = null;
-            {
-                String given = credentials.getPrivateKeyPassphrase();
-                if (given != null && !given.isEmpty()) {
-                    passphrase = given.getBytes(StandardCharsets.UTF_8);
-                    if (passphrase.length < 1) {
-                        throw new InvalidConfigException("Passphrase for key file is set but empty!");
-                    }
-                }
-            }
+            byte[] privateKey = credentials.getPrivateKeyFileContent();
+            byte[] passphrase = credentials.getPrivateKeyPassphraseAsBytes();
             this.client = HSAdapterFactory.newInstance(
                     credentials.getUserHandle(),
                     credentials.getPrivateKeyIndex(),
@@ -331,15 +319,22 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
 
         PrivateKey key;
         {
-            byte[] privateKeyBytes = this.extractPrivateKey(handleCredentials);
-            byte[] passphrase = handleCredentials.getPrivateKeyPassphrase().getBytes(Charset.defaultCharset());
-            // decrypt the private key using the passphrase/cypher
+            byte[] privateKeyBytes = handleCredentials.getPrivateKeyFileContent();
+            if (privateKeyBytes == null || privateKeyBytes.length == 0) {
+                throw new InvalidConfigException("Private Key is empty!");
+            }
+            byte[] passphrase = handleCredentials.getPrivateKeyPassphraseAsBytes();
             byte[] privateKeyDecrypted;
+            // decrypt the private key using the passphrase/cypher
             try {
                 privateKeyDecrypted = Util.decrypt(privateKeyBytes, passphrase);
-                key = Util.getPrivateKeyFromBytes(privateKeyDecrypted, 0);
             } catch (Exception e) {
                 throw new InvalidConfigException("Private key decryption failed: " + e.getMessage());
+            }
+            try {
+                key = Util.getPrivateKeyFromBytes(privateKeyDecrypted, 0);
+            } catch (HandleException | InvalidKeySpecException e) {
+                throw new InvalidConfigException("Private key conversion failed: " + e.getMessage());
             }
         }
 
@@ -505,31 +500,6 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             }
         }
         return isInternalValue;
-    }
-
-    /**
-     * Extract bytes from private key. Might be encrypted.
-     * 
-     * @param credentials the handle credentials.
-     * @return the bytes fron the private key file.
-     * @throws IOException on error when reading from file.
-     */
-    protected byte[] extractPrivateKey(HandleCredentials credentials) throws IOException {
-        {
-            File maybeKeyFile = credentials.getPrivateKeyPath().toFile();
-            if (!maybeKeyFile.exists()) {
-                throw new InvalidConfigException(
-                        String.format("PrivateKeyFilePath does not lead to a file: %s", maybeKeyFile.toString()));
-            }
-            if (!maybeKeyFile.isFile()) {
-                throw new InvalidConfigException(
-                        String.format("File to private key not a regular file: %s", maybeKeyFile.toString()));
-            }
-        }
-        // NOTE We can still fail later if the private key file contains garbage.
-
-        // Extract information and start handle client with available authentication.
-        return Files.readAllBytes(credentials.getPrivateKeyPath());
     }
 
     /**
