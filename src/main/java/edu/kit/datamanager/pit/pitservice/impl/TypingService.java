@@ -6,6 +6,7 @@ import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.TypeNotFoundException;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
@@ -273,6 +274,11 @@ public class TypingService implements ITypingService {
     @Override
     public boolean updatePID(PIDRecord record) throws IOException {
         return this.identifierSystem.updatePID(record);
+    }
+
+    @Override
+    public Collection<String> resolveAllPidsOfPrefix() throws IOException, InvalidConfigException {
+        return this.identifierSystem.resolveAllPidsOfPrefix();
     }
 
 }

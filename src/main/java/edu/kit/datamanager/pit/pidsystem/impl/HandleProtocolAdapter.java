@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.security.PrivateKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,9 +36,13 @@ import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import net.handle.api.HSAdapter;
 import net.handle.api.HSAdapterFactory;
+import net.handle.apps.batch.BatchUtil;
 import net.handle.hdllib.Common;
 import net.handle.hdllib.HandleException;
+import net.handle.hdllib.HandleResolver;
 import net.handle.hdllib.HandleValue;
+import net.handle.hdllib.PublicKeyAuthenticationInfo;
+import net.handle.hdllib.SiteInfo;
 
 /**
  * Uses the official java library to interact with the handle system using the
@@ -111,21 +116,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         } else {
             HandleCredentials credentials = props.getCredentials();
             // Check if key file is plausible, throw exceptions if something is wrong.
-            {
-                File maybeKeyFile = credentials.getPrivateKeyPath().toFile();
-                if (!maybeKeyFile.exists()) {
-                    throw new InvalidConfigException(
-                            String.format("PrivateKeyFilePath does not lead to a file: %s", maybeKeyFile.toString()));
-                }
-                if (!maybeKeyFile.isFile()) {
-                    throw new InvalidConfigException(
-                            String.format("File to private key not a regular file: %s", maybeKeyFile.toString()));
-                }
-            }
-            // NOTE We can still fail later if the private key file contains garbage.
-
-            // Extract information and start handle client with available authentication.
-            byte[] privateKey = Files.readAllBytes(credentials.getPrivateKeyPath());
+            byte[] privateKey = extractPrivateKey(credentials);
             // Passphrase may be null if key is not encrypted, this is fine.
             byte[] passphrase = null;
             {
@@ -328,6 +319,49 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         return false;
     }
 
+    @Override
+    public Collection<String> resolveAllPidsOfPrefix() throws IOException, InvalidConfigException {
+        HandleCredentials handleCredentials = this.props.getCredentials();
+
+        PrivateKey key;
+        {
+            byte[] privateKeyBytes = this.extractPrivateKey(handleCredentials);
+            byte[] passphrase = handleCredentials.getPrivateKeyPassphrase().getBytes();
+            // decrypt the private key using the passphrase/cypher
+            byte[] privateKeyDecrypted;
+            try {
+                privateKeyDecrypted = net.handle.hdllib.Util.decrypt(privateKeyBytes, passphrase);
+                key = net.handle.hdllib.Util.getPrivateKeyFromBytes(privateKeyDecrypted, 0);
+            } catch (Exception e) {
+                throw new InvalidConfigException("Private key decryption failed: " + e.getMessage());
+            }
+        }
+
+        PublicKeyAuthenticationInfo auth = new PublicKeyAuthenticationInfo(
+                net.handle.hdllib.Util.encodeString(handleCredentials.getUserHandle()),
+                handleCredentials.getPrivateKeyIndex(),
+                key);
+
+        HandleResolver resolver = new HandleResolver();
+        SiteInfo site;
+        {
+            HandleValue[] prefixValues;
+            try {
+                prefixValues = resolver.resolveHandle(handleCredentials.getHandleIdentifierPrefix());
+                site = BatchUtil.getFirstPrimarySiteFromHserv(prefixValues, resolver);
+            } catch (HandleException e) {
+                throw new IOException(e.getMessage());
+            }
+        }
+
+        String prefix = handleCredentials.getHandleIdentifierPrefix();
+        try {
+            return BatchUtil.listHandles(prefix, site, resolver, auth);
+        } catch (HandleException e) {
+            throw new IOException(e.getMessage());
+        }
+    }
+
     /**
      * Avoids an extra constructor in `PIDRecord`. Instead,
      * keep such details stored in the PID service implementation.
@@ -431,7 +465,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
      * @return true if PID is registered (and if has the generatorPrefix, if it
      *         exists).
      */
-    private boolean isValidPID(final String pid) {
+    protected boolean isValidPID(final String pid) {
         boolean isAuthMode = this.props.getCredentials() != null;
         if (isAuthMode && !pid.startsWith(this.props.getCredentials().getHandleIdentifierPrefix())) {
             return false;
@@ -446,7 +480,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         return true;
     }
 
-    private boolean isHandleInternalValue(HandleValue v) throws IOException {
+    protected boolean isHandleInternalValue(HandleValue v) throws IOException {
         boolean isInternalValue = false; // !this.isIdentifierRegistered(v.getTypeAsString());
         for (byte[][] typeList : BLACKLIST_NONTYPE_LISTS) {
             for (byte[] typeCode : typeList) {
@@ -454,6 +488,31 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             }
         }
         return isInternalValue;
+    }
+
+    /**
+     * Extract bytes from private key. Might be encrypted.
+     * 
+     * @param credentials the handle credentials.
+     * @return the bytes fron the private key file.
+     * @throws IOException on error when reading from file.
+     */
+    protected byte[] extractPrivateKey(HandleCredentials credentials) throws IOException {
+        {
+            File maybeKeyFile = credentials.getPrivateKeyPath().toFile();
+            if (!maybeKeyFile.exists()) {
+                throw new InvalidConfigException(
+                        String.format("PrivateKeyFilePath does not lead to a file: %s", maybeKeyFile.toString()));
+            }
+            if (!maybeKeyFile.isFile()) {
+                throw new InvalidConfigException(
+                        String.format("File to private key not a regular file: %s", maybeKeyFile.toString()));
+            }
+        }
+        // NOTE We can still fail later if the private key file contains garbage.
+
+        // Extract information and start handle client with available authentication.
+        return Files.readAllBytes(credentials.getPrivateKeyPath());
     }
 
     /**
