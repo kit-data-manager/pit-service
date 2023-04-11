@@ -316,6 +316,9 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     @Override
     public Collection<String> resolveAllPidsOfPrefix() throws IOException, InvalidConfigException {
         HandleCredentials handleCredentials = this.props.getCredentials();
+        if (handleCredentials == null) {
+            throw new InvalidConfigException("No credentials for handle protocol configured.");
+        }
 
         PrivateKey key;
         {
