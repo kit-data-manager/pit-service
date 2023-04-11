@@ -34,7 +34,7 @@ public class CliTaskBootstrap implements ICliTask {
     }
 
     @Override
-    public void process() throws IOException, InvalidConfigException {
+    public boolean process() throws IOException, InvalidConfigException {
         Instant unknownTime = Instant.ofEpochMilli(0);
         pids
             .map(pid -> new KnownPid(pid, unknownTime, unknownTime))
@@ -53,6 +53,7 @@ public class CliTaskBootstrap implements ICliTask {
                 messagingService.send(message);
             });
         knownPids.flush();
+        return false;
     }
 
 }

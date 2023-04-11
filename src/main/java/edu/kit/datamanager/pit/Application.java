@@ -26,6 +26,7 @@ import com.google.common.cache.RemovalNotification;
 
 import edu.kit.datamanager.pit.cli.CliTaskBootstrap;
 import edu.kit.datamanager.pit.cli.CliTaskWriteFile;
+import edu.kit.datamanager.pit.cli.ICliTask;
 import edu.kit.datamanager.pit.cli.PidSource;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
@@ -42,7 +43,9 @@ import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.cache.CacheConfig;
@@ -182,6 +185,7 @@ public class Application {
         System.out.println("Spring is running!");
 
         final boolean cliArgsGiven = args != null && args.length != 0;
+        final boolean cliArgsAmountValid = cliArgsGiven && args.length >= 2;
         
         final String writeFileCmd = "write-file";
         final String bootstrapCmd = "bootstrap";
@@ -192,52 +196,57 @@ public class Application {
         final String errorCommunication = "Communication error: {}";
         final String errorConfiguration = "Configuration error: {}";
 
-        if (cliArgsGiven) {
-            if (Arrays.equals(new String[] { bootstrapCmd, sourceFromPrefix }, args)) {
+        if (cliArgsAmountValid) {
+            ICliTask task = null;
+            Stream<String> pidSource = null;
+            
+            if (Objects.equals(args[1], sourceFromPrefix)) {
                 try {
-                    new CliTaskBootstrap(context, PidSource.fromPrefix(context)).process();
-                } catch (InvalidConfigException e) {
-                    e.printStackTrace();
-                    LOG.error(errorConfiguration, e.getMessage());
-                    exitApp(context, 1);
+                    pidSource = PidSource.fromPrefix(context);
                 } catch (IOException e) {
                     e.printStackTrace();
                     LOG.error(errorCommunication, e.getMessage());
                     exitApp(context, 1);
                 }
-                exitApp(context, 0);
+            } else if (Objects.equals(args[1], sourceKnownPids)) {
+                pidSource = PidSource.fromKnown(context);
+            }
 
-            } else
-            if (Arrays.equals(new String[] { writeFileCmd, sourceFromPrefix }, args)) {
-                try {
-                    new CliTaskWriteFile(context, PidSource.fromPrefix(context)).process();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    LOG.error(errorCommunication, e.getMessage());
+            if (Objects.equals(args[0], bootstrapCmd)) {
+                task = new CliTaskBootstrap(context, pidSource);
+            } else if (Objects.equals(args[0], writeFileCmd)) {
+                task = new CliTaskWriteFile(context, pidSource);
+            }
+
+            try {
+                if (task != null && pidSource != null) {
+                    // ---process task---
+                    if (task.process()) {
+                        exitApp(context, 0);
+                    }
+                } else {
+                    printUsage(args);
                     exitApp(context, 1);
                 }
-                exitApp(context, 0);
-
-            } else
-            if (Arrays.equals(new String[] { writeFileCmd, sourceKnownPids }, args)) {
-                try {
-                    new CliTaskWriteFile(context, PidSource.fromKnown(context)).process();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    LOG.error(errorCommunication, e.getMessage());
-                    exitApp(context, 1);
-                }
-                exitApp(context, 0);
-
-            } else {
-                LOG.error("CLI usage incorrect. Usage:");
-                LOG.error("java -jar TypedPIDMaker.jar [ACTION] [SOURCE]");
-                LOG.error("java -jar TypedPIDMaker.jar bootstrap all-pids-from-prefix");
-                LOG.error("java -jar TypedPIDMaker.jar write-file all-pids-from-prefix");
-                LOG.error("java -jar TypedPIDMaker.jar write-file known-pids");
+            } catch (InvalidConfigException e) {
+                e.printStackTrace();
+                LOG.error(errorConfiguration, e.getMessage());
+                exitApp(context, 1);
+            } catch (IOException e) {
+                e.printStackTrace();
+                LOG.error(errorCommunication, e.getMessage());
                 exitApp(context, 1);
             }
         }
+    }
+
+    private static void printUsage(String[] args) {
+        LOG.error("Got commands: {} and {}", args[0], args[1]);
+        LOG.error("CLI usage incorrect. Usage:");
+        LOG.error("java -jar TypedPIDMaker.jar [ACTION] [SOURCE]");
+        LOG.error("java -jar TypedPIDMaker.jar bootstrap all-pids-from-prefix");
+        LOG.error("java -jar TypedPIDMaker.jar write-file all-pids-from-prefix");
+        LOG.error("java -jar TypedPIDMaker.jar write-file known-pids");
     }
 
     private static void exitApp(ConfigurableApplicationContext context, int errCode) {

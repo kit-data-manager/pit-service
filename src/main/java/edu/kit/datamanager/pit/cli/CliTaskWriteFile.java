@@ -32,7 +32,7 @@ public class CliTaskWriteFile implements ICliTask {
     }
 
     @Override
-    public void process() throws IOException {
+    public boolean process() throws IOException {
         String date = ZonedDateTime
                 .now(ZoneId.systemDefault())
                 .toString()
@@ -53,5 +53,6 @@ public class CliTaskWriteFile implements ICliTask {
             LOG.info("Storing into CSV: {}", pid);
             Files.writeString(path, pid + "\n", StandardOpenOption.APPEND);
         }
+        return true;
     }
 }
