@@ -9,14 +9,17 @@ import java.nio.file.StandardOpenOption;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Iterator;
-import java.util.Map.Entry;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 
 public class CliTaskWriteFile implements ICliTask {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CliTaskWriteFile.class);
 
     Stream<String> pids;
     ConfigurableApplicationContext context;
@@ -25,13 +28,7 @@ public class CliTaskWriteFile implements ICliTask {
     public CliTaskWriteFile(ConfigurableApplicationContext context, Stream<String> pids) {
         this.pids = pids;
         this.context = context;
-        this.appProps = context.getBeansOfType(ApplicationProperties.class)
-            .entrySet()
-            .stream()
-            .filter(e -> !e.getKey().contains("typing"))
-            .map(Entry<String, ApplicationProperties>::getValue)
-            .findFirst()
-            .orElseThrow();
+        this.appProps = context.getBean(ApplicationProperties.class);
     }
 
     @Override
@@ -53,6 +50,7 @@ public class CliTaskWriteFile implements ICliTask {
         }
         for (Iterator<String> iter = pids.iterator(); iter.hasNext(); ) {
             String pid = iter.next();
+            LOG.info("Storing into CSV: {}", pid);
             Files.writeString(path, pid + "\n", StandardOpenOption.APPEND);
         }
     }

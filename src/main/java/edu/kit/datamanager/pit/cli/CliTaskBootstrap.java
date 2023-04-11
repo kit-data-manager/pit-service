@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import edu.kit.datamanager.entities.messaging.PidRecordMessage;
@@ -16,6 +18,8 @@ import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 
 public class CliTaskBootstrap implements ICliTask {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CliTaskBootstrap.class);
 
     Stream<String> pids;
     ApplicationProperties appProps;
@@ -36,6 +40,7 @@ public class CliTaskBootstrap implements ICliTask {
             .map(pid -> new KnownPid(pid, unknownTime, unknownTime))
             .forEach(known -> {
                 // store PIDs in the local database of known PIDs
+                LOG.info("Store PID {} in the local database of known PIDs.", known.getPid());
                 knownPids.save(known);
                 // send to message broker
                 PidRecordMessage message = PidRecordMessage.creation(
@@ -44,6 +49,7 @@ public class CliTaskBootstrap implements ICliTask {
                     AuthenticationHelper.getPrincipal(),
                     ControllerUtils.getLocalHostname()
                 );
+                LOG.info("Send PID {} to message broker.", known.getPid());
                 messagingService.send(message);
             });
         knownPids.flush();
