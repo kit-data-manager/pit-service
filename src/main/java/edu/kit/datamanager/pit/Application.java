@@ -24,8 +24,10 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalNotification;
 
+import edu.kit.datamanager.pit.cli.CliTaskBootstrap;
 import edu.kit.datamanager.pit.cli.CliTaskWriteFile;
 import edu.kit.datamanager.pit.cli.PidSource;
+import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
@@ -188,10 +190,22 @@ public class Application {
         final String sourceKnownPids = "known-pids";
 
         final String errorCommunication = "Communication error: {}";
+        final String errorConfiguration = "Configuration error: {}";
 
         if (cliArgsGiven) {
             if (Arrays.equals(new String[] { bootstrapCmd, sourceFromPrefix }, args)) {
-                // new CliTaskBootstrap(context, PidSource.fromPrefix(context));
+                try {
+                    new CliTaskBootstrap(context, PidSource.fromPrefix(context)).process();
+                } catch (InvalidConfigException e) {
+                    e.printStackTrace();
+                    LOG.error(errorConfiguration, e.getMessage());
+                    exitApp(context, 1);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    LOG.error(errorCommunication, e.getMessage());
+                    exitApp(context, 1);
+                }
+                exitApp(context, 0);
 
             } else
             if (Arrays.equals(new String[] { writeFileCmd, sourceFromPrefix }, args)) {
