@@ -159,7 +159,6 @@ public class Application {
                 });
     }
 
-    @Bean
     @ConfigurationProperties("pit")
     public ApplicationProperties applicationProperties() {
         return new ApplicationProperties();
