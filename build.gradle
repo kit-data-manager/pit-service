@@ -82,6 +82,8 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-ui:${springDocVersion}"
     implementation "org.springdoc:springdoc-openapi-data-rest:${springDocVersion}"
     implementation "org.springdoc:springdoc-openapi-webmvc-core:${springDocVersion}"
+    // spring + elasticsearch communication
+    implementation "org.springframework.data:spring-data-elasticsearch"
 
     // More flexibility when (de-)serializing json:
     //implementation("com.monitorjbl:spring-json-view:1.1.0")
