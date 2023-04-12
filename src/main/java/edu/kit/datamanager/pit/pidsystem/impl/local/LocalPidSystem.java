@@ -49,7 +49,7 @@ public class LocalPidSystem implements IIdentifierSystem {
     private static final Logger LOG = LoggerFactory.getLogger(LocalPidSystem.class);
     
     @Autowired
-    PidDatabaseObjectDao db;
+    private PidDatabaseObjectDao db;
 
     private static final String PREFIX = "sandboxed/";
 
@@ -62,8 +62,15 @@ public class LocalPidSystem implements IIdentifierSystem {
      * 
      * @param db the new DAO.
      */
-    public void setDatabase(PidDatabaseObjectDao db) {
+    protected void setDatabase(PidDatabaseObjectDao db) {
         this.db = db;
+    }
+
+    /**
+     * For testing purposes.
+     */
+    protected PidDatabaseObjectDao getDatabase() {
+        return this.db;
     }
 
     @Override
