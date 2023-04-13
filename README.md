@@ -12,9 +12,11 @@ The Typed PID Maker enables the creation, maintenance, and validation of PIDs. I
 - ✅ Maintain the information within these PIDs.
 - ✅ Validate PIDs.
 - ✅ Resolve PIDs.
-- ✅ Store the created PIDs in your database.
+- ✅ Store the created PIDs in your database and query them.
   - ✅ Pagination support
   - ✅ Tabulator.js support
+- ✅ Build & use your own search index
+  - ✅ Search for information stored within PIDs. This includes PIDs you created, updated or resolved at some point. Requires an Elasticsearch instance.
 - ✅ Authentication via [JWT](https://jwt.io/introduction) or [KeyCloak](https://www.keycloak.org/)
 
 ## How to build
