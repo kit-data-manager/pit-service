@@ -19,15 +19,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
-import org.springframework.stereotype.Repository;
 
 /**
  * Elastic repository for indexing PID records.
  */
-@Repository
 @ConditionalOnProperty(prefix = "repo.search", name = "enabled", havingValue = "true")
 public interface PidRecordElasticRepository extends ElasticsearchRepository<PidRecordElasticWrapper, String> {
 
-    Page<PidRecordElasticWrapper> findById(String id, Pageable pageable);
+    Page<PidRecordElasticWrapper> findByPid(String pid, Pageable pageable);
 
 }
