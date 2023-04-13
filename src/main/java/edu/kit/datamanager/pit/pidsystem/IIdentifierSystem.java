@@ -24,8 +24,8 @@ public interface IIdentifierSystem {
      * Queries all properties from the given PID, independent of types.
      *
      * @param pid
-     * @return a PID information record with property identifiers mapping to
-     * values. The property names will be empty strings. Contains all property
+     * @return a PID information record with its PID and attribute-value-pairs.
+     * The property names will be empty strings. Contains all property
      * values present in the record of the given PID. If the pid is not
      * registered, the method returns null.
      * @throws IOException
