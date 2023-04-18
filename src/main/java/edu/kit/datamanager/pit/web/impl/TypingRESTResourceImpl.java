@@ -583,7 +583,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
     private void saveToElastic(PIDRecord rec) {
         this.elastic.ifPresent(
-            database -> database.save(new PidRecordElasticWrapper(rec))
+            database -> database.save(
+                new PidRecordElasticWrapper(rec, typingService.getOperations())
+            )
         );
     }
 
