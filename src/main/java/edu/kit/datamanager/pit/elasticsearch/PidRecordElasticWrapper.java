@@ -15,9 +15,11 @@
  */
 package edu.kit.datamanager.pit.elasticsearch;
 
+import edu.kit.datamanager.pit.domain.Operations;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.pidsystem.impl.local.PidDatabaseObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -55,10 +57,11 @@ public class PidRecordElasticWrapper {
         PidDatabaseObject simple = new PidDatabaseObject(pidRecord);
         this.attributes = simple.getEntries();
 
-        // TODO set dates
-        //pidRecord.getDates().stream().filter(d -> (DATE_TYPE.CREATED.equals(d.getType()))).forEachOrdered(d -> {
-        //    created = Date.from(d.getValue());
-        //});
-        //lastUpdate = Date.from(Instant.now());
+        try {
+            this.created = Operations.findDateCreated(pidRecord).orElse(null);
+            this.lastUpdate = Operations.findDateModified(pidRecord).orElse(null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
