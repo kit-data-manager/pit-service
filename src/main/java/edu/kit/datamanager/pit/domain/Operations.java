@@ -12,7 +12,6 @@ import java.util.Optional;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 
@@ -32,14 +31,13 @@ public class Operations {
         "21.T11148/397d831aa3a9d18eb52c"
     };
 
-    @Autowired
-    private static ITypingService pit;
+    private ITypingService typingService;
 
-    private Operations() {
-        // static class
+    public Operations(ITypingService typingService) {
+        this.typingService = typingService;
     }
 
-    public static Optional<Date> findDateCreated(PIDRecord pidRecord) throws IOException {
+    public Optional<Date> findDateCreated(PIDRecord pidRecord) throws IOException {
         /* try known types */
         List<String> knownDateTypes = Arrays.asList(Operations.KNOWN_DATE_CREATED);
         Optional<Date> date = knownDateTypes
@@ -47,7 +45,7 @@ public class Operations {
             .map(pidRecord::getPropertyValues)
             .map(Arrays::asList)
             .flatMap(List<String>::stream)
-            .map(Operations::extractDate)
+            .map(this::extractDate)
             .filter(Optional<Date>::isPresent)
             .map(Optional<Date>::get)
             .sorted(Comparator.comparingLong(Date::getTime))
@@ -61,7 +59,7 @@ public class Operations {
         // we need to resolve types without streams to forward possible exceptions
         Collection<TypeDefinition> types = new ArrayList<>();
         for (String attributePid : pidRecord.getPropertyIdentifiers()) {
-            TypeDefinition type = pit.describeType(attributePid);
+            TypeDefinition type = this.typingService.describeType(attributePid);
             types.add(type);
         }
 
@@ -80,16 +78,16 @@ public class Operations {
                 || type.getName().equals("createdAt")
                 || type.getName().equals("creationDate"))
             .map(type -> pidRecord.getPropertyValues(type.getIdentifier()))
-            .map(values -> Arrays.asList(values))
+            .map(Arrays::asList)
             .flatMap(List<String>::stream)
-            .map(Operations::extractDate)
+            .map(this::extractDate)
             .filter(Optional<Date>::isPresent)
             .map(Optional<Date>::get)
             .sorted(Comparator.comparingLong(Date::getTime))
             .findFirst();
     }
 
-    public static Optional<Date> findDateModified(PIDRecord pidRecord) throws IOException {
+    public Optional<Date> findDateModified(PIDRecord pidRecord) throws IOException {
         /* try known types */
         List<String> knownDateTypes = Arrays.asList(Operations.KNOWN_DATE_MODIFIED);
         Optional<Date> date = knownDateTypes
@@ -97,7 +95,7 @@ public class Operations {
             .map(pidRecord::getPropertyValues)
             .map(Arrays::asList)
             .flatMap(List<String>::stream)
-            .map(Operations::extractDate)
+            .map(this::extractDate)
             .filter(Optional<Date>::isPresent)
             .map(Optional<Date>::get)
             .sorted(Comparator.comparingLong(Date::getTime))
@@ -111,7 +109,7 @@ public class Operations {
         // we need to resolve types without streams to forward possible exceptions
         Collection<TypeDefinition> types = new ArrayList<>();
         for (String attributePid : pidRecord.getPropertyIdentifiers()) {
-            TypeDefinition type = pit.describeType(attributePid);
+            TypeDefinition type = this.typingService.describeType(attributePid);
             types.add(type);
         }
 
@@ -130,16 +128,16 @@ public class Operations {
                 || type.getName().equals("lastModified")
                 || type.getName().equals("modificationDate"))
             .map(type -> pidRecord.getPropertyValues(type.getIdentifier()))
-            .map(values -> Arrays.asList(values))
+            .map(Arrays::asList)
             .flatMap(List<String>::stream)
-            .map(Operations::extractDate)
+            .map(this::extractDate)
             .filter(Optional<Date>::isPresent)
             .map(Optional<Date>::get)
             .sorted(Comparator.comparingLong(Date::getTime))
             .findFirst();
     }
 
-    protected static Optional<Date> extractDate(String dateString) {
+    protected Optional<Date> extractDate(String dateString) {
         DateTimeFormatter dateFormatter = ISODateTimeFormat.dateTime();
         try {
             DateTime dateTime = dateFormatter.parseDateTime(dateString);

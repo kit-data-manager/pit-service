@@ -49,17 +49,14 @@ public class PidRecordElasticWrapper {
     @Field(type = FieldType.Date, format = DateFormat.basic_date_time)
     private Date lastUpdate;
 
-    /** For hibernate */
-    public PidRecordElasticWrapper() {}
-
-    public PidRecordElasticWrapper(PIDRecord pidRecord) {
+    public PidRecordElasticWrapper(PIDRecord pidRecord, Operations dateOperations) {
         pid = pidRecord.getPid();
         PidDatabaseObject simple = new PidDatabaseObject(pidRecord);
         this.attributes = simple.getEntries();
 
         try {
-            this.created = Operations.findDateCreated(pidRecord).orElse(null);
-            this.lastUpdate = Operations.findDateModified(pidRecord).orElse(null);
+            this.created = dateOperations.findDateCreated(pidRecord).orElse(null);
+            this.lastUpdate = dateOperations.findDateModified(pidRecord).orElse(null);
         } catch (IOException e) {
             e.printStackTrace();
         }
