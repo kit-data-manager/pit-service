@@ -59,8 +59,10 @@ public class Operations {
         // we need to resolve types without streams to forward possible exceptions
         Collection<TypeDefinition> types = new ArrayList<>();
         for (String attributePid : pidRecord.getPropertyIdentifiers()) {
-            TypeDefinition type = this.typingService.describeType(attributePid);
-            types.add(type);
+            if (this.typingService.isIdentifierRegistered(attributePid)) {
+                TypeDefinition type = this.typingService.describeType(attributePid);
+                types.add(type);
+            }
         }
 
         /*
@@ -109,8 +111,10 @@ public class Operations {
         // we need to resolve types without streams to forward possible exceptions
         Collection<TypeDefinition> types = new ArrayList<>();
         for (String attributePid : pidRecord.getPropertyIdentifiers()) {
-            TypeDefinition type = this.typingService.describeType(attributePid);
-            types.add(type);
+            if (this.typingService.isIdentifierRegistered(attributePid)) {
+                TypeDefinition type = this.typingService.describeType(attributePid);
+                types.add(type);
+            }
         }
 
         /*

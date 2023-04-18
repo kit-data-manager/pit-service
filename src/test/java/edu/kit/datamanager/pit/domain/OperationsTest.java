@@ -23,6 +23,8 @@ import edu.kit.datamanager.pit.web.ApiMockUtils;
 @ActiveProfiles("test")
 public class OperationsTest {
 
+    public static final String VALID_DATE = "2021-12-21T17:36:09.541+00:00";
+
     @Autowired
     private ITypingService typingService;
 
@@ -39,6 +41,16 @@ public class OperationsTest {
     }
 
     @Test
+    void testFindDateCreatedFail() throws IOException {
+        PIDRecord pidRecord = new PIDRecord();
+        // should fail because the type is not semantically recognizable as a date
+        // (because it is not a registered type)
+        pidRecord.addEntry("non-registered-creation-date", "", VALID_DATE);
+        Optional<Date> date = typingService.getOperations().findDateCreated(pidRecord);
+        assertTrue(date.isEmpty());
+    }
+
+    @Test
     void testFindDateModified() throws IOException {
         PIDRecord pidRecord = ApiMockUtils.getSomePidRecordInstance();
         Optional<Date> date = typingService.getOperations().findDateModified(pidRecord);
@@ -46,9 +58,18 @@ public class OperationsTest {
     }
 
     @Test
+    void testFindDateModifiedFail() throws IOException {
+        PIDRecord pidRecord = new PIDRecord();
+        // should fail because the type is not semantically recognizable as a date
+        // (because it is not a registered type)
+        pidRecord.addEntry("non-registered-creation-date", "", VALID_DATE);
+        Optional<Date> date = typingService.getOperations().findDateModified(pidRecord);
+        assertTrue(date.isEmpty());
+    }
+
+    @Test
     void testExtractDate() {
-        String dateStr = "2021-12-21T17:36:09.541+00:00";
-        Optional<Date> date = typingService.getOperations().extractDate(dateStr);
+        Optional<Date> date = typingService.getOperations().extractDate(VALID_DATE);
         assertTrue(date.isPresent());
     }
 
