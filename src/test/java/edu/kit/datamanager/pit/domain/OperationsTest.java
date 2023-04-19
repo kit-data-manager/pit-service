@@ -24,9 +24,11 @@ import edu.kit.datamanager.pit.web.ApiMockUtils;
 public class OperationsTest {
 
     public static final String VALID_DATE = "2021-12-21T17:36:09.541+00:00";
+    public static final String TYPE_PROFILE = "21.T11148/076759916209e5d62bd5";
 
     @Autowired
     private ITypingService typingService;
+
 
     @Test
     void testSpringSetup() {
@@ -41,11 +43,21 @@ public class OperationsTest {
     }
 
     @Test
-    void testFindDateCreatedFail() throws IOException {
+    void testFindDateCreatedFailUnregistered() throws IOException {
         PIDRecord pidRecord = new PIDRecord();
         // should fail because the type is not semantically recognizable as a date
         // (because it is not a registered type)
         pidRecord.addEntry("non-registered-creation-date", "", VALID_DATE);
+        Optional<Date> date = typingService.getOperations().findDateCreated(pidRecord);
+        assertTrue(date.isEmpty());
+    }
+
+    @Test
+    void testFindDateCreatedFailRegistered() throws IOException {
+        PIDRecord pidRecord = new PIDRecord();
+        // should fail because the type is not semantically recognizable as a date
+        // (although it is a resolveable type)
+        pidRecord.addEntry(TYPE_PROFILE, "", "21.T11148/b9b76f887845e32d29f7");
         Optional<Date> date = typingService.getOperations().findDateCreated(pidRecord);
         assertTrue(date.isEmpty());
     }
@@ -58,11 +70,21 @@ public class OperationsTest {
     }
 
     @Test
-    void testFindDateModifiedFail() throws IOException {
+    void testFindDateModifiedFailUnregistered() throws IOException {
         PIDRecord pidRecord = new PIDRecord();
         // should fail because the type is not semantically recognizable as a date
         // (because it is not a registered type)
         pidRecord.addEntry("non-registered-creation-date", "", VALID_DATE);
+        Optional<Date> date = typingService.getOperations().findDateModified(pidRecord);
+        assertTrue(date.isEmpty());
+    }
+
+    @Test
+    void testFindDateModifiedFailRegistered() throws IOException {
+        PIDRecord pidRecord = new PIDRecord();
+        // should fail because the type is not semantically recognizable as a date
+        // (although it is a resolveable type)
+        pidRecord.addEntry(TYPE_PROFILE, "", "21.T11148/b9b76f887845e32d29f7");
         Optional<Date> date = typingService.getOperations().findDateModified(pidRecord);
         assertTrue(date.isEmpty());
     }
