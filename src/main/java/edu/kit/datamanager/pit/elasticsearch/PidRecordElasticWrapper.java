@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.persistence.ElementCollection;
@@ -49,10 +50,14 @@ public class PidRecordElasticWrapper {
     @Field(type = FieldType.Date, format = DateFormat.basic_date_time)
     private Date lastUpdate;
 
+    @Field(type = FieldType.Text)
+    private List<String> read = new ArrayList<>();
+
     public PidRecordElasticWrapper(PIDRecord pidRecord, Operations dateOperations) {
         pid = pidRecord.getPid();
         PidDatabaseObject simple = new PidDatabaseObject(pidRecord);
         this.attributes = simple.getEntries();
+        this.read.add("anonymousUser");
 
         try {
             this.created = dateOperations.findDateCreated(pidRecord).orElse(null);
