@@ -6,6 +6,8 @@ The Typed PID Maker enables the creation, maintenance, and validation of PIDs. I
 
 **See also: [Documentation](https://kit-data-manager.github.io/webpage/typed-pid-maker/index.html) | [Configuration details](https://github.com/kit-data-manager/pit-service/blob/master/config/application.properties)**
 
+[TOC]
+
 ## Features
 
 - ✅ Create PIDs containing typed key-value-pairs for easy, fast, and automated decision-making.
@@ -19,6 +21,44 @@ The Typed PID Maker enables the creation, maintenance, and validation of PIDs. I
   - ✅ Search for information stored within PIDs. This includes PIDs you created, updated or resolved at some point.
   - ✅ Supports the [full elastic DSL](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html) (and requires an Elasticsearch 8 instance).
 - ✅ Authentication via [JWT](https://jwt.io/introduction) or [KeyCloak](https://www.keycloak.org/)
+
+### Search example
+
+The search can be executed via the provided swagger interface (default location: <http://localhost:8090/swagger-ui.html>). For example, with the following request body you will get all record information:
+
+```json
+{
+  "query": {
+    "regexp": {
+      "pid": {
+        "value": ".*",
+        "flags": "ALL",
+        "case_insensitive": true
+      }
+    }
+  }
+}
+```
+
+You can also use other http clients, like CURL. A CURL (which may be provided by swagger) request may look like this:
+
+```bash
+curl -X 'POST' \
+  'http://localhost:8090/api/v1/search?page=0&size=20' \
+  -H 'accept: application/hal+json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "query": {
+    "regexp": {
+      "pid": {
+        "value": ".*",
+        "flags": "ALL",
+        "case_insensitive": true
+      }
+    }
+  }
+}'
+```
 
 ## How to build
 
