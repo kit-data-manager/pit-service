@@ -16,7 +16,8 @@ The Typed PID Maker enables the creation, maintenance, and validation of PIDs. I
   - ✅ Pagination support
   - ✅ Tabulator.js support
 - ✅ Build & use your own search index
-  - ✅ Search for information stored within PIDs. This includes PIDs you created, updated or resolved at some point. Requires an Elasticsearch instance.
+  - ✅ Search for information stored within PIDs. This includes PIDs you created, updated or resolved at some point.
+  - ✅ Supports the [full elastic DSL](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html) (and requires an Elasticsearch 8 instance).
 - ✅ Authentication via [JWT](https://jwt.io/introduction) or [KeyCloak](https://www.keycloak.org/)
 
 ## How to build
