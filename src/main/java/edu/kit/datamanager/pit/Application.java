@@ -246,6 +246,7 @@ public class Application {
         LOG.error("CLI usage incorrect. Usage:");
         LOG.error("java -jar TypedPIDMaker.jar [ACTION] [SOURCE]");
         LOG.error("java -jar TypedPIDMaker.jar bootstrap all-pids-from-prefix");
+        LOG.error("java -jar TypedPIDMaker.jar bootstrap known-pids");
         LOG.error("java -jar TypedPIDMaker.jar write-file all-pids-from-prefix");
         LOG.error("java -jar TypedPIDMaker.jar write-file known-pids");
     }
