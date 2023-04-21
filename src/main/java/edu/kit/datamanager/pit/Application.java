@@ -87,6 +87,16 @@ public class Application {
 
     private static final Logger LOG = LoggerFactory.getLogger(Application.class);
 
+    protected static final String CMD_BOOTSTRAP = "bootstrap";
+    protected static final String CMD_WRITE_FILE = "write-file";
+
+    protected static final String SOURCE_FROM_PREFIX = "all-pids-from-prefix";
+    protected static final String SOURCE_KNOWN_PIDS = "known-pids";
+    
+    protected static final String ERROR_COMMUNICATION = "Communication error: {}";
+    protected static final String ERROR_CONFIGURATION = "Configuration error: {}";
+
+
     @Bean
     @Scope("prototype")
     public Logger logger(InjectionPoint injectionPoint) {
@@ -183,37 +193,27 @@ public class Application {
         ConfigurableApplicationContext context = SpringApplication.run(Application.class, args);
         System.out.println("Spring is running!");
 
-        final boolean cliArgsGiven = args != null && args.length != 0;
-        final boolean cliArgsAmountValid = cliArgsGiven && args.length >= 2;
+        final boolean cliArgsAmountValid = args != null && args.length != 0 && args.length >= 2;
         
-        final String writeFileCmd = "write-file";
-        final String bootstrapCmd = "bootstrap";
-        
-        final String sourceFromPrefix = "all-pids-from-prefix";
-        final String sourceKnownPids = "known-pids";
-
-        final String errorCommunication = "Communication error: {}";
-        final String errorConfiguration = "Configuration error: {}";
-
         if (cliArgsAmountValid) {
             ICliTask task = null;
             Stream<String> pidSource = null;
             
-            if (Objects.equals(args[1], sourceFromPrefix)) {
+            if (Objects.equals(args[1], SOURCE_FROM_PREFIX)) {
                 try {
                     pidSource = PidSource.fromPrefix(context);
                 } catch (IOException e) {
                     e.printStackTrace();
-                    LOG.error(errorCommunication, e.getMessage());
+                    LOG.error(ERROR_COMMUNICATION, e.getMessage());
                     exitApp(context, 1);
                 }
-            } else if (Objects.equals(args[1], sourceKnownPids)) {
+            } else if (Objects.equals(args[1], SOURCE_KNOWN_PIDS)) {
                 pidSource = PidSource.fromKnown(context);
             }
 
-            if (Objects.equals(args[0], bootstrapCmd)) {
+            if (Objects.equals(args[0], CMD_BOOTSTRAP)) {
                 task = new CliTaskBootstrap(context, pidSource);
-            } else if (Objects.equals(args[0], writeFileCmd)) {
+            } else if (Objects.equals(args[0], CMD_WRITE_FILE)) {
                 task = new CliTaskWriteFile(context, pidSource);
             }
 
@@ -229,11 +229,11 @@ public class Application {
                 }
             } catch (InvalidConfigException e) {
                 e.printStackTrace();
-                LOG.error(errorConfiguration, e.getMessage());
+                LOG.error(ERROR_CONFIGURATION, e.getMessage());
                 exitApp(context, 1);
             } catch (IOException e) {
                 e.printStackTrace();
-                LOG.error(errorCommunication, e.getMessage());
+                LOG.error(ERROR_COMMUNICATION, e.getMessage());
                 exitApp(context, 1);
             }
         }
