@@ -42,7 +42,6 @@ import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -241,7 +240,9 @@ public class Application {
     }
 
     private static void printUsage(String[] args) {
-        LOG.error("Got commands: {} and {}", args[0], args[1]);
+        String firstArg = args[0].replaceAll("[\r\n]","");
+        String secondArg = args[1].replaceAll("[\r\n]","");
+        LOG.error("Got commands: {} and {}", firstArg, secondArg);
         LOG.error("CLI usage incorrect. Usage:");
         LOG.error("java -jar TypedPIDMaker.jar [ACTION] [SOURCE]");
         LOG.error("java -jar TypedPIDMaker.jar bootstrap all-pids-from-prefix");
