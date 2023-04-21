@@ -16,6 +16,8 @@ The Typed PID Maker enables the creation, maintenance, and validation of PIDs. I
   - ✅ Pagination support
   - ✅ Tabulator.js support
 - ✅ Authentication via [JWT](https://jwt.io/introduction) or [KeyCloak](https://www.keycloak.org/)
+- ✅ Bootstrap with existing PIDs in your PID Prefix (see command line options).
+- ✅ Extract all your PIDs to CSV files (see command line options).
 
 ## How to build
 
@@ -74,6 +76,21 @@ in order to see available RESTful endpoints and their documentation. You may hav
 Furthermore, you can use this Web interface to test single API calls in order to get familiar with the service.
 
 Details on the version being used and other build information can be found on http://localhost:8090/actuator/info.
+
+### Command line options
+
+- `--spring.config.location=config/application.properties` set the configuration files location to be used. Not required if the file is in the same directory as the jar file.
+- `bootstrap all-pids-from-prefix` starts the service and bootstraps all PIDs. This means:
+  - store the PIDs as "known PIDs" in the local database (as configured)
+  - send one message per PID to the message broker (if configured)
+  - (WIP, #128) store the PID records in the search index (if configured)
+  - after the bootstrap, the application will continue to run
+- `bootstrap known-pids` same as above, but:
+  - not using all PIDs from prefix, but only the ones stored in the local database ("known PIDs")
+  - useful to, for example, re-send PIDs via messaging to notify new services
+- `write-file all-pids-from-prefix` writes all PIDs of the configured PID prefix to a CSV file (one PID per line).
+- `write-file known-pids` same as above but:
+  - only with the PIDs stored in the local database ("known PIDs").
 
 ## License
 
