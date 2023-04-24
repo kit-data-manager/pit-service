@@ -7,17 +7,7 @@ import java.nio.file.Paths;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 
-// JUnit5 + Spring
-@SpringBootTest
-// Set the in-memory implementation
-@TestPropertySource(
-    locations = "/test/application-test.properties"
-)
-@ActiveProfiles("test")
 public class CliTaskWriteFileTest {
     @Test
     void testCreateFilename() {
