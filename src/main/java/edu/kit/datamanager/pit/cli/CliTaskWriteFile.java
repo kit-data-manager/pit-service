@@ -13,26 +13,42 @@ import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ConfigurableApplicationContext;
-
-import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 
 public class CliTaskWriteFile implements ICliTask {
 
     private static final Logger LOG = LoggerFactory.getLogger(CliTaskWriteFile.class);
 
-    Stream<String> pids;
-    ConfigurableApplicationContext context;
-    ApplicationProperties appProps;
+    protected Stream<String> pids;
 
-    public CliTaskWriteFile(ConfigurableApplicationContext context, Stream<String> pids) {
+    public CliTaskWriteFile(Stream<String> pids) {
         this.pids = pids;
-        this.context = context;
-        this.appProps = context.getBean(ApplicationProperties.class);
     }
 
     @Override
     public boolean process() throws IOException {
+        String filename = createFilename();
+        
+        Path path = Paths.get(filename);
+        ensureFileExists(path);
+
+        writeToFile(path);
+        return true;
+    }
+
+    protected void writeToFile(Path path) throws IOException {
+        for (Iterator<String> iter = pids.iterator(); iter.hasNext(); ) {
+            String pid = iter.next();
+            LOG.info("Storing into CSV: {}", pid);
+            Files.writeString(path, pid + "\n", StandardOpenOption.APPEND);
+        }
+    }
+
+    protected void ensureFileExists(Path path) throws IOException {
+        File f = path.toFile();
+        f.createNewFile();
+    }
+
+    protected String createFilename() {
         String date = ZonedDateTime
                 .now(ZoneId.systemDefault())
                 .toString()
@@ -42,17 +58,6 @@ public class CliTaskWriteFile implements ICliTask {
                 .replace("/", "-")
                 //.replace("+", "_")
                 ;
-        String filename = String.format("%s.%s", date, "csv");
-        Path path = Paths.get(filename);
-        {
-            File f = path.toFile();
-            f.createNewFile();
-        }
-        for (Iterator<String> iter = pids.iterator(); iter.hasNext(); ) {
-            String pid = iter.next();
-            LOG.info("Storing into CSV: {}", pid);
-            Files.writeString(path, pid + "\n", StandardOpenOption.APPEND);
-        }
-        return true;
+        return String.format("%s.%s", date, "csv");
     }
 }

@@ -214,7 +214,7 @@ public class Application {
             if (Objects.equals(args[0], CMD_BOOTSTRAP)) {
                 task = new CliTaskBootstrap(context, pidSource);
             } else if (Objects.equals(args[0], CMD_WRITE_FILE)) {
-                task = new CliTaskWriteFile(context, pidSource);
+                task = new CliTaskWriteFile(pidSource);
             }
 
             try {
