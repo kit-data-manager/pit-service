@@ -1,9 +1,13 @@
 package edu.kit.datamanager.pit.cli;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
@@ -14,6 +18,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
+import edu.kit.datamanager.pit.common.InvalidConfigException;
+import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
 
 // JUnit5 + Spring
@@ -59,6 +65,23 @@ public class CliTaskBootstrapTest {
         ICliTask task = new CliTaskBootstrap(context, pidSource);
         boolean shutdown = task.process();
         assertFalse(shutdown);
+    }
+
+    @Test
+    void testNoOverride() throws InvalidConfigException, IOException {
+        // lets say a pid exists and has dates assigned
+        String pid = "some/pid";
+        Instant date = Instant.now();
+        knownPids.save(new KnownPid(pid, date, date));
+        // the bootstrap task is not allowed to remove/change date information
+        Stream<String> pidSource = Stream.of(pid);
+        ICliTask task = new CliTaskBootstrap(context, pidSource);
+        task.process();
+        // nothing should have changed for the pid
+        Optional<KnownPid> known = knownPids.findByPid(pid);
+        assertTrue(known.isPresent());
+        assertEquals(date, known.get().getCreated());
+        assertEquals(date, known.get().getModified());
     }
 
     @AfterEach
