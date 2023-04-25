@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -71,7 +73,7 @@ public class CliTaskBootstrapTest {
     void testNoOverride() throws InvalidConfigException, IOException {
         // lets say a pid exists and has dates assigned
         String pid = "some/pid";
-        Instant date = Instant.now();
+        Instant date = Instant.now().truncatedTo(ChronoUnit.MINUTES);
         knownPids.save(new KnownPid(pid, date, date));
         // the bootstrap task is not allowed to remove/change date information
         Stream<String> pidSource = Stream.of(pid);
@@ -82,6 +84,7 @@ public class CliTaskBootstrapTest {
         assertTrue(known.isPresent());
         assertEquals(date, known.get().getCreated());
         assertEquals(date, known.get().getModified());
+        knownPids.deleteById(pid);
     }
 
     @AfterEach
