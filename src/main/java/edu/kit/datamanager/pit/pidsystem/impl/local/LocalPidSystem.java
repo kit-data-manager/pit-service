@@ -9,6 +9,7 @@ import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,11 +85,11 @@ public class LocalPidSystem implements IIdentifierSystem {
     
     @Override
     public String registerPID(PIDRecord rec) throws IOException {
-        int counter = 0;
+        //int counter = 0;
         do {
-            int hash = rec.getEntries().hashCode() + counter;
-            rec.setPid("sandboxed/" + hash);
-            counter++;
+           // int hash = rec.getEntries().hashCode() + counter;
+            rec.setPid("sandboxed/" + UUID.randomUUID());
+           // counter++;
         } while (this.db.existsById(rec.getPid()));
         this.db.save(new PidDatabaseObject(rec));
         LOG.debug("Registered record with PID: {}", rec.getPid());
