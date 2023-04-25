@@ -41,7 +41,10 @@ public class CliTaskBootstrap implements ICliTask {
             .forEach(known -> {
                 // store PIDs in the local database of known PIDs
                 LOG.info("Store PID {} in the local database of known PIDs.", known.getPid());
-                knownPids.save(known);
+                boolean exists = knownPids.findByPid(known.getPid()).isPresent();
+                if (!exists) {
+                    knownPids.save(known);
+                }
                 // send to message broker
                 PidRecordMessage message = PidRecordMessage.creation(
                     known.getPid(),
