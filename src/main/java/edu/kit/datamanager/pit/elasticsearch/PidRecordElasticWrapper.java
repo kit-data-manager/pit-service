@@ -67,7 +67,7 @@ public class PidRecordElasticWrapper {
             this.created = dateOperations.findDateCreated(pidRecord).orElse(null);
             this.lastUpdate = dateOperations.findDateModified(pidRecord).orElse(null);
         } catch (IOException e) {
-            LOG.error("Could not retrieve date from record.", e);
+            LOG.error("Could not retrieve date from record (pid: " + pidRecord.getPid() + ").", e);
             e.printStackTrace();
         }
     }
