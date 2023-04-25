@@ -52,12 +52,11 @@ public class CliTaskWriteFile implements ICliTask {
         String date = ZonedDateTime
                 .now(ZoneId.systemDefault())
                 .toString()
-                //.replace(":", ".")
+                .replace(":", ".")
                 .replace("[", "(")
                 .replace("]", ")")
                 .replace("/", "-")
-                //.replace("+", "_")
-                ;
+                .replace("+", "-");
         return String.format("%s.%s", date, "csv");
     }
 }
