@@ -15,7 +15,6 @@ import edu.kit.datamanager.pit.configuration.ApplicationProperties.ValidationStr
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
-import edu.kit.datamanager.pit.domain.SimplePidRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
@@ -32,7 +31,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.http.client.cache.HeaderConstants;
-import org.apache.http.entity.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
