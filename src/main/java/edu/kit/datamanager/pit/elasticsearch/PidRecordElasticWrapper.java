@@ -29,6 +29,8 @@ import java.util.Map;
 import javax.persistence.ElementCollection;
 import javax.persistence.FetchType;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -37,6 +39,8 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 
 @Document(indexName = "typedpidmaker")
 public class PidRecordElasticWrapper {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PidRecordElasticWrapper.class);
 
     @Id
     private String pid;
@@ -63,6 +67,7 @@ public class PidRecordElasticWrapper {
             this.created = dateOperations.findDateCreated(pidRecord).orElse(null);
             this.lastUpdate = dateOperations.findDateModified(pidRecord).orElse(null);
         } catch (IOException e) {
+            LOG.error("Could not retrieve date from record.", e);
             e.printStackTrace();
         }
     }
