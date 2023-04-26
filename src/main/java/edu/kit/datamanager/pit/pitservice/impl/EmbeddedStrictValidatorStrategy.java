@@ -16,6 +16,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.common.cache.LoadingCache;
 
+/**
+ * Validates a PID record using embedded profile(s).
+ * 
+ * - checks if all mandatory attributes are present
+ * - validates all available attributes
+ * - fails if an attribute is not defined within the profile
+ */
 public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedStrictValidatorStrategy.class);
@@ -104,6 +111,14 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
         }
     }
 
+    /**
+     * Validates all values of an attribute against a given type definition.
+     * 
+     * @param pidRecord the record containing the attribute and value.
+     * @param attributeKey the attribute to check the values for.
+     * @param type the type definition to check against.
+     * @throws RecordValidationException on error.
+     */
     private void validateValuesForKey(PIDRecord pidRecord, String attributeKey, TypeDefinition type)
             throws RecordValidationException {
         String[] values = pidRecord.getPropertyValues(attributeKey);
