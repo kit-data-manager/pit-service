@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -67,8 +68,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
   @Override
   protected void configure(HttpSecurity http) throws Exception {
     http
-        .cors()
-        .and()
+      //  .cors()
+      //  .and()
         // everyone, even unauthenticated users may do HTTP OPTIONS on urls.
         .authorizeRequests()
         .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -118,18 +119,20 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
   }
 
-  @Bean
-  public CorsFilter corsFilter() {
-    CorsConfiguration corsConfig = new CorsConfiguration();
-    corsConfig.setAllowCredentials(false);
-    corsConfig.addAllowedOriginPattern(allowedOriginPattern);
-    corsConfig.addAllowedHeader("*");
-    corsConfig.addAllowedMethod("*");
-    corsConfig.addExposedHeader("Content-Range");
-    corsConfig.addExposedHeader("ETag");
+    @Bean
+    public FilterRegistrationBean corsFilter() {
+        final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration corsConfig = new CorsConfiguration();
+        corsConfig.setAllowCredentials(true);
+        corsConfig.addAllowedOriginPattern(allowedOriginPattern); // @Value: http://localhost:8080
+        corsConfig.addAllowedHeader("*");
+        corsConfig.addAllowedMethod("*");
+        corsConfig.addExposedHeader("Content-Range");
+        corsConfig.addExposedHeader("ETag");
 
-    final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", corsConfig);
-    return new CorsFilter(source);
-  }
+        source.registerCorsConfiguration("/**", corsConfig);
+        FilterRegistrationBean bean = new FilterRegistrationBean(new CorsFilter(source));
+        bean.setOrder(0);
+        return bean;
+    }
 }
