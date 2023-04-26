@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -247,12 +248,26 @@ public class ApiMockUtils {
      * @return The created PID record.
      * @throws Exception if any assumption breaks.
      */
-    public static PIDRecord createSomeRecord(MockMvc mockMvc) throws Exception {
-        String createdBody = ApiMockUtils.createRecord(mockMvc, ApiMockUtils.JSON_RECORD, MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE);
+    public static PIDRecord registerSomeRecord(MockMvc mockMvc) throws Exception {
+        String createdBody = ApiMockUtils.registerRecord(mockMvc, ApiMockUtils.JSON_RECORD, MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE);
         PIDRecord createdRecord = getJsonMapper().readValue(createdBody, PIDRecord.class);
         String createdPid = createdRecord.getPid();
         assertFalse(createdPid.isEmpty());
         return createdRecord;
+    }
+
+    /**
+     * Generic method to do a "create" request. Expects HTTP 201.
+     * 
+     * @param mockMvc instance that mocks the REST API
+     * @param body the PID record to create
+     * @param bodyContentType type of the body
+     * @param acceptContentType type to expect
+     * @return the body of the response as string.
+     * @throws Exception on any error.
+     */
+    public static String registerRecord(MockMvc mockMvc, String body, String bodyContentType, String acceptContentType) throws Exception {
+        return ApiMockUtils.registerRecord(mockMvc, body, bodyContentType, acceptContentType, MockMvcResultMatchers.status().isCreated());
     }
 
     /**
@@ -262,10 +277,11 @@ public class ApiMockUtils {
      * @param body the PID record to create
      * @param bodyContentType type of the body
      * @param acceptContentType type to expect
+     * @param expectHttpCode custom result matcher for expecting other HTTP response codes.
      * @return the body of the response as string.
      * @throws Exception on any error.
      */
-    public static String createRecord(MockMvc mockMvc, String body, String bodyContentType, String acceptContentType) throws Exception {
+    public static String registerRecord(MockMvc mockMvc, String body, String bodyContentType, String acceptContentType, ResultMatcher expectHttpCode) throws Exception {
         MockHttpServletRequestBuilder request = post("/api/v1/pit/pid/")
             .contentType(MediaType.APPLICATION_JSON)
             .characterEncoding("utf-8")
@@ -285,7 +301,7 @@ public class ApiMockUtils {
         MvcResult created = mockMvc
             .perform(request)
             .andDo(MockMvcResultHandlers.print())
-            .andExpect(MockMvcResultMatchers.status().isCreated())
+            .andExpect(expectHttpCode)
             .andReturn();
         return created.getResponse().getContentAsString();
     }

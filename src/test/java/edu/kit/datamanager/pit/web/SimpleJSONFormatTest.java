@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -42,7 +44,7 @@ class SimpleJSONFormatTest {
      */
     @Test
     void testResolvePid() throws Exception {
-        PIDRecord complexFormat = ApiMockUtils.createSomeRecord(this.mockMvc);
+        PIDRecord complexFormat = ApiMockUtils.registerSomeRecord(this.mockMvc);
         assertNotNull(complexFormat);
 
         SimplePidRecord simpleFormat = ApiMockUtils.resolveSimpleRecord(this.mockMvc, complexFormat.getPid());
@@ -57,6 +59,69 @@ class SimpleJSONFormatTest {
     }
 
     /**
+     * Test: Create PID with unsupported accept type
+     * 
+     * Input: simple json
+     * Accept: SVG/XML
+     * Expect: error, HTTP 406
+     */
+    @Test
+    void testCreateWithUnsupportedAcceptType() throws Exception {
+        SimplePidRecord input = new SimplePidRecord(ApiMockUtils.getSomePidRecordInstance());
+        String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
+        String responseBody = ApiMockUtils.registerRecord(
+            mockMvc,
+            requestBody,
+            SimplePidRecord.CONTENT_TYPE,
+            ContentType.APPLICATION_SVG_XML.getMimeType(),
+            MockMvcResultMatchers.status().isNotAcceptable());
+        // Spring does not give a message in the body in this case.
+        assertTrue(responseBody.isBlank());
+    }
+
+    /**
+     * Test: Create PID with unsupported content type
+     * 
+     * Input: SVG/XML
+     * Accept: simple json
+     * Expect: error, HTTP 415
+     */
+    @Test
+    void testCreateWithUnsupportedContentType() throws Exception {
+        SimplePidRecord input = new SimplePidRecord(ApiMockUtils.getSomePidRecordInstance());
+        String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
+        String responseBody = ApiMockUtils.registerRecord(
+            mockMvc,
+            requestBody,
+            ContentType.APPLICATION_SVG_XML.getMimeType(),
+            SimplePidRecord.CONTENT_TYPE,
+            MockMvcResultMatchers.status().isUnsupportedMediaType());
+        // Spring does not give a message in the body in this case.
+        assertTrue(responseBody.isBlank());
+    }
+
+    /**
+     * Test: Create PID with unsupported content type
+     * 
+     * Input: SVG/XML
+     * Accept: SVG/XML
+     * Expect: error, HTTP 415
+     */
+    @Test
+    void testCreateWithUnsupportedMediaTypes() throws Exception {
+        SimplePidRecord input = new SimplePidRecord(ApiMockUtils.getSomePidRecordInstance());
+        String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
+        String responseBody = ApiMockUtils.registerRecord(
+            mockMvc,
+            requestBody,
+            ContentType.APPLICATION_SVG_XML.getMimeType(),
+            SimplePidRecord.CONTENT_TYPE,
+            MockMvcResultMatchers.status().isUnsupportedMediaType());
+        // Spring does not give a message in the body in this case.
+        assertTrue(responseBody.isBlank());
+    }
+
+    /**
      * Test: Create PID
      * 
      * Input: simple json
@@ -67,7 +132,7 @@ class SimpleJSONFormatTest {
     void testCreatePidFromSimpleAndAcceptSimple() throws Exception {
         SimplePidRecord input = new SimplePidRecord(ApiMockUtils.getSomePidRecordInstance());
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
-        String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, SimplePidRecord.CONTENT_TYPE, SimplePidRecord.CONTENT_TYPE);
+        String responseBody = ApiMockUtils.registerRecord(mockMvc, requestBody, SimplePidRecord.CONTENT_TYPE, SimplePidRecord.CONTENT_TYPE);
         SimplePidRecord sim = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
         assertNotNull(sim);
         assertNotNull(sim.getPairs());
@@ -84,7 +149,7 @@ class SimpleJSONFormatTest {
     void testCreatePidFromSimpleAndAcceptAll() throws Exception {
         SimplePidRecord input = new SimplePidRecord(ApiMockUtils.getSomePidRecordInstance());
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
-        String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, SimplePidRecord.CONTENT_TYPE, MediaType.ALL_VALUE);
+        String responseBody = ApiMockUtils.registerRecord(mockMvc, requestBody, SimplePidRecord.CONTENT_TYPE, MediaType.ALL_VALUE);
         PIDRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
         assertNotNull(modified);
         assertTrue(modified.getEntries().size() > 0);
@@ -101,7 +166,7 @@ class SimpleJSONFormatTest {
     void testCreatePidFromComplexAndAcceptJson() throws Exception {
         PIDRecord input = ApiMockUtils.getSomePidRecordInstance();
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
-        String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_JSON_VALUE);
+        String responseBody = ApiMockUtils.registerRecord(mockMvc, requestBody, MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_JSON_VALUE);
         PIDRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
         assertNotNull(modified);
         assertTrue(modified.getEntries().size() > 0);
@@ -118,7 +183,7 @@ class SimpleJSONFormatTest {
     void testCreatePidFromComplexAndAcceptAll() throws Exception {
         PIDRecord input = ApiMockUtils.getSomePidRecordInstance();
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
-        String responseBody = ApiMockUtils.createRecord(mockMvc, requestBody, MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE);
+        String responseBody = ApiMockUtils.registerRecord(mockMvc, requestBody, MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE);
         PIDRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
         assertNotNull(modified);
         assertTrue(modified.getEntries().size() > 0);
@@ -133,7 +198,7 @@ class SimpleJSONFormatTest {
      */
     @Test
     void testUpdatePidFromComplexAndAcceptAll() throws Exception {
-        PIDRecord original = ApiMockUtils.createSomeRecord(this.mockMvc);
+        PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // add digitalObjectLocation, which is a property supported by most profiles.
         // in future, it would be more reliable to really ask the profile for the pid of this field.
         original.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
@@ -153,7 +218,7 @@ class SimpleJSONFormatTest {
      */
     @Test
     void testUpdatePidFromComplexAndAcceptComplex() throws Exception {
-        PIDRecord original = ApiMockUtils.createSomeRecord(this.mockMvc);
+        PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // add digitalObjectLocation, which is a property supported by most profiles.
         // in future, it would be more reliable to really ask the profile for the pid of this field.
         original.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
@@ -173,7 +238,7 @@ class SimpleJSONFormatTest {
      */
     @Test
     void testUpdatePidFromSimpleAndAcceptJson() throws Exception {
-        PIDRecord original = ApiMockUtils.createSomeRecord(this.mockMvc);
+        PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // add digitalObjectLocation, which is a property supported by most profiles.
         // in future, it would be more reliable to really ask the profile for the pid of this field.
         original.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
@@ -194,7 +259,7 @@ class SimpleJSONFormatTest {
      */
     @Test
     void testUpdatePidFromSimpleAndAcceptSimple() throws Exception {
-        PIDRecord original = ApiMockUtils.createSomeRecord(this.mockMvc);
+        PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // add digitalObjectLocation, which is a property supported by most profiles.
         // in future, it would be more reliable to really ask the profile for the pid of this field.
         original.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
@@ -215,7 +280,7 @@ class SimpleJSONFormatTest {
      */
     @Test
     void testUpdatePidFromSimpleAndAcceptAll() throws Exception {
-        PIDRecord original = ApiMockUtils.createSomeRecord(this.mockMvc);
+        PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // add digitalObjectLocation, which is a property supported by most profiles.
         // in future, it would be more reliable to really ask the profile for the pid of this field.
         original.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
@@ -236,7 +301,7 @@ class SimpleJSONFormatTest {
      */
     @Test
     void testUpdatePidFromSimpleAndAcceptComplex() throws Exception {
-        PIDRecord original = ApiMockUtils.createSomeRecord(this.mockMvc);
+        PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // add digitalObjectLocation, which is a property supported by most profiles.
         // in future, it would be more reliable to really ask the profile for the pid of this field.
         original.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
