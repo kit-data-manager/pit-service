@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.Set;
 
 /**
@@ -75,6 +76,16 @@ public class PIDRecord {
 
     public Map<String, List<PIDRecordEntry>> getEntries() {
         return entries;
+    }
+
+    public Set<SimplePair> getSimpleEntries() {
+        return this.entries
+                .entrySet()
+                .stream()
+                .flatMap(
+                        entry -> entry.getValue().stream()
+                                .map(complexPair -> new SimplePair(complexPair.getKey(), complexPair.getValue())))
+                .collect(Collectors.toSet());
     }
 
     public void setEntries(Map<String, List<PIDRecordEntry>> entries) {
@@ -210,7 +221,8 @@ public class PIDRecord {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((pid == null) ? 0 : pid.hashCode());
-        result = prime * result + ((entries == null) ? 0 : entries.hashCode());
+        Set<SimplePair> simpleEntries = this.getSimpleEntries();
+        result = prime * result + ((simpleEntries == null) ? 0 : simpleEntries.hashCode());
         return result;
     }
 
@@ -227,39 +239,31 @@ public class PIDRecord {
         if (getClass() != obj.getClass()) {return false;}
 
         PIDRecord other = (PIDRecord) obj;
-        if (pid == null) {
-            if (other.pid != null) {return false;}
-        } else if (!pid.equals(other.pid)) {
+        boolean isThisPidEmpty = pid == null || pid.isBlank();
+        boolean isOtherPidEmpty = other.pid == null || other.pid.isBlank();
+        boolean isBothPidEmpty = isThisPidEmpty && isOtherPidEmpty;
+        boolean equalPIDs = isBothPidEmpty || (this.pid != null && this.pid.equals(other.pid));
+
+        if (!equalPIDs) {
             return false;
         }
 
-        if (this.entries == null) {
-            return other.entries == null;
-        } else if (other.entries == null) {
-            return this.entries == null;
-        } else {
-            // Equal means:
-            // 1. have the same set of keys
-            boolean isEqual = this.entries.keySet().equals(other.getEntries().keySet());
-            if (!isEqual) {return false;}
-            // 2. for each key, have the same values (order does not matter)
-            isEqual &= this.entries.values().stream()
-                .flatMap(List<PIDRecordEntry>::stream)
-                .filter(entry -> other.entries
-                    .getOrDefault(entry.getKey(), new ArrayList<>())
-                    .stream()
-                        // keep key-value-pairs with values not present in `other`:
-                        .filter(otherEntry -> otherEntry.getValue().equals(entry.getValue()))
-                        // there should be none:
-                        .count() == 0
-                )
-                .count() == 0; // there should be no pairs with values which are not available in `other`.
-            return isEqual;
-        }
+        // this ignores attributes order, names, and even duplicates
+        return this.getSimpleEntries().equals(other.getSimpleEntries());
     }
 
     @Override
     public String toString() {
         return "PIDRecord [pid=" + pid + ", entries=" + entries + "]";
+    }
+
+    /**
+     * Calculates an etag for a record.
+     * 
+     * @return an etag, which is independent of any order or duplicates in the
+     *         entries.
+     */
+    public String getEtag() {
+        return Integer.toString(this.hashCode());
     }
 }
