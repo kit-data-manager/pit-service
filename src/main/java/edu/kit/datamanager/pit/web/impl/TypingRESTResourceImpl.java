@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 import edu.kit.datamanager.pit.common.InconsistentRecordsException;
+import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.TypeNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
@@ -402,6 +403,12 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
         LOG.info("Creating PID");
+
+        boolean hasCustomPid = record.getPid() != null;
+        boolean isExistingPid = this.typingService.isIdentifierRegistered(record.getPid());
+        if (hasCustomPid && isExistingPid) {
+            throw new PidAlreadyExistsException(record.getPid());
+        }
 
         this.typingService.validate(record);
 
