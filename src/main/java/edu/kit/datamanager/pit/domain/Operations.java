@@ -37,6 +37,19 @@ public class Operations {
         this.typingService = typingService;
     }
 
+    /**
+     * Tries to get the date when a FAIR DO was created from a PID record.
+     * 
+     * Strategy:
+     * - try to get it from known "dateCreated" types
+     * - as a fallback, try to get it by its human readable name
+     * 
+     * Semantic reasoning in some sense is planned but not yet supported.
+     * 
+     * @param pidRecord the record to extract the information from.
+     * @return the date, if it could been extracted.
+     * @throws IOException on IO errors regarding resolving types.
+     */
     public Optional<Date> findDateCreated(PIDRecord pidRecord) throws IOException {
         /* try known types */
         List<String> knownDateTypes = Arrays.asList(Operations.KNOWN_DATE_CREATED);
@@ -89,6 +102,19 @@ public class Operations {
             .findFirst();
     }
 
+    /**
+     * Tries to get the date when a FAIR DO was modified from a PID record.
+     * 
+     * Strategy:
+     * - try to get it from known "dateModified" types
+     * - as a fallback, try to get it by its human readable name
+     * 
+     * Semantic reasoning in some sense is planned but not yet supported.
+     * 
+     * @param pidRecord the record to extract the information from.
+     * @return the date, if it could been extracted.
+     * @throws IOException on IO errors regarding resolving types.
+     */
     public Optional<Date> findDateModified(PIDRecord pidRecord) throws IOException {
         /* try known types */
         List<String> knownDateTypes = Arrays.asList(Operations.KNOWN_DATE_MODIFIED);
@@ -141,6 +167,12 @@ public class Operations {
             .findFirst();
     }
 
+    /**
+     * Tries to extract a Date object from a String.
+     * 
+     * @param dateString the date string to extract the date from.
+     * @return the extracted Date object.
+     */
     protected Optional<Date> extractDate(String dateString) {
         DateTimeFormatter dateFormatter = ISODateTimeFormat.dateTime();
         try {
