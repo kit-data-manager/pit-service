@@ -430,7 +430,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         } catch (Exception e) {
             LOG.error("Could not notify messaging service about the following message: {}", message.toString());
         }
-        return ResponseEntity.status(HttpStatus.CREATED.value()).body(record);
+        return ResponseEntity.status(HttpStatus.CREATED.value()).eTag(quotedEtag(record)).body(record);
     }
 
     @Override
@@ -446,9 +446,13 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             throw new InconsistentRecordsException(
                     "PID in record was given, but it was not the same as the PID in the URL.");
         }
-        if (!this.typingService.isIdentifierRegistered(pid)) {
+        
+        PIDRecord existingRecord = this.typingService.queryAllProperties(pid);
+        if (existingRecord == null) {
             throw new PidNotFoundException(pid);
         }
+        // throws exception (HTTP 415) if check fails.
+        ControllerUtils.checkEtag(request, existingRecord);
 
         // record validation
         record.setPid(pid);
@@ -467,7 +471,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                     AuthenticationHelper.getPrincipal(),
                     ControllerUtils.getLocalHostname());
             this.messagingService.send(message);
-            return ResponseEntity.ok().body(record);
+            return ResponseEntity.ok().eTag(quotedEtag(record)).body(record);
         } else {
             throw new PidNotFoundException(pid);
         }
@@ -532,7 +536,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         if (applicationProps.getStorageStrategy().storesResolved()) {
             storeLocally(pid, false);
         }
-        return ResponseEntity.ok().body(rec);
+        return ResponseEntity.ok().eTag(quotedEtag(rec)).body(rec);
     }
 
     @Override
@@ -634,6 +638,10 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                 page.getTotalElements()));
         TabulatorPaginationFormat<KnownPid> tabPage = new TabulatorPaginationFormat<>(page);
         return ResponseEntity.ok().body(tabPage);
+    }
+
+    private String quotedEtag(PIDRecord record) {
+        return String.format("\"%s\"", record.getEtag());
     }
 
     // /**

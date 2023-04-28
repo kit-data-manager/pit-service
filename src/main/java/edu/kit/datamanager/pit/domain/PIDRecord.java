@@ -2,6 +2,7 @@ package edu.kit.datamanager.pit.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import edu.kit.datamanager.entities.EtagSupport;
 import edu.kit.datamanager.pit.pidsystem.impl.local.PidDatabaseObject;
 
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ import java.util.Set;
  * communication or representation for the outside. In contrast, this is the
  * internal representation offering methods for manipulation.
  */
-public class PIDRecord {
+public class PIDRecord implements EtagSupport {
 
     private String pid = "";
 
@@ -263,6 +264,7 @@ public class PIDRecord {
      * @return an etag, which is independent of any order or duplicates in the
      *         entries.
      */
+    @Override
     public String getEtag() {
         return Integer.toString(this.hashCode());
     }
