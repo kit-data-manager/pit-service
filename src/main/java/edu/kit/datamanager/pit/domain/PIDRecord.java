@@ -79,6 +79,7 @@ public class PIDRecord implements EtagSupport {
         return entries;
     }
 
+    @JsonIgnore
     public Set<SimplePair> getSimpleEntries() {
         return this.entries
                 .entrySet()
@@ -264,6 +265,7 @@ public class PIDRecord implements EtagSupport {
      * @return an etag, which is independent of any order or duplicates in the
      *         entries.
      */
+    @JsonIgnore
     @Override
     public String getEtag() {
         return Integer.toString(this.hashCode());
