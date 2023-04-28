@@ -164,10 +164,11 @@ public class RestWithLocalPidSystemTest {
 
     @Test
     public void testUpdateRecord() throws Exception {
-        PIDRecord record = this.createSomeRecord();
-        record.getEntries().get("21.T11148/b8457812905b83046284").get(0).setValue("https://example.com/anotherUrlAsBefore");
-        PIDRecord updatedRecord = this.updateRecord(record);
-        assertEquals(record, updatedRecord);
+        PIDRecord original = this.createSomeRecord();
+        PIDRecord modified = ApiMockUtils.clone(original);
+        modified.getEntries().get("21.T11148/b8457812905b83046284").get(0).setValue("https://example.com/anotherUrlAsBefore");
+        PIDRecord updatedRecord = this.updateRecord(original, modified);
+        assertEquals(modified, updatedRecord);
     }
 
     @Test
@@ -361,19 +362,9 @@ public class RestWithLocalPidSystemTest {
      * @throws Exception if any assumption breaks. Do not catch, let your test fail
      *                   if this happens.
      */
-    PIDRecord updateRecord(PIDRecord record) throws Exception {
-        assertFalse(record.getPid().isEmpty());
-        MvcResult updated = this.mockMvc
-                .perform(
-                    put("/api/v1/pit/pid/" + record.getPid())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .characterEncoding("utf-8")
-                        .content(mapper.writeValueAsString(record))
-                        .accept(MediaType.ALL)
-                )
-                .andDo(MockMvcResultHandlers.print())
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andReturn();
+    PIDRecord updateRecord(PIDRecord oldRecord, PIDRecord newRecord) throws Exception {
+        assertFalse(newRecord.getPid().isEmpty());
+        MvcResult updated = ApiMockUtils.updateRecordAndReturnMvcResult(mockMvc, oldRecord, newRecord);
             
         String body = updated.getResponse().getContentAsString();
         PIDRecord updatedRecord = mapper.readValue(body, PIDRecord.class);
@@ -386,7 +377,7 @@ public class RestWithLocalPidSystemTest {
     }
 
     /**
-     * Resolves a record and does make some generic tests. This is a reusable test
+     * Resolves a newRecord and does make some generic tests. This is a reusable test
      * component.
      * 
      * @param createdPid

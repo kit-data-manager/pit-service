@@ -192,10 +192,11 @@ public class RestWithInMemoryTest {
 
     @Test
     public void testUpdateRecord() throws Exception {
-        PIDRecord record = ApiMockUtils.registerSomeRecord(this.mockMvc);
-        record.getEntries().get("21.T11148/b8457812905b83046284").get(0).setValue("https://example.com/anotherUrlAsBefore");
-        PIDRecord updatedRecord = ApiMockUtils.updateRecord(this.mockMvc, record);
-        assertEquals(record, updatedRecord);
+        PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PIDRecord modified = ApiMockUtils.clone(original);
+        modified.getEntries().get("21.T11148/b8457812905b83046284").get(0).setValue("https://example.com/anotherUrlAsBefore");
+        PIDRecord updatedRecord = ApiMockUtils.updateRecord(this.mockMvc, original, modified);
+        assertEquals(modified, updatedRecord);
     }
 
     @Test

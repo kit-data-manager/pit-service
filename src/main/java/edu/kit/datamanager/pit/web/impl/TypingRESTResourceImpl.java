@@ -451,7 +451,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         if (existingRecord == null) {
             throw new PidNotFoundException(pid);
         }
-        // throws exception (HTTP 415) if check fails.
+        // throws exception (HTTP 412) if check fails.
         ControllerUtils.checkEtag(request, existingRecord);
 
         // record validation

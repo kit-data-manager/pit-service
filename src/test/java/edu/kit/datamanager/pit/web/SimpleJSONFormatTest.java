@@ -201,12 +201,12 @@ class SimpleJSONFormatTest {
         PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // add digitalObjectLocation, which is a property supported by most profiles.
         // in future, it would be more reliable to really ask the profile for the pid of this field.
-        original.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
-        String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(original);
-        String responseBody = ApiMockUtils.updateRecord(mockMvc, original.getPid(), requestBody, MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE);
-        PIDRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
-        assertNotNull(modified);
-        assertTrue(modified.getEntries().size() > 0);
+        PIDRecord modified = ApiMockUtils.clone(original);
+        modified.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
+        String responseBody = ApiMockUtils.updateRecord(mockMvc, original, modified, MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE);
+        PIDRecord receivedRecord = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
+        assertNotNull(receivedRecord);
+        assertTrue(receivedRecord.getEntries().size() > 0);
     }
 
     /**
@@ -221,12 +221,12 @@ class SimpleJSONFormatTest {
         PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // add digitalObjectLocation, which is a property supported by most profiles.
         // in future, it would be more reliable to really ask the profile for the pid of this field.
-        original.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
-        String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(original);
-        String responseBody = ApiMockUtils.updateRecord(mockMvc, original.getPid(), requestBody, MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_JSON_VALUE);
-        PIDRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
-        assertNotNull(modified);
-        assertTrue(modified.getEntries().size() > 0);
+        PIDRecord modified = ApiMockUtils.clone(original);
+        modified.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
+        String responseBody = ApiMockUtils.updateRecord(mockMvc, original, modified, MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_JSON_VALUE);
+        PIDRecord receivedRecord = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
+        assertNotNull(receivedRecord);
+        assertTrue(receivedRecord.getEntries().size() > 0);
     }
 
     /**
@@ -241,13 +241,14 @@ class SimpleJSONFormatTest {
         PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // add digitalObjectLocation, which is a property supported by most profiles.
         // in future, it would be more reliable to really ask the profile for the pid of this field.
-        original.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
-        SimplePidRecord simple = new SimplePidRecord(original);
+        PIDRecord modified = ApiMockUtils.clone(original);
+        modified.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
+        SimplePidRecord simple = new SimplePidRecord(modified);
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(simple);
-        String responseBody = ApiMockUtils.updateRecord(mockMvc, simple.getPid(), requestBody, SimplePidRecord.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-        PIDRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
-        assertNotNull(modified);
-        assertTrue(modified.getEntries().size() > 0);
+        String responseBody = ApiMockUtils.updateRecord(mockMvc, simple.getPid(), requestBody, original.getEtag(), SimplePidRecord.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+        PIDRecord receivedRecord = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
+        assertNotNull(receivedRecord);
+        assertTrue(receivedRecord.getEntries().size() > 0);
     }
 
     /**
@@ -262,13 +263,14 @@ class SimpleJSONFormatTest {
         PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // add digitalObjectLocation, which is a property supported by most profiles.
         // in future, it would be more reliable to really ask the profile for the pid of this field.
-        original.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
-        SimplePidRecord simple = new SimplePidRecord(original);
+        PIDRecord modified = ApiMockUtils.clone(original);
+        modified.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
+        SimplePidRecord simple = new SimplePidRecord(modified);
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(simple);
-        String responseBody = ApiMockUtils.updateRecord(mockMvc, simple.getPid(), requestBody, SimplePidRecord.CONTENT_TYPE, SimplePidRecord.CONTENT_TYPE);
-        SimplePidRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
-        assertNotNull(modified);
-        assertNotNull(modified.getPairs());
+        String responseBody = ApiMockUtils.updateRecord(mockMvc, simple.getPid(), requestBody, original.getEtag(), SimplePidRecord.CONTENT_TYPE, SimplePidRecord.CONTENT_TYPE);
+        SimplePidRecord receivedRecord = ApiMockUtils.getJsonMapper().readValue(responseBody, SimplePidRecord.class);
+        assertNotNull(receivedRecord);
+        assertNotNull(receivedRecord.getPairs());
     }
 
     /**
@@ -283,13 +285,14 @@ class SimpleJSONFormatTest {
         PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // add digitalObjectLocation, which is a property supported by most profiles.
         // in future, it would be more reliable to really ask the profile for the pid of this field.
-        original.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
-        SimplePidRecord simple = new SimplePidRecord(original);
+        PIDRecord modified = ApiMockUtils.clone(original);
+        modified.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
+        SimplePidRecord simple = new SimplePidRecord(modified);
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(simple);
-        String responseBody = ApiMockUtils.updateRecord(mockMvc, simple.getPid(), requestBody, SimplePidRecord.CONTENT_TYPE, MediaType.ALL_VALUE);
-        PIDRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
-        assertNotNull(modified);
-        assertTrue(modified.getEntries().size() > 0);
+        String responseBody = ApiMockUtils.updateRecord(mockMvc, simple.getPid(), requestBody, original.getEtag(), SimplePidRecord.CONTENT_TYPE, MediaType.ALL_VALUE);
+        PIDRecord receivedRecord = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
+        assertNotNull(receivedRecord);
+        assertTrue(receivedRecord.getEntries().size() > 0);
     }
 
     /**
@@ -304,13 +307,14 @@ class SimpleJSONFormatTest {
         PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // add digitalObjectLocation, which is a property supported by most profiles.
         // in future, it would be more reliable to really ask the profile for the pid of this field.
-        original.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
-        SimplePidRecord simple = new SimplePidRecord(original);
+        PIDRecord modified = ApiMockUtils.clone(original);
+        modified.addEntry("21.T11148/b8457812905b83046284", "", "https://example.com/file2");
+        SimplePidRecord simple = new SimplePidRecord(modified);
         assertNotNull(simple.getPairs());
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(simple);
-        String responseBody = ApiMockUtils.updateRecord(mockMvc, simple.getPid(), requestBody, SimplePidRecord.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-        PIDRecord modified = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
-        assertNotNull(modified);
-        assertTrue(modified.getEntries().size() > 0);
+        String responseBody = ApiMockUtils.updateRecord(mockMvc, simple.getPid(), requestBody, original.getEtag(), SimplePidRecord.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+        PIDRecord receivedRecord = ApiMockUtils.getJsonMapper().readValue(responseBody, PIDRecord.class);
+        assertNotNull(receivedRecord);
+        assertTrue(receivedRecord.getEntries().size() > 0);
     }
 }
