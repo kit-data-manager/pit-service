@@ -15,7 +15,6 @@ import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.IValidationStrategy;
 import edu.kit.datamanager.pit.common.ExternalServiceException;
-import edu.kit.datamanager.pit.common.InconsistentRecordsException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import java.util.concurrent.ExecutionException;
@@ -155,7 +154,7 @@ public class TypingService implements ITypingService {
 
     @Override
     public PIDRecord queryAllProperties(String pid, boolean includePropertyNames)
-            throws IOException, InconsistentRecordsException {
+            throws IOException {
         LOG.trace("Performing queryAllProperties({}, {}).", pid, includePropertyNames);
         PIDRecord pidInfo = identifierSystem.queryAllProperties(pid);
         LOG.trace("PID record found. {}", (includePropertyNames) ? "Adding property names." : "Returning result.");
@@ -209,7 +208,7 @@ public class TypingService implements ITypingService {
 
     @Override
     public PIDRecord queryByType(String pid, String typeIdentifier, boolean includePropertyNames)
-            throws IOException, InconsistentRecordsException {
+            throws IOException {
         TypeDefinition typeDef;
         try {
             typeDef = typeCache.get(typeIdentifier);
@@ -230,7 +229,7 @@ public class TypingService implements ITypingService {
 
     @Override
     public PIDRecord queryByTypeWithConformance(String pid, String typeIdentifier, boolean includePropertyNames)
-            throws IOException, InconsistentRecordsException {
+            throws IOException {
         TypeDefinition typeDef;
 
         try {
@@ -253,7 +252,7 @@ public class TypingService implements ITypingService {
 
     @Override
     public PIDRecord queryByTypeWithConformance(String pid, List<String> typeIdentifiers,
-            boolean includePropertyNames) throws IOException, InconsistentRecordsException {
+            boolean includePropertyNames) throws IOException {
         if (typeIdentifiers.isEmpty()) {
             return null;
         }

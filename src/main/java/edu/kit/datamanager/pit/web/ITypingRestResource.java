@@ -17,7 +17,6 @@ package edu.kit.datamanager.pit.web;
 
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
-import edu.kit.datamanager.pit.common.InconsistentRecordsException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.SimplePidRecord;
 import io.swagger.v3.oas.annotations.Operation;
@@ -231,7 +230,7 @@ public interface ITypingRestResource {
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder
-    ) throws IOException, InconsistentRecordsException;
+    ) throws IOException;
 
     /**
      * Check if a certain PID provided as path segment(s) exist.

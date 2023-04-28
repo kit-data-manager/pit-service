@@ -1,7 +1,6 @@
 package edu.kit.datamanager.pit.pitservice;
 
 import edu.kit.datamanager.pit.common.ExternalServiceException;
-import edu.kit.datamanager.pit.common.InconsistentRecordsException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
@@ -66,7 +65,7 @@ public interface ITypingService extends IIdentifierSystem {
      */
     public PIDRecord queryProperty(String pid, String propertyIdentifier) throws IOException;
 
-    public PIDRecord queryAllProperties(String pid, boolean includePropertyNames) throws IOException, InconsistentRecordsException;
+    public PIDRecord queryAllProperties(String pid, boolean includePropertyNames) throws IOException;
 
     /**
      * Queries all properties of a type available from the given PID. If
@@ -84,9 +83,8 @@ public interface ITypingService extends IIdentifierSystem {
      * PID that are also specified by the type (mandatory or optional). If the
      * pid is not registered, the method returns null.
      * @throws IOException
-     * @throws InconsistentRecordsException
      */
-    public PIDRecord queryByType(String pid, String typeIdentifier, boolean includePropertyNames) throws IOException, InconsistentRecordsException;
+    public PIDRecord queryByType(String pid, String typeIdentifier, boolean includePropertyNames) throws IOException;
 
     /**
      * Same as {@link #queryByType}, but also performs a type conformance check.
@@ -99,13 +97,10 @@ public interface ITypingService extends IIdentifierSystem {
      * @return a PID information record with property information and
      * conformance check results.
      * @throws IOException
-     * @throws InconsistentRecordsException
      */
-    public PIDRecord queryByTypeWithConformance(String pid, String typeIdentifier, boolean includePropertyNames) throws IOException,
-            InconsistentRecordsException;
+    public PIDRecord queryByTypeWithConformance(String pid, String typeIdentifier, boolean includePropertyNames) throws IOException;
 
-    public PIDRecord queryByTypeWithConformance(String pid, List<String> typeIdentifiers, boolean includePropertyNames) throws IOException,
-            InconsistentRecordsException;
+    public PIDRecord queryByTypeWithConformance(String pid, List<String> typeIdentifiers, boolean includePropertyNames) throws IOException;
 
 //  /**
 //   * Determines whether the given identifier references a simple object, a

@@ -7,7 +7,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
-import edu.kit.datamanager.pit.common.InconsistentRecordsException;
 import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.TypeNotFoundException;
@@ -438,13 +437,14 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             PIDRecord record,
             final WebRequest request,
             final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder) throws IOException, InconsistentRecordsException {
+            final UriComponentsBuilder uriBuilder) throws IOException {
         // PID validation
         String pid = getContentPathFromRequest("pid", request);
         String pid_internal = record.getPid();
-        if (pid_internal != null && !pid_internal.isEmpty() && pid == pid_internal) {
-            throw new InconsistentRecordsException(
-                    "PID in record was given, but it was not the same as the PID in the URL.");
+        if (pid_internal != null && !pid_internal.isEmpty() && pid.equals(pid_internal)) {
+            throw new RecordValidationException(
+                pid,
+                "PID in record was given, but it was not the same as the PID in the URL. Ignore request, assuming this was not intended.");
         }
         
         PIDRecord existingRecord = this.typingService.queryAllProperties(pid);
