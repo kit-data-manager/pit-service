@@ -34,6 +34,11 @@ public class PidGenerationProperties {
     @NotNull
     private Optional<String> brandingPrefix = Optional.empty();
 
+    /**
+     * Creates a {@link PidSuffixGenerator} bean from the given configuration.
+     * 
+     * @return a {@link PidSuffixGenerator} as defined by the configuration.
+     */
     @Bean
     public PidSuffixGenerator pidGenerator() {
         PidSuffixGenerator generator = new PidSuffixGenUuid4();
@@ -47,7 +52,8 @@ public class PidGenerationProperties {
         } else {
             generator = new PidSuffixGenUpperCase(generator);
         }
-
+        // we assume the branding should not be affected
+        // by the lower/upper case generators.
         if (brandingPrefix.isPresent()) {
             generator = new PidSuffixGenPrefixed(generator, brandingPrefix.get());
         }
