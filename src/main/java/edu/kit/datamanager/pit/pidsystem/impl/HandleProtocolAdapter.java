@@ -285,6 +285,9 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     @Override
     public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws IOException {
         PIDRecord allProps = queryAllProperties(pid);
+        if (allProps == null) {
+            return null;
+        }
         // only return properties listed in the type definition
         Set<String> typeProps = typeDefinition.getAllProperties();
         PIDRecord result = new PIDRecord();
