@@ -5,7 +5,7 @@ import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 
 /**
  * Generates a PID suffix based on a contained generator and returns the result
- * in lower case.
+ * in upper case.
  */
 public class PidSuffixGenUpperCase implements PidSuffixGenerator {
 
