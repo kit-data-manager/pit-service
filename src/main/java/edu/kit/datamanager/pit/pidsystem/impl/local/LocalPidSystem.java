@@ -1,9 +1,12 @@
 package edu.kit.datamanager.pit.pidsystem.impl.local;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
@@ -46,7 +49,9 @@ public class LocalPidSystem implements IIdentifierSystem {
     private static final Logger LOG = LoggerFactory.getLogger(LocalPidSystem.class);
     
     @Autowired
-    PidDatabaseObjectDao db;
+    private PidDatabaseObjectDao db;
+
+    private static final String PREFIX = "sandboxed/";
 
     public LocalPidSystem() {
         LOG.warn("Using local identifier system to store PIDs. REGISTERED PIDs ARE NOT PERMANENTLY OR PUBLICLY STORED.");
@@ -57,8 +62,15 @@ public class LocalPidSystem implements IIdentifierSystem {
      * 
      * @param db the new DAO.
      */
-    public void setDatabase(PidDatabaseObjectDao db) {
+    protected void setDatabase(PidDatabaseObjectDao db) {
         this.db = db;
+    }
+
+    /**
+     * For testing purposes.
+     */
+    protected PidDatabaseObjectDao getDatabase() {
+        return this.db;
     }
 
     @Override
@@ -87,7 +99,7 @@ public class LocalPidSystem implements IIdentifierSystem {
         int counter = 0;
         do {
             int hash = rec.getEntries().hashCode() + counter;
-            rec.setPid("sandboxed/" + hash);
+            rec.setPid(PREFIX + hash);
             counter++;
         } while (this.db.existsById(rec.getPid()));
         this.db.save(new PidDatabaseObject(rec));
@@ -125,5 +137,13 @@ public class LocalPidSystem implements IIdentifierSystem {
     @Override
     public boolean deletePID(String pid) {
         throw new UnsupportedOperationException("Deleting PIDs is against the P in PID.");
+    }
+
+    @Override
+    public Collection<String> resolveAllPidsOfPrefix() throws IOException, InvalidConfigException {
+        return this.db.findAll().parallelStream()
+                .map(dbo -> dbo.getPid())
+                .filter(pid -> pid.startsWith(PREFIX))
+                .collect(Collectors.toSet());
     }
 }

@@ -20,6 +20,7 @@ import javax.net.ssl.X509TrustManager;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.configuration.HandleSystemRESTProperties;
@@ -274,5 +275,11 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
 
     public String getGeneratorPrefix() {
         return generatorPrefix;
+    }
+
+    @Override
+    public Collection<String> resolveAllPidsOfPrefix() throws IOException, InvalidConfigException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'resolveAllPidsOfPrefix'");
     }
 }

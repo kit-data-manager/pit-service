@@ -1,8 +1,10 @@
 package edu.kit.datamanager.pit.pidsystem;
 
+import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import java.io.IOException;
+import java.util.Collection;
 
 /**
  * Main abstraction interface towards the identifier system containing
@@ -24,8 +26,8 @@ public interface IIdentifierSystem {
      * Queries all properties from the given PID, independent of types.
      *
      * @param pid
-     * @return a PID information record with property identifiers mapping to
-     * values. The property names will be empty strings. Contains all property
+     * @return a PID information record with its PID and attribute-value-pairs.
+     * The property names will be empty strings. Contains all property
      * values present in the record of the given PID. If the pid is not
      * registered, the method returns null.
      * @throws IOException
@@ -90,4 +92,13 @@ public interface IIdentifierSystem {
      * @return true if the identifier was deleted, false if it did not exist
      */
     public boolean deletePID(String pid) throws IOException;
+
+    /**
+     * Returns all PIDs which are registered for the configured prefix.
+     * 
+     * The result may be very large, use carefully.
+     * 
+     * @return all PIDs which are registered for the configured prefix.
+     */
+    public Collection<String> resolveAllPidsOfPrefix() throws IOException, InvalidConfigException;
 }
