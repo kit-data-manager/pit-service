@@ -2,7 +2,6 @@ package edu.kit.datamanager.pit.configuration;
 
 import java.util.Optional;
 
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
