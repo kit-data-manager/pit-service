@@ -74,6 +74,11 @@ public class LocalPidSystem implements IIdentifierSystem {
     }
 
     @Override
+    public Optional<String> getPrefix() {
+        return Optional.of(PREFIX);
+    }
+
+    @Override
     public boolean isIdentifierRegistered(String pid) throws IOException {
         return this.db.existsById(pid);
     }

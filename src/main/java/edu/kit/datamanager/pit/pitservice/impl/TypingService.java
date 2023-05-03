@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
@@ -39,6 +40,11 @@ public class TypingService implements ITypingService {
         this.identifierSystem = identifierSystem;
         this.typeRegistry = typeRegistry;
         this.typeCache = typeCache;
+    }
+
+    @Override
+    public Optional<String> getPrefix() {
+        return this.identifierSystem.getPrefix();
     }
 
     @Override

@@ -24,14 +24,20 @@ public class PidGenerationProperties {
         UUID4
     }
 
+    enum Case {
+        LOWER, UPPER, UNMODIFIED
+    }
+
     @NotNull
     private Mode mode = Mode.UUID4;
 
     @NotNull
-    private boolean lowerCase = true;
+    private Case lowerCase = Case.LOWER;
 
     @NotNull
     private Optional<String> brandingPrefix = Optional.empty();
+
+    private boolean customClientPidsEnabled = false;
 
     /**
      * Creates a {@link PidSuffixGenerator} bean from the given configuration.
@@ -46,11 +52,12 @@ public class PidGenerationProperties {
         //    generator = new PidSuffixGenUuid4();
         //} else if (...) { ... }
         
-        if (lowerCase) {
+        if (lowerCase == Case.LOWER) {
             generator = new PidSuffixGenLowerCase(generator);
-        } else {
+        } else if (lowerCase == Case.UPPER) {
             generator = new PidSuffixGenUpperCase(generator);
         }
+        
         // we assume the branding should not be affected
         // by the lower/upper case generators.
         if (brandingPrefix.isPresent()) {
@@ -60,15 +67,7 @@ public class PidGenerationProperties {
         return generator;
     }
 
-    public void setMode(Mode mode) {
-        this.mode = mode;
-    }
-
-    public void setLowerCase(boolean lowerCase) {
-        this.lowerCase = lowerCase;
-    }
-
-    public void setBrandingPrefix(Optional<String> brandingPrefix) {
-        this.brandingPrefix = brandingPrefix;
+    public boolean isCustomClientPidsEnabled() {
+        return customClientPidsEnabled;
     }
 }

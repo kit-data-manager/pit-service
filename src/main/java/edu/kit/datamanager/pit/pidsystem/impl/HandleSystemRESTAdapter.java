@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -133,6 +134,11 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
         requestFactory.setHttpClient(httpClient);
 
         restTemplate = new RestTemplate(requestFactory);
+    }
+
+    @Override
+    public Optional<String> getPrefix() {
+        return Optional.of(this.generatorPrefix);
     }
 
     @Override

@@ -3,8 +3,11 @@ package edu.kit.datamanager.pit.pidsystem;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
+import edu.kit.datamanager.pit.pidgeneration.PidSuffix;
+
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Optional;
 
 /**
  * Main abstraction interface towards the identifier system containing
@@ -14,13 +17,38 @@ import java.util.Collection;
 public interface IIdentifierSystem {
 
     /**
+     * Returns the configured prefix of this PID system.
+     * 
+     * If this system can create PIDs, the prefix is the one it uses to create PIDs.
+     * Otherwise, it does not return a prefix.
+     * 
+     * @return the prefix this system uses to create PIDs, if it can create PIDs,
+     *         empty otherwise.
+     */
+    public Optional<String> getPrefix();
+
+    /**
      * Checks whether the given PID is already registered.
      *
-     * @param pid
-     * @return True or false
-     * @throws IOException
+     * @param pid the PID to check.
+     * @return true, if the PID is registered, false otherwise.
+     * @throws IOException if the check could not be performed.
      */
     public boolean isIdentifierRegistered(String pid) throws IOException;
+
+    /**
+     * Checks whether the given PID is already registered.
+     * 
+     * Assumes the PID to be the configured prefix of the system combined with the given suffix.
+     * 
+     * @param suffix the given suffix, which, appended to the configured prefix, forms the PID to check.
+     * @return true, if the PID is registered, false otherwise.
+     * @throws IOException if the check could not be performed.
+     */
+    public default boolean isIdentifierRegistered(PidSuffix suffix) throws IOException, InvalidConfigException {
+        String prefix = getPrefix().orElseThrow(() -> new InvalidConfigException("This system cannot create PIDs."));
+        return isIdentifierRegistered(suffix.getWithPrefix(prefix));
+    }
 
     /**
      * Queries all properties from the given PID, independent of types.

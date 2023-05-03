@@ -11,6 +11,7 @@ import edu.kit.datamanager.pit.common.DataTypeException;
 import edu.kit.datamanager.pit.common.InconsistentRecordsException;
 import edu.kit.datamanager.pit.common.TypeNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
+import edu.kit.datamanager.pit.configuration.PidGenerationProperties;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties.ValidationStrategy;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
@@ -18,6 +19,8 @@ import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticRepository;
 import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticWrapper;
+import edu.kit.datamanager.pit.pidgeneration.PidSuffix;
+import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
@@ -334,6 +337,12 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     @Autowired
     private Optional<PidRecordElasticRepository> elastic;
 
+    @Autowired
+    private PidSuffixGenerator suffixGenerator;
+
+    @Autowired
+    private PidGenerationProperties pidGenerationProperties;
+
     public TypingRESTResourceImpl() {
         super();
     }
@@ -423,6 +432,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
+
+        setPid(record);
+
         LOG.info("Creating PID");
         boolean valid = false;
         try {
@@ -461,6 +473,25 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         } else {
             // if validation failed
             throw new RecordValidationException("(no PID registered yet)");
+        }
+    }
+
+    private void setPid(PIDRecord pidRecord) throws IOException, RecordValidationException {
+        boolean hasCustomPid = pidRecord.getPid() != null && !pidRecord.getPid().isBlank();
+        boolean allowsCustomPids = pidGenerationProperties.isCustomClientPidsEnabled();
+
+        if (allowsCustomPids && hasCustomPid) {
+            // in this only case, we do not have to generate a PID
+            // but we have to check if the PID is already registered and return an error if so
+            boolean isRegisteredPid = this.typingService.isIdentifierRegistered(new PidSuffix(pidRecord.getPid()));
+            if (isRegisteredPid) {
+                throw new RecordValidationException(pidRecord.getPid(), "PID is already registered. Can not create PID.");
+            }
+        } else {
+            // In all other (usual) cases, we have to generate a PID.
+            // We store only the suffix in the pid field.
+            // The registration at the PID service will preprend the prefix.
+            pidRecord.setPid(suffixGenerator.generate().get());
         }
     }
 

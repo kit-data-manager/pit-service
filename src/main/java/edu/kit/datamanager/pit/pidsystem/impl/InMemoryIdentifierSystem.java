@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,6 +38,11 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
 
     public InMemoryIdentifierSystem() {
         LOG.warn("Using in-memory identifier system. REGISTERED PIDs ARE NOT STORED PERMANENTLY.");
+    }
+
+    @Override
+    public Optional<String> getPrefix() {
+        return Optional.of(PREFIX);
     }
 
     @Override

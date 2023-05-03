@@ -16,4 +16,8 @@ public class PidSuffix {
     public String get() {
         return suffix;
     }
+
+    public String getWithPrefix(String prefix) {
+        return prefix + suffix;
+    }
 }

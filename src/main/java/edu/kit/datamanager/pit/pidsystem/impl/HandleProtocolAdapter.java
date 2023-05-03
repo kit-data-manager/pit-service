@@ -33,6 +33,7 @@ import edu.kit.datamanager.pit.configuration.HandleProtocolProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.PIDRecordEntry;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
+import edu.kit.datamanager.pit.pidgeneration.PidSuffix;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import net.handle.api.HSAdapter;
 import net.handle.api.HSAdapterFactory;
@@ -130,6 +131,25 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
                     props.getCredentials().getUserHandle(),
                     props.getCredentials().getPrivateKeyIndex(),
                     indexManager.getHsAdminIndex());
+        }
+    }
+
+    @Override
+    public Optional<String> getPrefix() {
+        if (this.isAdminMode) {
+            return Optional.of(this.props.getCredentials().getHandleIdentifierPrefix());
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public boolean isIdentifierRegistered(PidSuffix suffix) throws IOException {
+        if (this.isAdminMode) {
+            String prefix = this.props.getCredentials().getHandleIdentifierPrefix();
+            return this.isIdentifierRegistered(suffix.getWithPrefix(prefix));
+        } else {
+            throw new IOException("No writeable prefix is configured. Can not check if identifier is registered.");
         }
     }
 
