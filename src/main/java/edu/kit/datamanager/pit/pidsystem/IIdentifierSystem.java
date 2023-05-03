@@ -1,8 +1,10 @@
 package edu.kit.datamanager.pit.pidsystem;
 
+import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import java.io.IOException;
+import java.util.Collection;
 
 /**
  * Main abstraction interface towards the identifier system containing
@@ -90,4 +92,13 @@ public interface IIdentifierSystem {
      * @return true if the identifier was deleted, false if it did not exist
      */
     public boolean deletePID(String pid) throws IOException;
+
+    /**
+     * Returns all PIDs which are registered for the configured prefix.
+     * 
+     * The result may be very large, use carefully.
+     * 
+     * @return all PIDs which are registered for the configured prefix.
+     */
+    public Collection<String> resolveAllPidsOfPrefix() throws IOException, InvalidConfigException;
 }
