@@ -36,7 +36,7 @@ public class PidDatabaseObject {
     private Map<String, ArrayList<String>> entries = new HashMap<>();
 
     /** For hibernate */
-    PidDatabaseObject() {}
+    public PidDatabaseObject() {}
 
     /** Protected constructor for testing purposes. */
     protected PidDatabaseObject(String pid, String hiddenIndentifier) {
@@ -46,7 +46,7 @@ public class PidDatabaseObject {
         this.entries.put(hiddenIndentifier, values);
     }
 
-    PidDatabaseObject(PIDRecord other) {
+    public PidDatabaseObject(PIDRecord other) {
         this.pid = other.getPid();
 
         other

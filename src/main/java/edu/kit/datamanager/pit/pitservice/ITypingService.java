@@ -1,6 +1,7 @@
 package edu.kit.datamanager.pit.pitservice;
 
 import edu.kit.datamanager.pit.common.InconsistentRecordsException;
+import edu.kit.datamanager.pit.domain.Operations;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import java.io.IOException;
@@ -113,4 +114,13 @@ public interface ITypingService extends IIdentifierSystem {
 //   * @throws IOException
 //   */
 //  public EntityClass determineEntityClass(String identifier) throws IOException;
+
+    /**
+     * Returns an operations instance, configured with this typingService.
+     * 
+     * Convenience method for `new Operations(typingService)`.
+     * 
+     * @return an operation instance.
+     */
+    public Operations getOperations();
 }

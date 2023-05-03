@@ -16,6 +16,8 @@ import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
+import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticRepository;
+import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticWrapper;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
@@ -329,6 +331,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     @Autowired
     private KnownPidsDao localPidStorage;
 
+    @Autowired
+    private Optional<PidRecordElasticRepository> elastic;
+
     public TypingRESTResourceImpl() {
         super();
     }
@@ -339,9 +344,20 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
         LOG.trace("Performing isPidMatchingProfile({}).", identifier);
+
         String profileId = getContentPathFromRequest("profile", request);
-        LOG.trace("Validating PID record with identifier {} against profile with identifier {} from request path.",
-                identifier, profileId);
+        LOG.trace(
+                "Validating PID record with identifier {} against profile with identifier {} from request path.",
+                identifier,
+                profileId
+        );
+
+        PIDRecord pidRecord = this.typingService.queryAllProperties(identifier);
+        this.saveToElastic(pidRecord);
+        if (this.applicationProps.getStorageStrategy().storesResolved()) {
+            this.storeLocally(identifier, false);
+        }
+
         if (typingService.conformsToType(identifier, profileId)) {
             LOG.trace("PID record with identifier {} is matching profile with identifier {}.", identifier, profileId);
             return ResponseEntity.status(200).build();
@@ -373,6 +389,10 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                 typeId);
         if (TypeValidationUtils.isValid(record, typeDef)) {
             LOG.trace("PID record with identifier {} is matching type with identifier {}.", identifier, typeId);
+            this.saveToElastic(record);
+            if (this.applicationProps.getStorageStrategy().storesResolved()) {
+                this.storeLocally(identifier, false);
+            }
             return ResponseEntity.ok().build();
         }
 
@@ -432,6 +452,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             } catch (Exception e) {
                 LOG.error("Could not notify messaging service about the following message: {}", message.toString());
             }
+            this.saveToElastic(record);
             return ResponseEntity.status(HttpStatus.CREATED.value()).body(record);
         } else if (missingProfile) {
             // validation failed and profile is missing (this must therefore be the reason)
@@ -486,6 +507,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                     AuthenticationHelper.getPrincipal(),
                     ControllerUtils.getLocalHostname());
             this.messagingService.send(message);
+            this.saveToElastic(record);
             return ResponseEntity.ok().body(record);
         } else {
             throw new PidNotFoundException(pid);
@@ -500,11 +522,13 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         String pid = getContentPathFromRequest("pid", request);
         LOG.trace("Obtained PID {} from request.", pid);
 
-        if (typingService.isIdentifierRegistered(pid)) {
+        PIDRecord pidRecord = typingService.queryAllProperties(pid);
+        if (pidRecord != null) {
             LOG.trace("PID successfully checked.");
             if (applicationProps.getStorageStrategy().storesResolved()) {
-                storeLocally(pid, false);
+                this.storeLocally(pid, false);
             }
+            this.saveToElastic(pidRecord);
             return ResponseEntity.ok().body("PID is registered.");
         } else {
             LOG.error("PID {} not found at configured identifier system.", pid);
@@ -551,7 +575,16 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         if (applicationProps.getStorageStrategy().storesResolved()) {
             storeLocally(pid, false);
         }
+        this.saveToElastic(rec);
         return ResponseEntity.ok().body(rec);
+    }
+
+    private void saveToElastic(PIDRecord rec) {
+        this.elastic.ifPresent(
+            database -> database.save(
+                new PidRecordElasticWrapper(rec, typingService.getOperations())
+            )
+        );
     }
 
     @Override
