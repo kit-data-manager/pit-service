@@ -486,7 +486,10 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         if (allowsCustomPids && hasCustomPid) {
             // in this only case, we do not have to generate a PID
             // but we have to check if the PID is already registered and return an error if so
-            boolean isRegisteredPid = this.typingService.isIdentifierRegistered(new PidSuffix(pidRecord.getPid()));
+            String prefix = this.typingService.getPrefix().orElseThrow(() -> new IOException("No prefix configured."));
+            String maybeSuffix = pidRecord.getPid();
+            String pid = PidSuffix.asPrefixedChecked(maybeSuffix, prefix);
+            boolean isRegisteredPid = this.typingService.isIdentifierRegistered(pid);
             if (isRegisteredPid) {
                 throw new RecordValidationException(pidRecord.getPid(), "PID is already registered. Can not create PID.");
             }

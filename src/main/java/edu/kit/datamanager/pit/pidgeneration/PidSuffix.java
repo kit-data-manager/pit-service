@@ -31,4 +31,22 @@ public class PidSuffix {
     public String getWithPrefix(String prefix) {
         return prefix + suffix;
     }
+
+    /**
+     * Ensures a string is prefixed with the given prefix.
+     * 
+     * It makes sure the prefix is not added, if the string already starts with the
+     * prefix.
+     * 
+     * @param maybeSuffix the string to prefix.
+     * @param prefix      the prefix to add.
+     * @return the string with the prefix added.
+     */
+    public static String asPrefixedChecked(String maybeSuffix, String prefix) {
+        if (!maybeSuffix.startsWith(prefix)) {
+            return prefix + maybeSuffix;
+        } else {
+            return maybeSuffix;
+        }
+    }
 }
