@@ -6,9 +6,11 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import edu.kit.datamanager.pit.common.DataTypeException;
 import edu.kit.datamanager.pit.common.InconsistentRecordsException;
+import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.common.TypeNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.configuration.PidGenerationProperties;
@@ -35,6 +37,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.stream.Streams;
 import org.apache.http.client.cache.HeaderConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -476,7 +479,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
     }
 
-    private void setPid(PIDRecord pidRecord) throws IOException, RecordValidationException {
+    private void setPid(PIDRecord pidRecord) throws IOException {
         boolean hasCustomPid = pidRecord.getPid() != null && !pidRecord.getPid().isBlank();
         boolean allowsCustomPids = pidGenerationProperties.isCustomClientPidsEnabled();
 
@@ -491,7 +494,15 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             // In all other (usual) cases, we have to generate a PID.
             // We store only the suffix in the pid field.
             // The registration at the PID service will preprend the prefix.
-            pidRecord.setPid(suffixGenerator.generate().get());
+
+            Stream<PidSuffix> suffixStream = suffixGenerator.inifiteStream();
+            Optional<PidSuffix> maybeSuffix = Streams.stream(suffixStream)
+                    // The Streams.stream gives us a failible stream, so we can throw an exception
+                    .filter(suffix -> !this.typingService.isIdentifierRegistered(suffix))
+                    .stream()  // back to normal java streams
+                    .findFirst();  // as the stream is infinite, we should always find a prefix.
+            PidSuffix suffix = maybeSuffix.orElseThrow(() -> new IOException("Could not generate PID suffix."));
+            pidRecord.setPid(suffix.get());
         }
     }
 
