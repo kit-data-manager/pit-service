@@ -83,7 +83,7 @@ public class InMemoryIdentifierSystemTest {
         sys.registerPID(p1);
         assertEquals(1, sys.resolveAllPidsOfPrefix().size());
 
-        PIDRecord p2 = new PIDRecord().withPID("p1");
+        PIDRecord p2 = new PIDRecord().withPID("p2");
         sys.registerPID(p2);
         assertEquals(2, sys.resolveAllPidsOfPrefix().size());
     }

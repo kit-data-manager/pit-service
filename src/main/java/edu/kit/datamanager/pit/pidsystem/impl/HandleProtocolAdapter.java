@@ -215,7 +215,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public String registerPID(final PIDRecord pidRecord) throws IOException {
+    public String registerPidUnchecked(final PIDRecord pidRecord) throws IOException {
         // Add admin value for configured user only
         // TODO add options to add additional adminValues e.g. for user lists?
         ArrayList<HandleValue> admin = new ArrayList<>();
@@ -228,20 +228,14 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             throw new IOException("Error extracting values from record.");
         }
 
-        boolean success = false;
-        while (!success) {
-            pidRecord.setPid(generateRandomPID());
-            try {
-                this.client.createHandle(pidRecord.getPid(), values);
-                success = true;
-            } catch (HandleException e) {
-                if (e.getCode() == HandleException.HANDLE_ALREADY_EXISTS) {
-                    // try the loop again
-                    success = false; // (just to make 100% sure the loop will run again)
-                } else {
-                    // On other errors, we throw an exception.
-                    throw new IOException(e);
-                }
+        try {
+            this.client.createHandle(pidRecord.getPid(), values);
+        } catch (HandleException e) {
+            if (e.getCode() == HandleException.HANDLE_ALREADY_EXISTS) {
+                // Should not happen as this has to be checked on the REST handler level.
+                throw new IOException("PID already exists. This is an application error, please report it.", e);
+            } else {
+                throw new IOException(e);
             }
         }
         return pidRecord.getPid();
@@ -469,21 +463,6 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         public final int getHsAdminIndex() {
             return 100;
         }
-    }
-
-    /**
-     * Generates a random PID. NOTE: Expects handleIdentifierPrefix in props to be
-     * set.
-     * 
-     * @return A random PID with the generator prefix from the preferences.
-     */
-    protected String generateRandomPID() {
-        String uuid = UUID.randomUUID().toString();
-        return this.props
-                .getCredentials()
-                .getHandleIdentifierPrefix()
-                .concat("/")
-                .concat(uuid);
     }
 
     /**

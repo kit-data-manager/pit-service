@@ -1,6 +1,7 @@
 package edu.kit.datamanager.pit.pidsystem;
 
 import edu.kit.datamanager.pit.common.InvalidConfigException;
+import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffix;
@@ -26,6 +27,25 @@ public interface IIdentifierSystem {
      *         empty otherwise.
      */
     public Optional<String> getPrefix();
+
+    /**
+     * Appends the given PID to the prefix, if possible.
+     * 
+     * It may not be possible if no prefix is present, or if the PID already starts
+     * with a the prefix. The returnes String is then exaxtly the same.
+     * 
+     * @param pid the PID to append to the prefix.
+     * @return the PID with the prefix appended, if possible.
+     * @throws InvalidConfigException if the system can n.
+     */
+    public default String appendPrefixIfAbsent(String pid) throws InvalidConfigException {
+        Optional<String> prefix = this.getPrefix();
+        if (prefix.isPresent() && !pid.startsWith(prefix.get())) {
+            return new PidSuffix(pid).getWithPrefix(prefix.get());
+        } else {
+            return pid;
+        }
+    }
 
     /**
      * Checks whether the given PID is already registered.
@@ -74,15 +94,41 @@ public interface IIdentifierSystem {
     public String queryProperty(String pid, TypeDefinition typeDefinition) throws IOException;
 
     /**
-     * Registers a new PID with given property values. The method decides on a
-     * PID name automatically, guaranteeing its uniqueness and preventing
-     * failure due to potential overwrites.
+     * Registers a new PID with given property values. The method takes the PID from
+     * the record and treats it as a suffix.
+     * 
+     * The method must process the given PID using the
+     * {@link #registerPID(PIDRecord)} method.
      *
-     * @param record contains the initial PID record. Do not assume a valid PID in here.
+     * @param record contains the initial PID record.
      * @return the PID that was assigned to the record.
      * @throws IOException
      */
-    public String registerPID(PIDRecord record) throws IOException;
+    public default String registerPID(final PIDRecord pidRecord) throws IOException, RecordValidationException {
+        if (pidRecord.getPid() == null) {
+            throw new RecordValidationException("<null>", "PID must not be null.");
+        }
+        if (pidRecord.getPid().isEmpty()) {
+            throw new RecordValidationException("<empty>", "PID must not be empty.");
+        }
+        pidRecord.setPid(
+            appendPrefixIfAbsent(pidRecord.getPid())
+        );
+        return registerPidUnchecked(pidRecord);
+    }
+
+    /**
+     * Registers the given record with its given PID, without applying any checks.
+     * Recommended to use {@link #registerPID(PIDRecord)} instead.
+     * 
+     * As an implementor, you can assume the PID to be not null, valid,
+     * non-registered, and prefixed.
+     * 
+     * @param pidRecord the record to register.
+     * @return the PID that was assigned to the record.
+     * @throws IOException if the PID could not be registered.
+     */
+    public String registerPidUnchecked(final PIDRecord pidRecord) throws IOException;
 
     /**
      * Updates an existing record with the new given values.

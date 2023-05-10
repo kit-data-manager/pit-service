@@ -172,16 +172,11 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
 
     }
 
-    protected String generatePIDName() {
-        String uuid = UUID.randomUUID().toString();
-        return this.generatorPrefix + "/" + uuid;
-    }
-
     @Override
-    public String registerPID(PIDRecord received_record) throws IOException {
-        Map<String, List<PIDRecordEntry>> properties = received_record.getEntries();
+    public String registerPidUnchecked(final PIDRecord receivedRecord) throws IOException {
+        Map<String, List<PIDRecordEntry>> properties = receivedRecord.getEntries();
         ResponseEntity<String> response;
-        String pid = generatePIDName();
+        String pid = receivedRecord.getPid();
         do {
             // PUT record to HS
             Collection<Map<String, String>> record = new LinkedList<>();
