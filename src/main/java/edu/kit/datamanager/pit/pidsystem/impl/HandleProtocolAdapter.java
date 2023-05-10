@@ -137,7 +137,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     @Override
     public Optional<String> getPrefix() {
         if (this.isAdminMode) {
-            return Optional.of(this.props.getCredentials().getHandleIdentifierPrefix());
+            return Optional.of(this.props.getCredentials()).map(HandleCredentials::getHandleIdentifierPrefix);
         } else {
             return Optional.empty();
         }
@@ -145,9 +145,9 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
 
     @Override
     public boolean isIdentifierRegistered(PidSuffix suffix) throws IOException {
-        if (this.isAdminMode) {
-            String prefix = this.props.getCredentials().getHandleIdentifierPrefix();
-            return this.isIdentifierRegistered(suffix.getWithPrefix(prefix));
+        Optional<String> maybePrefix = this.getPrefix();
+        if (maybePrefix.isPresent()) {
+            return this.isIdentifierRegistered(suffix.getWithPrefix(maybePrefix.get()));
         } else {
             throw new IOException("No writeable prefix is configured. Can not check if identifier is registered.");
         }
