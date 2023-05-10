@@ -70,4 +70,17 @@ public class PidGenerationProperties {
     public boolean isCustomClientPidsEnabled() {
         return customClientPidsEnabled;
     }
+
+    public void setCustomClientPidsEnabled(boolean customClientPidsEnabled) {
+        this.customClientPidsEnabled = customClientPidsEnabled;
+    }
+
+    public void setMode(Mode mode) {
+        this.mode = mode;
+    }
+    
+    public void setLowerCase(Case lowerCase) {
+        this.lowerCase = lowerCase;
+    }
+
 }
