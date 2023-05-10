@@ -13,10 +13,21 @@ public class PidSuffix {
         this.suffix = suffix;
     }
 
+    /**
+     * Returns the suffix string.
+     * 
+     * @return the suffix without any prefix.
+     */
     public String get() {
         return suffix;
     }
 
+    /**
+     * Returns the suffix string with the given prefix prepended.
+     * 
+     * @param prefix the prefix to prepend.
+     * @return the prefix + suffix.
+     */
     public String getWithPrefix(String prefix) {
         return prefix + suffix;
     }
