@@ -100,7 +100,7 @@ public interface IIdentifierSystem {
      * The method must process the given PID using the
      * {@link #registerPID(PIDRecord)} method.
      *
-     * @param record contains the initial PID record.
+     * @param pidRecord contains the initial PID record.
      * @return the PID that was assigned to the record.
      * @throws IOException
      */
