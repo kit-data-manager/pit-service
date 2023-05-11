@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -108,5 +110,32 @@ class CustomPidsTest {
             MockMvcResultMatchers.status().isCreated()
         );
         assertFalse(responseBody.contains(customPid));
+    }
+
+    /**
+     * Test: Register a PID with a branding-prefix being set.
+     * Expect: HTTP 201 (created) and PID does not contain branding-prefix.
+     * 
+     * We assume that this dangerous custom PID feature gives full control to the client.
+     */
+    @Test
+    void testBrandingNotApplied() throws Exception {
+        String branding = "test-branding.";
+        this.props.setBrandingPrefix(Optional.of(branding));
+        String customPid = "unbranded-pid";
+
+        PIDRecord record = ApiMockUtils.getSomePidRecordInstance();
+        record.setPid(customPid);
+        String body = ApiMockUtils.getJsonMapper().writeValueAsString(record);
+        
+        String responseBody = ApiMockUtils.registerRecord(
+            mockMvc,
+            body,
+            MediaType.APPLICATION_JSON_VALUE,
+            MediaType.APPLICATION_JSON_VALUE,
+            MockMvcResultMatchers.status().isCreated()
+        );
+        assertTrue(responseBody.contains(customPid));
+        assertFalse(responseBody.contains(branding));
     }
 }
