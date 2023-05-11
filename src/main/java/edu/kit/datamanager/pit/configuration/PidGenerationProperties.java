@@ -32,7 +32,7 @@ public class PidGenerationProperties {
     private Mode mode = Mode.UUID4;
 
     @NotNull
-    private Case lowerCase = Case.LOWER;
+    private Case casing = Case.LOWER;
 
     @NotNull
     private Optional<String> brandingPrefix = Optional.empty();
@@ -52,9 +52,9 @@ public class PidGenerationProperties {
         //    generator = new PidSuffixGenUuid4();
         //} else if (...) { ... }
         
-        if (lowerCase == Case.LOWER) {
+        if (casing == Case.LOWER) {
             generator = new PidSuffixGenLowerCase(generator);
-        } else if (lowerCase == Case.UPPER) {
+        } else if (casing == Case.UPPER) {
             generator = new PidSuffixGenUpperCase(generator);
         }
         
@@ -71,6 +71,14 @@ public class PidGenerationProperties {
         return customClientPidsEnabled;
     }
 
+    public Optional<String> getBrandingPrefix() {
+        return brandingPrefix;
+    }
+
+    public void setBrandingPrefix(Optional<String> brandingPrefix) {
+        this.brandingPrefix = brandingPrefix;
+    }
+
     public void setCustomClientPidsEnabled(boolean customClientPidsEnabled) {
         this.customClientPidsEnabled = customClientPidsEnabled;
     }
@@ -79,8 +87,8 @@ public class PidGenerationProperties {
         this.mode = mode;
     }
     
-    public void setLowerCase(Case lowerCase) {
-        this.lowerCase = lowerCase;
+    public void setCasing(Case lowerCase) {
+        this.casing = lowerCase;
     }
 
 }
