@@ -28,7 +28,7 @@ public interface PidSuffixGenerator {
      * 
      * @return an infinite stream of PID suffixes.
      */
-    public default Stream<PidSuffix> inifiteStream() {
+    public default Stream<PidSuffix> infiniteStream() {
         return Stream.generate(this::generate);
     }
 }

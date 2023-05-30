@@ -233,7 +233,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             // We store only the suffix in the pid field.
             // The registration at the PID service will preprend the prefix.
 
-            Stream<PidSuffix> suffixStream = suffixGenerator.inifiteStream();
+            Stream<PidSuffix> suffixStream = suffixGenerator.infiniteStream();
             Optional<PidSuffix> maybeSuffix = Streams.stream(suffixStream)
                     // The Streams.stream gives us a failible stream, so we can throw an exception
                     .filter(suffix -> !this.typingService.isIdentifierRegistered(suffix))
