@@ -1,5 +1,6 @@
 package edu.kit.datamanager.pit.pidgeneration.generators;
 
+import java.security.SecureRandom;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -14,7 +15,7 @@ import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
  */
 public class HexChunksGenerator implements PidSuffixGenerator {
 
-    protected Random random = new Random();
+    protected Random random = new SecureRandom();
 
     protected int numChunks = 4;
 
