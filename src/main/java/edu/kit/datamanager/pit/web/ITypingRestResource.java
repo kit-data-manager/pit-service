@@ -60,11 +60,14 @@ public interface ITypingRestResource {
      * Check if a certain resource with a given PID is matching a profile. The
      * profile is identified by its PID provided as path segment(s), whereas the
      * resource is identified via its PID as request param.
+     * 
+     * Important note: Validation may take up to 30+ seconds. For details, see the
+     * documentation of "POST /pid/".
      *
      * @param identifier The resource identifier
      *
      * @return either 200 or 404, indicating whether the PID is registered or
-     * not registered
+     *         not registered
      * @throws IOException
      */
     @RequestMapping(path = "/profile/**", method = RequestMethod.HEAD)
@@ -90,11 +93,14 @@ public interface ITypingRestResource {
      * Check if a certain resource with a given PID is matching a type. The type
      * is identified by its PID provided as path segment(s), whereas the
      * resource is identified via its PID as request param.
+     * 
+     * Important note: Validation may take up to 30+ seconds. For details, see the
+     * documentation of "POST /pid/".
      *
      * @param identifier The resource identifier
      *
      * @return either 200 or 404, indicating whether the PID is registered or
-     * not registered
+     *         not registered
      * @throws IOException
      */
     @RequestMapping(path = "/type/**", method = RequestMethod.HEAD)
@@ -140,6 +146,13 @@ public interface ITypingRestResource {
      * body. The record is expected to contain the identifier of the matching
      * profile. Before creating the record, the record information will be
      * validated against the profile.
+     * 
+     * Important note: Validation caches recently used type information locally.
+     * Therefore, changes in a registry may take a few minutes to be reflected
+     * within the Typed PID Maker. This speeds up validation drastically in most
+     * situations. But it also means that, if the cache is empty, validation may
+     * take 30+ seconds. We are aware of the issue and considering improvements. But
+     * be aware that in general, validation may take up some time.
      *
      * @param rec The PID record.
      *
@@ -189,6 +202,9 @@ public interface ITypingRestResource {
      * Update the given PIDs record using the information provided in the request
      * body. The record is expected to contain the identifier of the matching
      * profile. Conditions for a valid record are the same as for creation.
+     * 
+     * Important note: Validation may take up to 30+ seconds. For details, see the
+     * documentation of "POST /pid/".
      *
      * @param rec The PID record.
      *
