@@ -74,6 +74,11 @@ public class LocalPidSystem implements IIdentifierSystem {
     }
 
     @Override
+    public Optional<String> getPrefix() {
+        return Optional.of(PREFIX);
+    }
+
+    @Override
     public boolean isIdentifierRegistered(String pid) throws IOException {
         return this.db.existsById(pid);
     }
@@ -95,16 +100,13 @@ public class LocalPidSystem implements IIdentifierSystem {
     }
     
     @Override
-    public String registerPID(PIDRecord rec) throws IOException {
-        int counter = 0;
-        do {
-            int hash = rec.getEntries().hashCode() + counter;
-            rec.setPid(PREFIX + hash);
-            counter++;
-        } while (this.db.existsById(rec.getPid()));
-        this.db.save(new PidDatabaseObject(rec));
-        LOG.debug("Registered record with PID: {}", rec.getPid());
-        return rec.getPid();
+    public String registerPidUnchecked(final PIDRecord pidRecord) throws IOException {
+        if (this.db.existsById(pidRecord.getPid())) {
+            throw new IOException("PID already exists: " + pidRecord.getPid());
+        }
+        this.db.save(new PidDatabaseObject(pidRecord));
+        LOG.debug("Registered record with PID: {}", pidRecord.getPid());
+        return pidRecord.getPid();
     }
 
     @Override

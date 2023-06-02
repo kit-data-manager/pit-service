@@ -171,6 +171,16 @@ test {
     }
 }
 
+javadoc {
+    // include doc-files folder in javadoc
+    doLast {
+        copy {
+            from "src/main/javadoc"
+            into "$buildDir/docs/javadoc"
+        }
+    }
+}
+
 jacocoTestReport {
     reports {
         xml.required = true

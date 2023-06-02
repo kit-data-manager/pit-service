@@ -35,6 +35,7 @@ public class IIdentifierSystemTest {
         IIdentifierSystem handleProtocol = handleProtocolInstance;
 
         PIDRecord rec = new PIDRecord();
+        rec.setPid("my-custom-suffix");
         rec.addEntry(
             // this is actually a registered type, but not in a data type registry, but inline in the PID system.
             "10320/loc",

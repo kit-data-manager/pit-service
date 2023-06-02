@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -40,6 +41,11 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
     }
 
     @Override
+    public Optional<String> getPrefix() {
+        return Optional.of(PREFIX);
+    }
+
+    @Override
     public boolean isIdentifierRegistered(String pid) throws IOException {
         return this.records.containsKey(pid);
     }
@@ -60,16 +66,10 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
     }
     
     @Override
-    public String registerPID(PIDRecord record) throws IOException {
-        int counter = 0;
-        do {
-            int hash = record.getEntries().hashCode() + counter;
-            record.setPid(PREFIX + hash);
-            counter++;
-        } while (this.records.containsKey(record.getPid()));
-        this.records.put(record.getPid(), record);
-        LOG.debug("Registered record with PID: {}", record.getPid());
-        return record.getPid();
+    public String registerPidUnchecked(final PIDRecord pidRecord) throws IOException {
+        this.records.put(pidRecord.getPid(), pidRecord);
+        LOG.debug("Registered record with PID: {}", pidRecord.getPid());
+        return pidRecord.getPid();
     }
 
     @Override

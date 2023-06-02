@@ -82,6 +82,7 @@ public class LocalPidSystemTest {
     @Transactional
     void testAllSystemTests() throws Exception {
         PIDRecord rec = new PIDRecord();
+        rec.setPid("my-custom-pid");
         rec.addEntry(
             // this is actually a registered type, but not in a data type registry, but inline in the PID system.
             "10320/loc",
@@ -162,7 +163,7 @@ public class LocalPidSystemTest {
         this.localPidSystem.registerPID(p1);
         assertEquals(1, this.localPidSystem.resolveAllPidsOfPrefix().size());
 
-        PIDRecord p2 = new PIDRecord().withPID("p1");
+        PIDRecord p2 = new PIDRecord().withPID("p2");
         this.localPidSystem.registerPID(p2);
         assertEquals(2, this.localPidSystem.resolveAllPidsOfPrefix().size());
     }

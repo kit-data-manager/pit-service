@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
@@ -42,6 +43,11 @@ public class TypingService implements ITypingService {
     }
 
     @Override
+    public Optional<String> getPrefix() {
+        return this.identifierSystem.getPrefix();
+    }
+
+    @Override
     public boolean isIdentifierRegistered(String pid) throws IOException {
         LOG.trace("Performing isIdentifierRegistered({}).", pid);
         return identifierSystem.isIdentifierRegistered(pid);
@@ -54,9 +60,9 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public String registerPID(PIDRecord record) throws IOException {
-        LOG.trace("Performing registerPID({}).", record);
-        return identifierSystem.registerPID(record);
+    public String registerPidUnchecked(final PIDRecord pidRecord) throws IOException {
+        LOG.trace("Performing registerPID({}).", pidRecord);
+        return identifierSystem.registerPidUnchecked(pidRecord);
     }
 
     @Override
