@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
-import edu.kit.datamanager.pit.pidsystem.IIdentifierSystemTest;
+import edu.kit.datamanager.pit.pidsystem.IIdentifierSystemQueryTest;
 
 /**
  * This tests the same things as `IIdentifierSystemTest`, but is separated from
@@ -40,7 +40,7 @@ import edu.kit.datamanager.pit.pidsystem.IIdentifierSystemTest;
 )
 @ActiveProfiles("test")
 public class LocalPidSystemTest {
-    IIdentifierSystemTest systemTests = new IIdentifierSystemTest();
+    IIdentifierSystemQueryTest systemTests = new IIdentifierSystemQueryTest();
     
     @Autowired
     LocalPidSystem localPidSystem;
@@ -96,8 +96,8 @@ public class LocalPidSystemTest {
         PIDRecord newRec = localPidSystem.queryAllProperties(pid);
         assertEquals(rec, newRec);
         
-        Set<Method> publicMethods = new HashSet<>(Arrays.asList(IIdentifierSystemTest.class.getMethods()));
-        Set<Method> allDirectMethods = new HashSet<>(Arrays.asList(IIdentifierSystemTest.class.getDeclaredMethods()));
+        Set<Method> publicMethods = new HashSet<>(Arrays.asList(IIdentifierSystemQueryTest.class.getMethods()));
+        Set<Method> allDirectMethods = new HashSet<>(Arrays.asList(IIdentifierSystemQueryTest.class.getDeclaredMethods()));
         publicMethods.retainAll(allDirectMethods);
         assertEquals(7, publicMethods.size());
         for (Method test : publicMethods) {

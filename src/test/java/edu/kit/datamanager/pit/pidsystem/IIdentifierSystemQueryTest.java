@@ -21,11 +21,17 @@ import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 import net.handle.hdllib.HandleException;
 
 /**
- * This test ensures the interface is implemented correctly, with the following limits:
- * - TODO do write tests (update, register, delete PIDs), as this requires authentication or mocking
+ * This test ensures the interface is implemented correctly, with the following
+ * limits:
+ * 
+ * - Only read-tests (write tests are only possible for sandboxed systems on a
+ * regular and automated basis)
  * - TODO do queryByType tests (requires PID with registered type as property)
+ * 
+ * NOTE: The difference to the tests in the web module is that this only tests
+ * the pidsystem without any validation or other functionality.
  */
-public class IIdentifierSystemTest {
+public class IIdentifierSystemQueryTest {
 
     private static Stream<Arguments> implProvider() throws HandleException, IOException {
         HandleProtocolProperties props = new HandleProtocolProperties();
