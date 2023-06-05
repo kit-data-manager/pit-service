@@ -21,13 +21,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.web.context.WebApplicationContext;
 
+import edu.kit.datamanager.pit.RecordTestHelper;
+import edu.kit.datamanager.pit.configuration.ApplicationProperties;
+import edu.kit.datamanager.pit.configuration.ApplicationProperties.ValidationStrategy;
 import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
 import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 import edu.kit.datamanager.pit.pidsystem.impl.local.LocalPidSystem;
-import edu.kit.datamanager.pit.web.impl.TypingRESTResourceImpl;
+import edu.kit.datamanager.pit.pitservice.ITypingService;
 
 // org.springframework.mock is for unit testing
 // Source: https://docs.spring.io/spring-framework/docs/current/reference/html/testing.html
@@ -75,6 +79,15 @@ public class RestWithLocalPidSystemTest {
     @Autowired
     private WebApplicationContext webApplicationContext;
 
+    @Autowired
+    private PidSuffixGenerator pidGenerator;
+
+    @Autowired
+    ITypingService typingService;
+
+    @Autowired
+    ApplicationProperties appProps;
+
     private MockMvc mockMvc;
 
     private ObjectMapper mapper;
@@ -91,6 +104,7 @@ public class RestWithLocalPidSystemTest {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
         this.mapper = this.webApplicationContext.getBean("OBJECT_MAPPER_BEAN", ObjectMapper.class);
         this.knownPidsDao.deleteAll();
+        this.appProps.setValidationStrategy(ValidationStrategy.EMBEDDED_STRICT);
     }
 
     @Test
@@ -161,6 +175,23 @@ public class RestWithLocalPidSystemTest {
         assertEquals(kp.getCreated(), kp.getModified());
         // on update only
         kp.getCreated().isBefore(kp.getModified());
+    }
+
+    @Test
+    public void testCreateLargeRecord() throws Exception {
+        this.appProps.setValidationStrategy(ValidationStrategy.NONE_DEBUG);
+        // create mockup of a large record. It contains non-registered PIDs and can not be validated, which 
+        int numAttributes = 100;
+        int numValues = 1000;
+        PIDRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
+        String rJson = ApiMockUtils.serialize(r);
+        ApiMockUtils.registerRecord(
+            this.mockMvc,
+            rJson,
+            MediaType.APPLICATION_JSON_VALUE,
+            MediaType.APPLICATION_JSON_VALUE,
+            MockMvcResultMatchers.status().isCreated()
+        );
     }
 
     @Test
