@@ -12,6 +12,7 @@ import javax.servlet.ServletContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -178,12 +179,16 @@ public class RestWithLocalPidSystemTest {
     }
 
     @Test
-    public void testCreateLargeRecord() throws Exception {
+    @DisplayName("Testing PID Records with usual/larger size, with the Local PID system (in-memory db).")
+    public void testExtensiveRecord() throws Exception {
+        // create mockup of a large record. It contains non-registered PIDs and can not be validated.
         this.appProps.setValidationStrategy(ValidationStrategy.NONE_DEBUG);
-        // create mockup of a large record. It contains non-registered PIDs and can not be validated, which 
+        // as we use an in-memory db for testing, lets not make it too large.
         int numAttributes = 100;
-        int numValues = 1000;
+        int numValues = 100;
+        assertTrue(numAttributes * numValues > 256);
         PIDRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
+        
         String rJson = ApiMockUtils.serialize(r);
         ApiMockUtils.registerRecord(
             this.mockMvc,

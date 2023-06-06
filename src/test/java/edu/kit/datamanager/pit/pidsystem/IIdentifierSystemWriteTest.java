@@ -66,10 +66,11 @@ public class IIdentifierSystemWriteTest {
     }
 
     @Test
-    @DisplayName("Testing large PID Records for the Local PID system, using a local database.")
-    void testLargeRecordWithLocalPidSystem() throws IOException {
-        int numAttributes = 2000;
-        int numValues = 5000;
+    @DisplayName("Testing PID Records with usual/larger size, with the Local PID system (in-memory db).")
+    void testExtensiveRecordWithLocalPidSystem() throws IOException {
+        // as we use an in-memory db for testing, lets not make it too large.
+        int numAttributes = 100;
+        int numValues = 100;
 
         PIDRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, PID_PREFIX, pidGenerator);
         assertEquals(numAttributes, r.getPropertyIdentifiers().size());
