@@ -32,7 +32,22 @@ public class PidDatabaseObject {
     @Column(name = "pid")
     private String pid;
 
+    /**
+     * About the column definition we use here:
+     * 
+     * int javax.persistence.Column.length() (Optional) The column length. (Applies
+     * only if a string-valued column is used.) Default: 255
+     * 
+     * The h2 database we use for testing has a CHARACTER VARYING limit of
+     * 1_000_000_000
+     * (http://h2database.com/html/datatypes.html#character_varying_type).
+     * 
+     * Postgres does not have a limit according to
+     * https://www.postgresql.org/docs/current/datatype-character.html, but we
+     * assume it will not use its text datatype for the collection anyway.
+     */
     @ElementCollection(fetch = FetchType.EAGER)
+    @Column(length = 1_000_000_000)
     private Map<String, ArrayList<String>> entries = new HashMap<>();
 
     /** For hibernate */
