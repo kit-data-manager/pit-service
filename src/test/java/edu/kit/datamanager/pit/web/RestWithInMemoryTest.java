@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.web.context.WebApplicationContext;
 
+import edu.kit.datamanager.pit.RecordTestHelper;
+import edu.kit.datamanager.pit.configuration.ApplicationProperties;
+import edu.kit.datamanager.pit.configuration.ApplicationProperties.ValidationStrategy;
 import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
 import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
@@ -69,6 +74,12 @@ public class RestWithInMemoryTest {
     @Autowired
     private WebApplicationContext webApplicationContext;
 
+    @Autowired
+    private PidSuffixGenerator pidGenerator;
+
+    @Autowired
+    private ApplicationProperties appProps;
+
     private MockMvc mockMvc;
 
     private ObjectMapper mapper;
@@ -85,6 +96,7 @@ public class RestWithInMemoryTest {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
         this.mapper = this.webApplicationContext.getBean("OBJECT_MAPPER_BEAN", ObjectMapper.class);
         this.knownPidsDao.deleteAll();
+        this.appProps.setValidationStrategy(ValidationStrategy.EMBEDDED_STRICT);
     }
 
     @Test
@@ -128,6 +140,27 @@ public class RestWithInMemoryTest {
         
         // we store PIDs only if the PID was created successfully
         assertEquals(0, this.knownPidsDao.count());
+    }
+
+    @Test
+    @DisplayName("Testing PID Records with usual/larger size, with the InMemory PID system.")
+    public void testExtensiveRecord() throws Exception {
+        // create mockup of a large record. It contains non-registered PIDs and can not be validated.
+        this.appProps.setValidationStrategy(ValidationStrategy.NONE_DEBUG);
+        // as we use an in-memory data structure, lets not make it too large.
+        int numAttributes = 100;
+        int numValues = 100;
+        assertTrue(numAttributes * numValues > 256);
+        PIDRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
+        
+        String rJson = ApiMockUtils.serialize(r);
+        ApiMockUtils.registerRecord(
+            this.mockMvc,
+            rJson,
+            MediaType.APPLICATION_JSON_VALUE,
+            MediaType.APPLICATION_JSON_VALUE,
+            MockMvcResultMatchers.status().isCreated()
+        );
     }
 
     @Test
