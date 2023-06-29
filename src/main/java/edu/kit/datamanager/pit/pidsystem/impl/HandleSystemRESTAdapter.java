@@ -166,8 +166,7 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
             // More than one property stored at this record
             throw new IllegalStateException("PID records with more than one property of same type are not supported yet");
         }
-        String value = values.get(0).get("data").get("value").asText();
-        return value;
+        return values.get(0).get("data").get("value").asText();
 
     }
 

@@ -1,12 +1,18 @@
 package edu.kit.datamanager.pit.domain;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+@Disabled("Does not work yet due to the complexity of the TypeDefinition implementation. See TODO below.")
 public class TypeDefinitionTest {
 
-    //@Test
+    @Test
     // TODO We should change the domain model so this or similar tests will run.
     // But before we change the domain model to do so, we need a lot of tests to make sure things work as before after the changes.
     // Currently deserialization is done in `TypeRegistry.constructTypeDefinition` in a very complicated way.
@@ -52,5 +58,6 @@ public class TypeDefinitionTest {
         ObjectMapper mapper = new ObjectMapper();
         TypeDefinition def = mapper.readValue(type, TypeDefinition.class);
         System.out.println("DEF " + def.getExpression());
+        assertNotNull(def);
     }
 }

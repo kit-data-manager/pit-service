@@ -34,6 +34,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class TypingService implements ITypingService {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypingService.class);
+    private static final String LOG_MSG_TYPING_SERVICE_MISCONFIGURED = "Typing service misconfigured.";
+    private static final String LOG_MSG_QUERY_TYPE = "Querying for type with identifier {}.";
+
 
     protected final LoadingCache<String, TypeDefinition> typeCache;
     protected final IIdentifierSystem identifierSystem;
@@ -107,11 +110,11 @@ public class TypingService implements ITypingService {
     public TypeDefinition describeType(String typeIdentifier) throws IOException {
         LOG.trace("Performing describeType({}).", typeIdentifier);
         try {
-            LOG.trace("Querying for type with identifier {}.", typeIdentifier);
+            LOG.trace(LOG_MSG_QUERY_TYPE, typeIdentifier);
             return typeCache.get(typeIdentifier);
         } catch (ExecutionException ex) {
             LOG.error("Failed to query for type with identifier " + typeIdentifier + ".", ex);
-            throw new InvalidConfigException("Typing service misconfigured.");
+            throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
         }
     }
 
@@ -124,7 +127,7 @@ public class TypingService implements ITypingService {
             LOG.trace("Query for type with identifier {}.", typeIdentifier);
             typeDef = typeCache.get(typeIdentifier);
         } catch (ExecutionException ex) {
-            throw new InvalidConfigException("Typing service misconfigured.");
+            throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
         }
 
         if (typeDef == null) {
@@ -187,12 +190,12 @@ public class TypingService implements ITypingService {
         // query type registry
         TypeDefinition typeDef;
         try {
-            LOG.trace("Querying for type with identifier {}.", propertyIdentifier);
+            LOG.trace(LOG_MSG_QUERY_TYPE, propertyIdentifier);
             typeDef = typeCache.get(propertyIdentifier);
         } catch (ExecutionException ex) {
-            LOG.error("Querying for type with identifier {}.", propertyIdentifier);
+            LOG.error(LOG_MSG_QUERY_TYPE, propertyIdentifier);
 
-            throw new InvalidConfigException("Typing service misconfigured.");
+            throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
         }
 
         if (typeDef != null) {
@@ -202,15 +205,15 @@ public class TypingService implements ITypingService {
         return null;
     }
 
-    private void enrichPIDInformationRecord(PIDRecord pidInfo) throws IOException {
+    private void enrichPIDInformationRecord(PIDRecord pidInfo) {
         // enrich record by querying type registry for all property definitions
         // to get the property names
         for (String typeIdentifier : pidInfo.getPropertyIdentifiers()) {
             TypeDefinition typeDef;
             try {
-                typeDef = typeCache.get(typeIdentifier);// typeRegistry.queryTypeDefinition(typeIdentifier);
+                typeDef = typeCache.get(typeIdentifier);
             } catch (ExecutionException ex) {
-                throw new InvalidConfigException("Typing service misconfigured.");
+                throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
             }
 
             if (typeDef != null) {
@@ -228,7 +231,7 @@ public class TypingService implements ITypingService {
         try {
             typeDef = typeCache.get(typeIdentifier);
         } catch (ExecutionException ex) {
-            throw new InvalidConfigException("Typing service misconfigured.");
+            throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
         }
 
         if (typeDef == null) {
@@ -250,7 +253,7 @@ public class TypingService implements ITypingService {
         try {
             typeDef = typeCache.get(typeIdentifier);
         } catch (ExecutionException ex) {
-            throw new InvalidConfigException("Typing service misconfigured.");
+            throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
         }
 
         if (typeDef == null) {
@@ -286,7 +289,7 @@ public class TypingService implements ITypingService {
             try {
                 typeDef = typeCache.get(typeIdentifier);
             } catch (ExecutionException ex) {
-                throw new InvalidConfigException("Typing service misconfigured.");
+                throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
             }
             if (typeDef == null) {
                 return null;
