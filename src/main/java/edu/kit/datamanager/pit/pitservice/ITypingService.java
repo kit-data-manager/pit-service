@@ -2,6 +2,7 @@ package edu.kit.datamanager.pit.pitservice;
 
 import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
+import edu.kit.datamanager.pit.domain.Operations;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import java.io.IOException;
@@ -16,18 +17,11 @@ import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
  */
 public interface ITypingService extends IIdentifierSystem {
 
+    public void setValidationStrategy(IValidationStrategy strategy);
+
     public void validate(PIDRecord pidRecord)
             throws RecordValidationException, ExternalServiceException;
 
-//**
-//   * Retrieves a property definition
-//   *
-//   * @param propertyIdentifier
-//   * @return null if there is no property with given identifier, the definition
-//   * record otherwise.
-//   * @throws IOException
-//   */
-//  public PropertyDefinition describeProperty(String propertyIdentifier) throws IOException;
     /**
      * Retrieves a type definition
      *
@@ -40,18 +34,6 @@ public interface ITypingService extends IIdentifierSystem {
 
     public boolean conformsToType(String pid, String typeIdentifier) throws IOException;
 
-//    /**
-//     * Resolves the given PID without previous knowledge about the kind of
-//     * entity it identifies (e.g. a common PID record, a property or type
-//     * definition etc.).
-//     *
-//     * @param pid
-//     * @return The returned object can be either a PID record, a property
-//     * definition or a type definition. It can also be null, indicating the PID
-//     * is not registered at all.
-//     * @throws IOException
-//     */
-//    public Object genericResolve(String pid) throws IOException;
     /**
      * Queries a single property from the PID.
      *
@@ -102,15 +84,12 @@ public interface ITypingService extends IIdentifierSystem {
 
     public PIDRecord queryByTypeWithConformance(String pid, List<String> typeIdentifiers, boolean includePropertyNames) throws IOException;
 
-//  /**
-//   * Determines whether the given identifier references a simple object, a
-//   * property, a type etc. Note that the method may contact a remote registry to
-//   * answer the request since information may not be encoded in the identifier
-//   * string.
-//   *
-//   * @param identifier
-//   * @return a value of {@link EntityClass}
-//   * @throws IOException
-//   */
-//  public EntityClass determineEntityClass(String identifier) throws IOException;
+    /**
+     * Returns an operations instance, configured with this typingService.
+     * 
+     * Convenience method for `new Operations(typingService)`.
+     * 
+     * @return an operation instance.
+     */
+    public Operations getOperations();
 }

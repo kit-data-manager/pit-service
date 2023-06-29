@@ -1,10 +1,14 @@
 package edu.kit.datamanager.pit.pidsystem.impl;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
@@ -29,10 +33,16 @@ import org.springframework.stereotype.Component;
 public class InMemoryIdentifierSystem implements IIdentifierSystem {
 
     private static final Logger LOG = LoggerFactory.getLogger(InMemoryIdentifierSystem.class);
+    private static final String PREFIX = "sandboxed/";
     private Map<String, PIDRecord> records = new HashMap<>();
 
     public InMemoryIdentifierSystem() {
         LOG.warn("Using in-memory identifier system. REGISTERED PIDs ARE NOT STORED PERMANENTLY.");
+    }
+
+    @Override
+    public Optional<String> getPrefix() {
+        return Optional.of(PREFIX);
     }
 
     @Override
@@ -56,16 +66,10 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
     }
     
     @Override
-    public String registerPID(PIDRecord record) throws IOException {
-        int counter = 0;
-        do {
-            int hash = record.getEntries().hashCode() + counter;
-            record.setPid("sandboxed/" + hash);
-            counter++;
-        } while (this.records.containsKey(record.getPid()));
-        this.records.put(record.getPid(), record);
-        LOG.debug("Registered record with PID: {}", record.getPid());
-        return record.getPid();
+    public String registerPidUnchecked(final PIDRecord pidRecord) throws IOException {
+        this.records.put(pidRecord.getPid(), pidRecord);
+        LOG.debug("Registered record with PID: {}", pidRecord.getPid());
+        return pidRecord.getPid();
     }
 
     @Override
@@ -98,5 +102,10 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
     @Override
     public boolean deletePID(String pid) {
         throw new UnsupportedOperationException("Deleting PIDs is against the P in PID.");
+    }
+
+    @Override
+    public Collection<String> resolveAllPidsOfPrefix() throws IOException, InvalidConfigException {
+        return this.records.keySet().stream().filter(pid -> pid.startsWith(PREFIX)).collect(Collectors.toSet());
     }
 }

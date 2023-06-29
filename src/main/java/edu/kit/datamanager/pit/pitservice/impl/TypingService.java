@@ -7,14 +7,17 @@ import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.common.TypeNotFoundException;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.IValidationStrategy;
 import edu.kit.datamanager.pit.common.ExternalServiceException;
+import edu.kit.datamanager.pit.domain.Operations;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import java.util.concurrent.ExecutionException;
@@ -55,6 +58,16 @@ public class TypingService implements ITypingService {
     }
 
     @Override
+    public Optional<String> getPrefix() {
+        return this.identifierSystem.getPrefix();
+    }
+
+    @Override
+    public void setValidationStrategy(IValidationStrategy strategy) {
+        this.defaultStrategy = strategy;
+    }
+
+    @Override
     public void validate(PIDRecord pidRecord)
             throws RecordValidationException, ExternalServiceException {
         this.defaultStrategy.validate(pidRecord);
@@ -73,9 +86,9 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public String registerPID(PIDRecord record) throws IOException {
-        LOG.trace("Performing registerPID({}).", record);
-        return identifierSystem.registerPID(record);
+    public String registerPidUnchecked(final PIDRecord pidRecord) throws IOException {
+        LOG.trace("Performing registerPID({}).", pidRecord);
+        return identifierSystem.registerPidUnchecked(pidRecord);
     }
 
     @Override
@@ -145,11 +158,13 @@ public class TypingService implements ITypingService {
     @Override
     public PIDRecord queryAllProperties(String pid) throws IOException {
         LOG.trace("Performing queryAllProperties({}).", pid);
-        PIDRecord record = identifierSystem.queryAllProperties(pid);
-        if (record == null) {
+        PIDRecord pidRecord = identifierSystem.queryAllProperties(pid);
+        if (pidRecord == null) {
             throw new PidNotFoundException(pid);
         }
-        return record;
+        // ensure the PID is always contained
+        pidRecord.setPid(pid);
+        return pidRecord;
     }
 
     @Override
@@ -294,6 +309,15 @@ public class TypingService implements ITypingService {
     @Override
     public boolean updatePID(PIDRecord pidRecord) throws IOException {
         return this.identifierSystem.updatePID(pidRecord);
+    }
+
+    @Override
+    public Collection<String> resolveAllPidsOfPrefix() throws IOException, InvalidConfigException {
+        return this.identifierSystem.resolveAllPidsOfPrefix();
+    }
+
+    public Operations getOperations()  {
+        return new Operations(this);
     }
 
 }

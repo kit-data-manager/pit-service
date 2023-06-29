@@ -194,7 +194,7 @@ public class PIDRecord implements EtagSupport {
     public String getPropertyValue(String propertyIdentifier) {
         List<PIDRecordEntry> entry = entries.get(propertyIdentifier);
         if (entry == null) {
-            throw new IllegalArgumentException("Property identifier not listed in this record: " + propertyIdentifier);
+            return "";
         }
         return entry.get(0).getValue();
     }
@@ -208,7 +208,7 @@ public class PIDRecord implements EtagSupport {
     public String[] getPropertyValues(String propertyIdentifier) {
         List<PIDRecordEntry> entry = entries.get(propertyIdentifier);
         if (entry == null) {
-            throw new IllegalArgumentException("Property identifier not listed in this record: " + propertyIdentifier);
+            return new String[]{};
         }
 
         List<String> values = new ArrayList<>();

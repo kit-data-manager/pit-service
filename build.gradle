@@ -1,7 +1,7 @@
 plugins {
     // Spring boot & dependency management:
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
-    id 'org.springframework.boot' version '2.7.9'
+    id 'org.springframework.boot' version '2.7.13'
     // https://docs.spring.io/dependency-management-plugin/docs/current-SNAPSHOT/reference/html/
     id "io.spring.dependency-management" version "1.1.0"
     // Lombok generates getter and setter and more. https://projectlombok.org/
@@ -20,7 +20,7 @@ plugins {
     // Adds coveralls task for CI to send results to the coveralls service.
     id "com.github.kt3k.coveralls" version "2.12.2"
     //id "com.github.kt3k.coveralls" version "2.12.0" 
-    id "org.owasp.dependencycheck" version "8.1.2"
+    id "org.owasp.dependencycheck" version "8.3.1"
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
     // include build and git information via Spring Actuator
     id "com.gorylenko.gradle-git-properties" version "2.4.1"
@@ -51,16 +51,16 @@ repositories {
 }
 
 ext {
-    springDocVersion  = '1.6.15'
+    springDocVersion  = '1.7.0'
 }
 
 dependencies {
     // Due to the spring boot gradle plugin, we can omit versions in org.springframework.*
     // dependencies. It will automatically choose the fitting ones.
-    implementation("edu.kit.datamanager:service-base:1.1.0")
-    implementation("edu.kit.datamanager:repo-core:1.1.1")
+    implementation("edu.kit.datamanager:service-base:1.1.1")
+    implementation("edu.kit.datamanager:repo-core:1.1.2")
     // com.google.common, LoadingCache
-    implementation("com.google.guava:guava:31.1-jre")
+    implementation("com.google.guava:guava:32.0.1-jre")
     // Required by Spring/Javers at runtime
     implementation 'com.google.code.gson:gson:2.10.1'
 
@@ -82,6 +82,8 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-ui:${springDocVersion}"
     implementation "org.springdoc:springdoc-openapi-data-rest:${springDocVersion}"
     implementation "org.springdoc:springdoc-openapi-webmvc-core:${springDocVersion}"
+    // spring + elasticsearch communication
+    implementation "org.springframework.data:spring-data-elasticsearch"
 
     // More flexibility when (de-)serializing json:
     //implementation("com.monitorjbl:spring-json-view:1.1.0")
@@ -92,7 +94,7 @@ dependencies {
 
     implementation("net.handle:handle-client:9.3.1")
 
-    testImplementation(platform('org.junit:junit-bom:5.9.2'))
+    testImplementation(platform('org.junit:junit-bom:5.9.3'))
 	testImplementation('org.junit.jupiter:junit-jupiter')
     testImplementation('org.junit.jupiter:junit-jupiter-params')
 
@@ -166,6 +168,16 @@ test {
         showStandardStreams = true
         // for junit5
         events "passed", "skipped", "failed"
+    }
+}
+
+javadoc {
+    // include doc-files folder in javadoc
+    doLast {
+        copy {
+            from "src/main/javadoc"
+            into "$buildDir/docs/javadoc"
+        }
     }
 }
 

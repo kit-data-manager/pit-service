@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -20,6 +21,7 @@ import javax.net.ssl.X509TrustManager;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.configuration.HandleSystemRESTProperties;
@@ -135,6 +137,11 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
     }
 
     @Override
+    public Optional<String> getPrefix() {
+        return Optional.of(this.generatorPrefix);
+    }
+
+    @Override
     public boolean isIdentifierRegistered(String pid) {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(baseUri).pathSegment("api", "handles", pid);
         ResponseEntity<String> response = restTemplate.exchange(uriBuilder.build().toUri(), HttpMethod.GET, HttpEntity.EMPTY, String.class);
@@ -165,16 +172,11 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
 
     }
 
-    protected String generatePIDName() {
-        String uuid = UUID.randomUUID().toString();
-        return this.generatorPrefix + "/" + uuid;
-    }
-
     @Override
-    public String registerPID(PIDRecord received_record) throws IOException {
-        Map<String, List<PIDRecordEntry>> properties = received_record.getEntries();
+    public String registerPidUnchecked(final PIDRecord receivedRecord) throws IOException {
+        Map<String, List<PIDRecordEntry>> properties = receivedRecord.getEntries();
         ResponseEntity<String> response;
-        String pid = generatePIDName();
+        String pid = receivedRecord.getPid();
         do {
             // PUT record to HS
             Collection<Map<String, String>> record = new LinkedList<>();
@@ -274,5 +276,11 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
 
     public String getGeneratorPrefix() {
         return generatorPrefix;
+    }
+
+    @Override
+    public Collection<String> resolveAllPidsOfPrefix() throws IOException, InvalidConfigException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'resolveAllPidsOfPrefix'");
     }
 }

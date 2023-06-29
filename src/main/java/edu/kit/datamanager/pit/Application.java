@@ -24,6 +24,11 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalNotification;
 
+import edu.kit.datamanager.pit.cli.CliTaskBootstrap;
+import edu.kit.datamanager.pit.cli.CliTaskWriteFile;
+import edu.kit.datamanager.pit.cli.ICliTask;
+import edu.kit.datamanager.pit.cli.PidSource;
+import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
@@ -37,7 +42,9 @@ import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.cache.CacheConfig;
@@ -50,6 +57,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Scope;
@@ -78,6 +86,16 @@ import org.springframework.web.client.RestTemplate;
 public class Application {
 
     private static final Logger LOG = LoggerFactory.getLogger(Application.class);
+
+    protected static final String CMD_BOOTSTRAP = "bootstrap";
+    protected static final String CMD_WRITE_FILE = "write-file";
+
+    protected static final String SOURCE_FROM_PREFIX = "all-pids-from-prefix";
+    protected static final String SOURCE_KNOWN_PIDS = "known-pids";
+    
+    protected static final String ERROR_COMMUNICATION = "Communication error: {}";
+    protected static final String ERROR_CONFIGURATION = "Configuration error: {}";
+
 
     @Bean
     @Scope("prototype")
@@ -166,7 +184,6 @@ public class Application {
                 });
     }
 
-    @Bean
     @ConfigurationProperties("pit")
     public ApplicationProperties applicationProperties() {
         return new ApplicationProperties();
@@ -184,8 +201,80 @@ public class Application {
     }
 
     public static void main(String[] args) {
-        SpringApplication.run(Application.class, args);
+        ConfigurableApplicationContext context = SpringApplication.run(Application.class, args);
         System.out.println("Spring is running!");
+
+        final boolean cliArgsAmountValid = args != null && args.length != 0 && args.length >= 2;
+        
+        if (cliArgsAmountValid) {
+            ICliTask task = null;
+            Stream<String> pidSource = null;
+            
+            if (Objects.equals(args[1], SOURCE_FROM_PREFIX)) {
+                try {
+                    pidSource = PidSource.fromPrefix(context);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    LOG.error(ERROR_COMMUNICATION, e.getMessage());
+                    exitApp(context, 1);
+                }
+            } else if (Objects.equals(args[1], SOURCE_KNOWN_PIDS)) {
+                pidSource = PidSource.fromKnown(context);
+            }
+
+            if (Objects.equals(args[0], CMD_BOOTSTRAP)) {
+                task = new CliTaskBootstrap(context, pidSource);
+            } else if (Objects.equals(args[0], CMD_WRITE_FILE)) {
+                task = new CliTaskWriteFile(pidSource);
+            }
+
+            try {
+                if (task != null && pidSource != null) {
+                    // ---process task---
+                    if (task.process()) {
+                        exitApp(context, 0);
+                    }
+                } else {
+                    printUsage(args);
+                    exitApp(context, 1);
+                }
+            } catch (InvalidConfigException e) {
+                e.printStackTrace();
+                LOG.error(ERROR_CONFIGURATION, e.getMessage());
+                exitApp(context, 1);
+            } catch (IOException e) {
+                e.printStackTrace();
+                LOG.error(ERROR_COMMUNICATION, e.getMessage());
+                exitApp(context, 1);
+            }
+        }
+    }
+
+    private static void printUsage(String[] args) {
+        String firstArg = args[0].replaceAll("[\r\n]","");
+        String secondArg = args[1].replaceAll("[\r\n]","");
+        LOG.error("Got commands: {} and {}", firstArg, secondArg);
+        LOG.error("CLI usage incorrect. Usage:");
+        LOG.error("java -jar TypedPIDMaker.jar [ACTION] [SOURCE]");
+        LOG.error("java -jar TypedPIDMaker.jar bootstrap all-pids-from-prefix");
+        LOG.error("java -jar TypedPIDMaker.jar bootstrap known-pids");
+        LOG.error("java -jar TypedPIDMaker.jar write-file all-pids-from-prefix");
+        LOG.error("java -jar TypedPIDMaker.jar write-file known-pids");
+    }
+
+    private static void exitApp(ConfigurableApplicationContext context, int errCode) {
+        context.close();
+        try {
+            Thread.sleep(2 * 1000L);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        if (errCode != 0) {
+            LOG.error("Exited with error.");
+        } else {
+            LOG.info("Success");
+        }
+        System.exit(errCode);
     }
 
 }
