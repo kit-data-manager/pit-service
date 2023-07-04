@@ -58,7 +58,7 @@ dependencies {
     // Due to the spring boot gradle plugin, we can omit versions in org.springframework.*
     // dependencies. It will automatically choose the fitting ones.
     implementation("edu.kit.datamanager:service-base:1.1.1")
-    implementation("edu.kit.datamanager:repo-core:1.1.2")
+    implementation("edu.kit.datamanager:repo-core:1.2.1")
     // com.google.common, LoadingCache
     implementation("com.google.guava:guava:32.1.1-jre")
     // Required by Spring/Javers at runtime
