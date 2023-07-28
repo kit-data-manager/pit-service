@@ -49,7 +49,6 @@ public class ApplicationProperties extends GenericApplicationProperties {
   public enum IdentifierSystemImpl {
     IN_MEMORY,
     LOCAL,
-    HANDLE_REST,
     HANDLE_PROTOCOL;
   }
 
