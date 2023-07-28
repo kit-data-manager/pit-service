@@ -99,7 +99,8 @@ public interface IIdentifierSystem {
      * @return the property value or null if there is no property of given name
      * defined in this PID record.
      * @throws PidNotFoundException if PID is not registered.
-     * @throws ExternalServiceException
+     * @throws ExternalServiceException if an error occured in communication with
+     *         other services.
      */
     public String queryProperty(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException;
 
