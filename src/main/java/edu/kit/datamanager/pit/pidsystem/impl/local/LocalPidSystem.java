@@ -5,9 +5,11 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
+import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
+import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
+import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
@@ -79,19 +81,19 @@ public class LocalPidSystem implements IIdentifierSystem {
     }
 
     @Override
-    public boolean isIdentifierRegistered(String pid) throws IOException {
+    public boolean isIdentifierRegistered(String pid) throws ExternalServiceException {
         return this.db.existsById(pid);
     }
 
     @Override
-    public PIDRecord queryAllProperties(String pid) throws IOException {
+    public PIDRecord queryAllProperties(String pid) throws PidNotFoundException, ExternalServiceException {
         Optional<PidDatabaseObject> dbo = this.db.findByPid(pid);
         if (dbo.isEmpty()) { return null; }
         return new PIDRecord(dbo.get());
     }
 
     @Override
-    public String queryProperty(String pid, TypeDefinition typeDefinition) throws IOException {
+    public String queryProperty(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
         Optional<PidDatabaseObject> dbo = this.db.findByPid(pid);
         if (dbo.isEmpty()) { throw new PidNotFoundException(pid); }
         PIDRecord rec = new PIDRecord(dbo.get());
@@ -100,9 +102,9 @@ public class LocalPidSystem implements IIdentifierSystem {
     }
     
     @Override
-    public String registerPidUnchecked(final PIDRecord pidRecord) throws IOException {
+    public String registerPidUnchecked(final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
         if (this.db.existsById(pidRecord.getPid())) {
-            throw new IOException("PID already exists: " + pidRecord.getPid());
+            throw new PidAlreadyExistsException(pidRecord.getPid());
         }
         this.db.save(new PidDatabaseObject(pidRecord));
         LOG.debug("Registered record with PID: {}", pidRecord.getPid());
@@ -110,7 +112,7 @@ public class LocalPidSystem implements IIdentifierSystem {
     }
 
     @Override
-    public boolean updatePID(PIDRecord rec) throws IOException {
+    public boolean updatePID(PIDRecord rec) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
         if (this.db.existsById(rec.getPid())) {
             this.db.save(new PidDatabaseObject(rec));
             return true;
@@ -119,7 +121,7 @@ public class LocalPidSystem implements IIdentifierSystem {
     }
 
     @Override
-    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws IOException {
+    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
         PIDRecord allProps = this.queryAllProperties(pid);
         if (allProps == null) {return null;}
         // only return properties listed in the type def
@@ -142,7 +144,7 @@ public class LocalPidSystem implements IIdentifierSystem {
     }
 
     @Override
-    public Collection<String> resolveAllPidsOfPrefix() throws IOException, InvalidConfigException {
+    public Collection<String> resolveAllPidsOfPrefix() throws ExternalServiceException, InvalidConfigException {
         return this.db.findAll().parallelStream()
                 .map(dbo -> dbo.getPid())
                 .filter(pid -> pid.startsWith(PREFIX))

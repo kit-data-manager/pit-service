@@ -2,6 +2,7 @@ package edu.kit.datamanager.pit.pitservice.impl;
 
 import com.google.common.cache.LoadingCache;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
+import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.common.TypeNotFoundException;
@@ -77,31 +78,31 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public boolean isIdentifierRegistered(String pid) throws IOException {
+    public boolean isIdentifierRegistered(String pid) throws ExternalServiceException {
         LOG.trace("Performing isIdentifierRegistered({}).", pid);
         return identifierSystem.isIdentifierRegistered(pid);
     }
 
     @Override
-    public String queryProperty(String pid, TypeDefinition typeDefinition) throws IOException {
+    public String queryProperty(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
         LOG.trace("Performing queryProperty({}, TypeDefinition#{}).", pid, typeDefinition.getIdentifier());
         return identifierSystem.queryProperty(pid, typeDefinition);
     }
 
     @Override
-    public String registerPidUnchecked(final PIDRecord pidRecord) throws IOException {
+    public String registerPidUnchecked(final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
         LOG.trace("Performing registerPID({}).", pidRecord);
         return identifierSystem.registerPidUnchecked(pidRecord);
     }
 
     @Override
-    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws IOException {
+    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
         LOG.trace("Performing queryByType({}, TypeDefinition#{}).", pid, typeDefinition.getIdentifier());
         return identifierSystem.queryByType(pid, typeDefinition);
     }
 
     @Override
-    public boolean deletePID(String pid) throws IOException {
+    public boolean deletePID(String pid) throws ExternalServiceException {
         LOG.trace("Performing deletePID({}).", pid);
         return identifierSystem.deletePID(pid);
     }
@@ -159,7 +160,7 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public PIDRecord queryAllProperties(String pid) throws IOException {
+    public PIDRecord queryAllProperties(String pid) throws PidNotFoundException, ExternalServiceException {
         LOG.trace("Performing queryAllProperties({}).", pid);
         PIDRecord pidRecord = identifierSystem.queryAllProperties(pid);
         if (pidRecord == null) {
@@ -310,12 +311,12 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public boolean updatePID(PIDRecord pidRecord) throws IOException {
+    public boolean updatePID(PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
         return this.identifierSystem.updatePID(pidRecord);
     }
 
     @Override
-    public Collection<String> resolveAllPidsOfPrefix() throws IOException, InvalidConfigException {
+    public Collection<String> resolveAllPidsOfPrefix() throws ExternalServiceException, InvalidConfigException {
         return this.identifierSystem.resolveAllPidsOfPrefix();
     }
 

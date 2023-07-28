@@ -24,15 +24,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
-
+import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
+import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
+import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.PidUpdateException;
+import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.configuration.HandleCredentials;
 import edu.kit.datamanager.pit.configuration.HandleProtocolProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.PIDRecordEntry;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
-import edu.kit.datamanager.pit.pidgeneration.PidSuffix;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import net.handle.api.HSAdapter;
 import net.handle.api.HSAdapterFactory;
@@ -78,6 +80,8 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
                     Common.STD_TYPE_HSVALLIST,
             }
     };
+
+    private static final String SERVICE_NAME_HANDLE = "Handle System";
 
     // Properties specific to this adapter.
     @Autowired
@@ -143,17 +147,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public boolean isIdentifierRegistered(PidSuffix suffix) throws IOException {
-        Optional<String> maybePrefix = this.getPrefix();
-        if (maybePrefix.isPresent()) {
-            return this.isIdentifierRegistered(suffix.getWithPrefix(maybePrefix.get()));
-        } else {
-            throw new IOException("No writeable prefix is configured. Can not check if identifier is registered.");
-        }
-    }
-
-    @Override
-    public boolean isIdentifierRegistered(final String pid) throws IOException {
+    public boolean isIdentifierRegistered(final String pid) throws ExternalServiceException {
         HandleValue[] recordProperties = null;
         try {
             recordProperties = this.client.resolveHandle(pid, null, null);
@@ -161,14 +155,14 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             if (e.getCode() == HandleException.HANDLE_DOES_NOT_EXIST) {
                 return false;
             } else {
-                throw new IOException(e);
+                throw new ExternalServiceException(SERVICE_NAME_HANDLE, e);
             }
         }
         return recordProperties != null && recordProperties.length > 0;
     }
 
     @Override
-    public PIDRecord queryAllProperties(final String pid) throws IOException {
+    public PIDRecord queryAllProperties(final String pid) throws PidNotFoundException, ExternalServiceException {
         Collection<HandleValue> allValues = this.queryAllHandleValues(pid);
         if (allValues.isEmpty()) {
             return null;
@@ -180,7 +174,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @NotNull
-    protected Collection<HandleValue> queryAllHandleValues(final String pid) throws IOException {
+    protected Collection<HandleValue> queryAllHandleValues(final String pid) throws PidNotFoundException, ExternalServiceException {
         try {
             HandleValue[] values = this.client.resolveHandle(pid, null, null);
             return Stream
@@ -190,13 +184,13 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             if (e.getCode() == HandleException.HANDLE_DOES_NOT_EXIST) {
                 return new ArrayList<>();
             } else {
-                throw new IOException(e);
+                throw new ExternalServiceException(SERVICE_NAME_HANDLE, e);
             }
         }
     }
 
     @Override
-    public String queryProperty(final String pid, final TypeDefinition typeDefinition) throws IOException {
+    public String queryProperty(final String pid, final TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
         String[] typeArray = { typeDefinition.getIdentifier() };
         try {
             // TODO we assume here that the property only exists once, which will not be
@@ -207,14 +201,16 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         } catch (HandleException e) {
             if (e.getCode() == HandleException.INVALID_VALUE) {
                 return null;
+            } else if (e.getCode() == HandleException.HANDLE_DOES_NOT_EXIST) {
+                throw new PidNotFoundException(pid);
             } else {
-                throw new IOException(e);
+                throw new ExternalServiceException(SERVICE_NAME_HANDLE, e);
             }
         }
     }
 
     @Override
-    public String registerPidUnchecked(final PIDRecord pidRecord) throws IOException {
+    public String registerPidUnchecked(final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
         // Add admin value for configured user only
         // TODO add options to add additional adminValues e.g. for user lists?
         ArrayList<HandleValue> admin = new ArrayList<>();
@@ -222,26 +218,22 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         ArrayList<HandleValue> recordValues = this.handleValuesFrom(pidRecord, Optional.of(admin));
 
         HandleValue[] values = recordValues.toArray(new HandleValue[] {});
-        // sanity check
-        if (values.length >= pidRecord.getEntries().keySet().size()) {
-            throw new IOException("Error extracting values from record.");
-        }
 
         try {
             this.client.createHandle(pidRecord.getPid(), values);
         } catch (HandleException e) {
             if (e.getCode() == HandleException.HANDLE_ALREADY_EXISTS) {
                 // Should not happen as this has to be checked on the REST handler level.
-                throw new IOException("PID already exists. This is an application error, please report it.", e);
+                throw new PidAlreadyExistsException(pidRecord.getPid());
             } else {
-                throw new IOException(e);
+                throw new ExternalServiceException(SERVICE_NAME_HANDLE, e);
             }
         }
         return pidRecord.getPid();
     }
 
     @Override
-    public boolean updatePID(PIDRecord pidRecord) throws IOException {
+    public boolean updatePID(PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
         if (!this.isValidPID(pidRecord.getPid())) {
             return false;
         }
@@ -287,16 +279,16 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             if (e.getCode() == HandleException.HANDLE_DOES_NOT_EXIST) {
                 return false;
             } else {
-                throw new IOException(e);
+                throw new ExternalServiceException(SERVICE_NAME_HANDLE, e);
             }
         } catch (Exception e) {
-            throw new IOException("Implementation error in calculating record difference.", e);
+            throw new RuntimeException("Implementation error in calculating record difference. PLEASE REPORT!", e);
         }
         return true;
     }
 
     @Override
-    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws IOException {
+    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
         PIDRecord allProps = queryAllProperties(pid);
         if (allProps == null) {
             return null;
@@ -316,21 +308,21 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public boolean deletePID(final String pid) throws IOException {
+    public boolean deletePID(final String pid) throws ExternalServiceException {
         try {
             this.client.deleteHandle(pid);
         } catch (HandleException e) {
             if (e.getCode() == HandleException.HANDLE_DOES_NOT_EXIST) {
                 return false;
             } else {
-                throw new IOException(e);
+                throw new ExternalServiceException(SERVICE_NAME_HANDLE, e);
             }
         }
-        return false;
+        return true;
     }
 
     @Override
-    public Collection<String> resolveAllPidsOfPrefix() throws IOException, InvalidConfigException {
+    public Collection<String> resolveAllPidsOfPrefix() throws ExternalServiceException, InvalidConfigException {
         HandleCredentials handleCredentials = this.props.getCredentials();
         if (handleCredentials == null) {
             throw new InvalidConfigException("No credentials for handle protocol configured.");
@@ -338,7 +330,12 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
 
         PrivateKey key;
         {
-            byte[] privateKeyBytes = handleCredentials.getPrivateKeyFileContent();
+            byte[] privateKeyBytes;
+            try {
+                privateKeyBytes = handleCredentials.getPrivateKeyFileContent();
+            } catch (IOException e) {
+                throw new InvalidConfigException("Could not read private key file content.");
+            }
             if (privateKeyBytes == null || privateKeyBytes.length == 0) {
                 throw new InvalidConfigException("Private Key is empty!");
             }
@@ -370,7 +367,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
                 prefixValues = resolver.resolveHandle(handleCredentials.getHandleIdentifierPrefix());
                 site = BatchUtil.getFirstPrimarySiteFromHserv(prefixValues, resolver);
             } catch (HandleException e) {
-                throw new IOException(e.getMessage());
+                throw new ExternalServiceException(SERVICE_NAME_HANDLE, e);
             }
         }
 
@@ -378,7 +375,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         try {
             return BatchUtil.listHandles(prefix, site, resolver, auth);
         } catch (HandleException e) {
-            throw new IOException(e.getMessage());
+            throw new ExternalServiceException(SERVICE_NAME_HANDLE, e);
         }
     }
 
@@ -482,7 +479,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             if (!this.isIdentifierRegistered(pid)) {
                 return false;
             }
-        } catch (IOException e) {
+        } catch (ExternalServiceException e) {
             return false;
         }
         return true;

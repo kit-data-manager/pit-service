@@ -1,8 +1,6 @@
 package edu.kit.datamanager.pit.common;
 
-import org.springframework.web.bind.annotation.ResponseStatus;
-
-import java.io.IOException;
+import org.springframework.web.server.ResponseStatusException;
 
 import org.springframework.http.HttpStatus;
 
@@ -10,17 +8,17 @@ import org.springframework.http.HttpStatus;
  * Indicates that a PID was given which could not be resolved to answer the
  * request properly.
  */
-@ResponseStatus(value = HttpStatus.BAD_REQUEST)
-public class RecordValidationException extends IOException {
+public class RecordValidationException extends ResponseStatusException {
 
 	private static final long serialVersionUID = 1L;
+	private static final HttpStatus HTTP_STATUS = HttpStatus.BAD_REQUEST;
 
 	public RecordValidationException(String pid) {
-		super("Validation of record " + pid + " failed.");
+		super(HTTP_STATUS, "Validation of record " + pid + " failed.");
 	}
 
 	public RecordValidationException(String pid, String reason) {
-		super("Validation of record " + pid + " failed. Reason:\n" + reason);
+		super(HTTP_STATUS, "Validation of record " + pid + " failed. Reason:\n" + reason);
 	}
 
 }

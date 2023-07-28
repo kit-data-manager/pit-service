@@ -16,12 +16,15 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.net.ssl.X509TrustManager;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
+import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
+import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.configuration.HandleSystemRESTProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
@@ -56,6 +59,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class HandleSystemRESTAdapter implements IIdentifierSystem {
 
     private static final Logger LOG = LoggerFactory.getLogger(HandleSystemRESTAdapter.class);
+    private static final String SERVICE_NAME_HANDLE = "Handle System";
 
     public static final boolean UNSAFE_SSL = true;
 
@@ -148,13 +152,18 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public String queryProperty(String pid, TypeDefinition typeDefinition) throws IOException {
+    public String queryProperty(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(baseUri).pathSegment("api", "handles", pid);
         uriBuilder = uriBuilder.queryParam("type", typeDefinition.getIdentifier());
         ResponseEntity<String> response = restTemplate.exchange(uriBuilder.build().toUri(), HttpMethod.GET, HttpEntity.EMPTY, String.class);
 
         // extract the Handle value data entry from the json response
-        JsonNode rootNode = objectMapper.readTree(response.getBody());
+        JsonNode rootNode;
+        try {
+            rootNode = objectMapper.readTree(response.getBody());
+        } catch (JsonProcessingException e) {
+            throw new ExternalServiceException(SERVICE_NAME_HANDLE, "Unexpected response from service.", e);
+        }
         JsonNode values = rootNode.get("values");
         if (!values.isArray()) {
             throw new IllegalStateException("Invalid response format: values must be an array");
@@ -171,7 +180,7 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public String registerPidUnchecked(final PIDRecord receivedRecord) throws IOException {
+    public String registerPidUnchecked(final PIDRecord receivedRecord) throws PidAlreadyExistsException, ExternalServiceException, RecordValidationException {
         Map<String, List<PIDRecordEntry>> properties = receivedRecord.getEntries();
         ResponseEntity<String> response;
         String pid = receivedRecord.getPid();
@@ -184,17 +193,25 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
                 Map<String, String> handleValue = new HashMap<>();
                 handleValue.put("index", "" + idx);
                 handleValue.put("type", key);
-                handleValue.put(
-                    "data",
-                    objectMapper.writeValueAsString(
-                        properties.get(key)
-                            .stream()
-                            .map( entry -> entry.getValue() )
-                            .collect( Collectors.toList() ))
-                );
+                try {
+                    handleValue.put(
+                        "data",
+                        objectMapper.writeValueAsString(
+                            properties.get(key)
+                                .stream()
+                                .map( entry -> entry.getValue() )
+                                .collect( Collectors.toList() ))
+                    );
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException("Could not write values to a list. PLEASE REPORT!");
+                }
                 record.add(handleValue);
             }
-            String jsonText = objectMapper.writeValueAsString(record);
+            try {
+                String jsonText = objectMapper.writeValueAsString(record);
+            } catch (JsonProcessingException e) {
+                throw new ExternalServiceException(SERVICE_NAME_HANDLE, "Unexpected response from service.", e);
+            }
             UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(baseUri).pathSegment("api", "handles", pid);
             uriBuilder = uriBuilder.queryParam("overwrite", false);
             HttpHeaders headers = new HttpHeaders();
@@ -210,17 +227,17 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
         if (response.getStatusCodeValue() == 201) {
             return pid;
         } else {
-            throw new IOException("Error trying to create PID " + pid);
+            throw new ExternalServiceException(SERVICE_NAME_HANDLE, "Error trying to create PID " + pid);
         }
     }
 
     @Override
-    public boolean updatePID(PIDRecord record) throws IOException {
+    public boolean updatePID(PIDRecord pidRecord) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws IOException {
+    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
         PIDRecord allProps = queryAllProperties(pid);
         // only return properties listed in the type def
         Set<String> typeProps = typeDefinition.getAllProperties();
@@ -248,7 +265,7 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public PIDRecord queryAllProperties(String pid) throws IOException {
+    public PIDRecord queryAllProperties(String pid) throws PidNotFoundException, ExternalServiceException {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(baseUri).pathSegment("api", "handles", pid);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", "Basic " + authInfo);
@@ -259,7 +276,12 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
             throw new PidNotFoundException(pid);
         }
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode root = mapper.readTree(response.getBody());
+        JsonNode root;
+        try {
+            root = mapper.readTree(response.getBody());
+        } catch (JsonProcessingException e) {
+            throw new ExternalServiceException(SERVICE_NAME_HANDLE, "Unexpected response from service.", e);
+        }
         PIDRecord result = new PIDRecord();
         for (JsonNode valueNode : root.get("values")) {
             if (!(valueNode.get("data").get("format").asText().equals("string") || valueNode.get("data").get("format").asText().equals("base64") || valueNode
@@ -277,7 +299,7 @@ public class HandleSystemRESTAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public Collection<String> resolveAllPidsOfPrefix() throws IOException, InvalidConfigException {
+    public Collection<String> resolveAllPidsOfPrefix() throws InvalidConfigException {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'resolveAllPidsOfPrefix'");
     }

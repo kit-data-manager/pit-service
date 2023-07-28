@@ -1,8 +1,6 @@
 package edu.kit.datamanager.pit.common;
 
-import org.springframework.web.bind.annotation.ResponseStatus;
-
-import java.io.IOException;
+import org.springframework.web.server.ResponseStatusException;
 
 import org.springframework.http.HttpStatus;
 
@@ -10,13 +8,13 @@ import org.springframework.http.HttpStatus;
  * Indicates that a PID was given which could not be resolved to answer the
  * request properly.
  */
-@ResponseStatus(value = HttpStatus.NOT_FOUND)
-public class PidNotFoundException extends IOException {
+public class PidNotFoundException extends ResponseStatusException {
 
 	private static final long serialVersionUID = 1L;
+	private static final HttpStatus HTTP_STATUS = HttpStatus.NOT_FOUND;
 
 	public PidNotFoundException(String pid) {
-		super("Identifier with value " + pid + " not found.");
+		super(HTTP_STATUS, "Identifier with value " + pid + " not found.");
 	}
 
 }
