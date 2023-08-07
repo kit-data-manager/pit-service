@@ -60,7 +60,7 @@ dependencies {
     implementation("edu.kit.datamanager:service-base:1.1.1")
     implementation("edu.kit.datamanager:repo-core:1.1.2")
     // com.google.common, LoadingCache
-    implementation("com.google.guava:guava:32.1.1-jre")
+    implementation("com.google.guava:guava:32.1.2-jre")
     // Required by Spring/Javers at runtime
     implementation 'com.google.code.gson:gson:2.10.1'
 
