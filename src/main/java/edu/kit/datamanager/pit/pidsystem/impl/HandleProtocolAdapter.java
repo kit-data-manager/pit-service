@@ -220,16 +220,22 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         // TODO add options to add additional adminValues e.g. for user lists?
         ArrayList<HandleValue> admin = new ArrayList<>();
         admin.add(this.adminValue);
-        ArrayList<HandleValue> recordValues = this.handleValuesFrom(pidRecord, Optional.of(admin));
+        ArrayList<HandleValue> futurePairs = this.handleValuesFrom(pidRecord, Optional.of(admin));
 
-        HandleValue[] values = recordValues.toArray(new HandleValue[] {});
+        HandleValue[] futurePairsArray = futurePairs.toArray(new HandleValue[] {});
         // sanity check
-        if (values.length >= pidRecord.getEntries().keySet().size()) {
-            throw new IOException("Error extracting values from record.");
+        if (futurePairsArray.length < pidRecord.getEntries().keySet().size()) {
+            throw new IOException(
+                String.format(
+                    "Error extracting pairs from record. Extracted %d from at least %d",
+                    futurePairsArray.length,
+                    pidRecord.getEntries().keySet().size()
+                )
+            );
         }
 
         try {
-            this.client.createHandle(pidRecord.getPid(), values);
+            this.client.createHandle(pidRecord.getPid(), futurePairsArray);
         } catch (HandleException e) {
             if (e.getCode() == HandleException.HANDLE_ALREADY_EXISTS) {
                 // Should not happen as this has to be checked on the REST handler level.
