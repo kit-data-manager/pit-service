@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
@@ -31,10 +32,56 @@ public class Operations {
         "21.T11148/397d831aa3a9d18eb52c"
     };
 
+    private static final List<String> KNOWN_SUPPORTED_TYPES = List.of(
+        "21.T11148/2694e4a7a5a00d44e62b"
+    );
+
+    private static final List<String> KNOWN_SUPPORTED_LOCATIONS = List.of();
+
     private ITypingService typingService;
 
     public Operations(ITypingService typingService) {
         this.typingService = typingService;
+    }
+
+    /**
+     * Tries to get supported types. Usually, this property only exists for FAIR DOs
+     * representing operations.
+     * 
+     * Strategy: - try to get it from known "dateModified" types
+     * 
+     * Semantic reasoning in some sense is planned but not yet supported.
+     * 
+     * @param pidRecord the record to extract the information from.
+     * @return the extracted "supported types", if any.
+     */
+    public List<String> findSupportedTypes(PIDRecord pidRecord) {
+        return KNOWN_SUPPORTED_TYPES
+            .stream()
+            .map(pidRecord::getPropertyValues)
+            .map(Arrays::asList)
+            .flatMap(List<String>::stream)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Tries to get supported types. Usually, this property only exists for FAIR DOs
+     * representing operations.
+     * 
+     * Strategy: - try to get it from known "dateModified" types
+     * 
+     * Semantic reasoning in some sense is planned but not yet supported.
+     * 
+     * @param pidRecord the record to extract the information from.
+     * @return the extracted "supported locations", if any.
+     */
+    public List<String> findSupportedLocations(PIDRecord pidRecord) {
+        return KNOWN_SUPPORTED_LOCATIONS
+            .stream()
+            .map(pidRecord::getPropertyValues)
+            .map(Arrays::asList)
+            .flatMap(List<String>::stream)
+            .collect(Collectors.toList());
     }
 
     /**

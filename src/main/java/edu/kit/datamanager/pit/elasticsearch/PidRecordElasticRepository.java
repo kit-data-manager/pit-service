@@ -27,5 +27,7 @@ import org.springframework.data.elasticsearch.repository.ElasticsearchRepository
 public interface PidRecordElasticRepository extends ElasticsearchRepository<PidRecordElasticWrapper, String> {
 
     Page<PidRecordElasticWrapper> findByPid(String pid, Pageable pageable);
+    Page<PidRecordElasticWrapper> findBySupportedLocation(String location);
+    Page<PidRecordElasticWrapper> findBySupportedType(String type);
 
 }
