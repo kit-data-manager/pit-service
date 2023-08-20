@@ -2,6 +2,8 @@ package edu.kit.datamanager.pit.elasticsearch;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.Collection;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -80,5 +82,24 @@ public class PidRecordElasticRepositoryTest {
         assertEquals(0, dao.count());
         dao.save(w);
         assertEquals(1, dao.count());
+    }
+
+    @Test
+    @Transactional
+    void testRetrieveBySupportedType() throws JacksonException {
+        PIDRecord r = new PIDRecord();
+        r.setPid("not-a-pid");
+        String supportedType = "some/supported-type";
+        r.addEntry("21.T11148/2694e4a7a5a00d44e62b", "", supportedType);
+        r.addEntry("21.T11148/2694e4a7a5a00d44e62b", "", "second/supported-type");
+        PidRecordElasticWrapper w = new PidRecordElasticWrapper(r, typingService.getOperations());
+        assertEquals(0, dao.count());
+        dao.save(w);
+        assertEquals(1, dao.count());
+        Collection<PidRecordElasticWrapper> result = dao.findBySupportedLocationsContain("other/type");
+        assertEquals(0, result.size());
+        result = dao.findBySupportedTypesContain(supportedType);
+        assertEquals(1, result.size());
+        assertEquals(w, result.iterator().next());
     }
 }

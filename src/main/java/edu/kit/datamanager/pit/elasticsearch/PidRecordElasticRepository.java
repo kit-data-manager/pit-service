@@ -15,9 +15,12 @@
  */
 package edu.kit.datamanager.pit.elasticsearch;
 
+import java.util.Collection;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.annotations.Query;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
 /**
@@ -27,7 +30,13 @@ import org.springframework.data.elasticsearch.repository.ElasticsearchRepository
 public interface PidRecordElasticRepository extends ElasticsearchRepository<PidRecordElasticWrapper, String> {
 
     Page<PidRecordElasticWrapper> findByPid(String pid, Pageable pageable);
-    Page<PidRecordElasticWrapper> findBySupportedLocation(String location);
-    Page<PidRecordElasticWrapper> findBySupportedType(String type);
+
+    @Query("{\"match\": {\"supportedLocations\": \"?0\"}}")
+    Collection<PidRecordElasticWrapper> findBySupportedLocationsContain(
+        String location
+    );
+
+    @Query("{\"match\": {\"supportedTypes\": \"?0\"}}")
+    Collection<PidRecordElasticWrapper> findBySupportedTypesContain(String type);
 
 }
