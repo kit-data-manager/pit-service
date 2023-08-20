@@ -23,8 +23,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.FetchType;
@@ -55,10 +57,10 @@ public class PidRecordElasticWrapper {
     private Date lastUpdate;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    private List<String> supportedTypes = new ArrayList<>();
+    private Set<String> supportedTypes = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.EAGER)
-    private List<String> supportedLocations = new ArrayList<>();
+    private Set<String> supportedLocations = new HashSet<>();
 
     @Field(type = FieldType.Text)
     private List<String> read = new ArrayList<>();

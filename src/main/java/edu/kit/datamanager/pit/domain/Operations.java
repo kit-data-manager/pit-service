@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.joda.time.DateTime;
@@ -55,13 +56,13 @@ public class Operations {
      * @param pidRecord the record to extract the information from.
      * @return the extracted "supported types", if any.
      */
-    public List<String> findSupportedTypes(PIDRecord pidRecord) {
+    public Set<String> findSupportedTypes(PIDRecord pidRecord) {
         return KNOWN_SUPPORTED_TYPES
             .stream()
             .map(pidRecord::getPropertyValues)
             .map(Arrays::asList)
             .flatMap(List<String>::stream)
-            .collect(Collectors.toList());
+            .collect(Collectors.toSet());
     }
 
     /**
@@ -75,13 +76,13 @@ public class Operations {
      * @param pidRecord the record to extract the information from.
      * @return the extracted "supported locations", if any.
      */
-    public List<String> findSupportedLocations(PIDRecord pidRecord) {
+    public Set<String> findSupportedLocations(PIDRecord pidRecord) {
         return KNOWN_SUPPORTED_LOCATIONS
             .stream()
             .map(pidRecord::getPropertyValues)
             .map(Arrays::asList)
             .flatMap(List<String>::stream)
-            .collect(Collectors.toList());
+            .collect(Collectors.toSet());
     }
 
     /**

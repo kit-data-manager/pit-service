@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -23,6 +24,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.transaction.annotation.Transactional;
+
+import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.pitservice.ITypingService;
 
 @SpringBootTest
 @TestPropertySource("/test/application-test.properties")
@@ -31,6 +36,9 @@ public class KnownPidsDaoTest {
 
     @Autowired
     private KnownPidsDao knownPidsDao;
+
+    @Autowired
+    private ITypingService typingService;
 
     private static final Instant NOW = Instant.now();
 
@@ -203,5 +211,31 @@ public class KnownPidsDaoTest {
             assertEquals(1, page_siblings.getNumberOfElements());
             page = page_siblings.nextPageable();
         } while (page_siblings.hasNext());
+    }
+
+    @Test
+    @Transactional
+    void testRetrieveBySupportedType() throws IOException {
+        knownPidsDao.deleteAll();
+        knownPidsDao.flush();
+
+        String supportedType = "some/supported-type";
+
+        PIDRecord r = new PIDRecord();
+        r.setPid("not-a-pid");
+        r.addEntry("21.T11148/2694e4a7a5a00d44e62b", "", supportedType);
+        r.addEntry("21.T11148/2694e4a7a5a00d44e62b", "", "second/supported-type");
+        KnownPid w = new KnownPid(r, typingService.getOperations());
+
+        assertEquals(0, knownPidsDao.count());
+        knownPidsDao.save(w);
+        assertEquals(1, knownPidsDao.count());
+        
+        Collection<KnownPid> result = knownPidsDao.findBySupportedLocationsContain("other/type");
+        assertEquals(0, result.size());
+
+        result = knownPidsDao.findBySupportedTypesContain(supportedType);
+        assertEquals(1, result.size());
+        assertEquals(w, result.iterator().next());
     }
 }

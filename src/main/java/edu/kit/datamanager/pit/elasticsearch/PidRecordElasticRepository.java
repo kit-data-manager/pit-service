@@ -32,9 +32,7 @@ public interface PidRecordElasticRepository extends ElasticsearchRepository<PidR
     Page<PidRecordElasticWrapper> findByPid(String pid, Pageable pageable);
 
     @Query("{\"match\": {\"supportedLocations\": \"?0\"}}")
-    Collection<PidRecordElasticWrapper> findBySupportedLocationsContain(
-        String location
-    );
+    Collection<PidRecordElasticWrapper> findBySupportedLocationsContain(String location);
 
     @Query("{\"match\": {\"supportedTypes\": \"?0\"}}")
     Collection<PidRecordElasticWrapper> findBySupportedTypesContain(String type);
