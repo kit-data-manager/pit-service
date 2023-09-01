@@ -3,10 +3,10 @@ plugins {
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
     id 'org.springframework.boot' version '2.7.13'
     // https://docs.spring.io/dependency-management-plugin/docs/current-SNAPSHOT/reference/html/
-    id "io.spring.dependency-management" version "1.1.2"
+    id "io.spring.dependency-management" version "1.1.3"
     // Lombok generates getter and setter and more. https://projectlombok.org/
     // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
-    id "io.freefair.lombok" version "8.1.0"
+    id "io.freefair.lombok" version "8.3"
     // Release tagging with `./gradlew release`
     // Check for new versions here: https://plugins.gradle.org/plugin/net.researchgate.release
     // Usage: https://github.com/researchgate/gradle-release
@@ -20,7 +20,7 @@ plugins {
     // Adds coveralls task for CI to send results to the coveralls service.
     id "com.github.kt3k.coveralls" version "2.12.2"
     //id "com.github.kt3k.coveralls" version "2.12.0" 
-    id "org.owasp.dependencycheck" version "8.3.1"
+    id "org.owasp.dependencycheck" version "8.4.0"
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
     // include build and git information via Spring Actuator
     id "com.gorylenko.gradle-git-properties" version "2.4.1"
@@ -60,7 +60,7 @@ dependencies {
     implementation("edu.kit.datamanager:service-base:1.1.1")
     implementation("edu.kit.datamanager:repo-core:1.1.2")
     // com.google.common, LoadingCache
-    implementation("com.google.guava:guava:32.1.1-jre")
+    implementation("com.google.guava:guava:32.1.2-jre")
     // Required by Spring/Javers at runtime
     implementation 'com.google.code.gson:gson:2.10.1'
 
