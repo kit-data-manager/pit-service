@@ -1,11 +1,13 @@
 package edu.kit.datamanager.pit.domain;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.Date;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,7 @@ public class OperationsTest {
 
     public static final String VALID_DATE = "2021-12-21T17:36:09.541+00:00";
     public static final String TYPE_PROFILE = "21.T11148/076759916209e5d62bd5";
+    public static final String TYPE_DOTYPE = "21.T11148/1c699a5d1b4ad3ba4956";
 
     @Autowired
     private ITypingService typingService;
@@ -87,6 +90,16 @@ public class OperationsTest {
         pidRecord.addEntry(TYPE_PROFILE, "", "21.T11148/b9b76f887845e32d29f7");
         Optional<Date> date = typingService.getOperations().findDateModified(pidRecord);
         assertTrue(date.isEmpty());
+    }
+
+    @Test
+    void testFindDigitalObjectTypesSuccess() throws IOException {
+        PIDRecord pidRecord = new PIDRecord();
+        String myType = "my/type";
+        pidRecord.addEntry(TYPE_DOTYPE, "", myType);
+        pidRecord.addEntry(TYPE_DOTYPE, "", myType + "2");
+        Set<String> doTypes = typingService.getOperations().findDigitalObjectTypes(pidRecord);
+        assertEquals(2, doTypes.size());
     }
 
     @Test
