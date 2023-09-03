@@ -210,6 +210,7 @@ public class TypeRegistry implements ITypeRegistry {
 
         LOG.trace("Finalizing and returning type definition.");
         properties.keySet().forEach(pd -> result.addSubType(properties.get(pd)));
+        this.typeCache.put(identifier, result);
         return result;
     }
 }

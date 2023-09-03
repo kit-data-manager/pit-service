@@ -16,12 +16,17 @@
 package edu.kit.datamanager.pit.configuration;
 
 import edu.kit.datamanager.configuration.GenericApplicationProperties;
+import edu.kit.datamanager.pit.pitservice.IValidationStrategy;
+import edu.kit.datamanager.pit.pitservice.impl.EmbeddedStrictValidatorStrategy;
+import edu.kit.datamanager.pit.pitservice.impl.NoValidationStrategy;
+
 import java.net.URL;
 
 import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.validation.annotation.Validated;
 
 /**
@@ -37,14 +42,13 @@ import org.springframework.validation.annotation.Validated;
  * 
  * @author Andreas Pfeil
  */
-@Component
+@Configuration
 @Validated
 public class ApplicationProperties extends GenericApplicationProperties {
 
   public enum IdentifierSystemImpl {
     IN_MEMORY,
     LOCAL,
-    HANDLE_REST,
     HANDLE_PROTOCOL;
   }
 
@@ -60,6 +64,15 @@ public class ApplicationProperties extends GenericApplicationProperties {
   @Value("${pit.validation.strategy:embedded-strict}")
   @NotNull
   private ValidationStrategy validationStrategy = ValidationStrategy.EMBEDDED_STRICT;
+
+  @Bean
+  public IValidationStrategy defaultValidationStrategy() {
+    IValidationStrategy defaultStrategy = new NoValidationStrategy();
+    if (this.validationStrategy == ValidationStrategy.EMBEDDED_STRICT) {
+      defaultStrategy = new EmbeddedStrictValidatorStrategy();
+    }
+    return defaultStrategy;
+  }
 
   public enum StorageStrategy {
     // Only store PIDs which have been created or modified using this instance

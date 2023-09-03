@@ -17,7 +17,7 @@ public class SpringTestHelper {
             .getBeansOfType(classType)
             .values()
             .size();
-        assertEquals(propertyInstanceAmount, 1);
+        assertEquals(1, propertyInstanceAmount);
     }
 
     public void assertNoBeanInstanceOf(Class<?> classType) {
@@ -25,6 +25,6 @@ public class SpringTestHelper {
             .getBeansOfType(classType)
             .values()
             .size();
-        assertEquals(propertyInstanceAmount, 0);
+        assertEquals(0, propertyInstanceAmount);
     }
 }

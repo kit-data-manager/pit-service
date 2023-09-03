@@ -1,12 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package edu.kit.datamanager.pit.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import edu.kit.datamanager.entities.EtagSupport;
 import edu.kit.datamanager.pit.pidsystem.impl.local.PidDatabaseObject;
 
 import java.util.ArrayList;
@@ -15,10 +11,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.Set;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
 
 /**
  * The internal representation for a PID record, offering methods to manipulate
@@ -28,12 +22,9 @@ import lombok.ToString;
  * communication or representation for the outside. In contrast, this is the
  * internal representation offering methods for manipulation.
  */
-@ToString
-@Getter
-@Setter
-public class PIDRecord {
+public class PIDRecord implements EtagSupport {
 
-    private String pid;
+    private String pid = "";
 
     private Map<String, List<PIDRecordEntry>> entries = new HashMap<>();
 
@@ -76,6 +67,33 @@ public class PIDRecord {
         return this;
     }
 
+    public String getPid() {
+        return pid;
+    }
+
+    public void setPid(String pid) {
+        this.pid = pid;
+    }
+
+    public Map<String, List<PIDRecordEntry>> getEntries() {
+        return entries;
+    }
+
+    @JsonIgnore
+    public Set<SimplePair> getSimpleEntries() {
+        return this.entries
+                .entrySet()
+                .stream()
+                .flatMap(
+                        entry -> entry.getValue().stream()
+                                .map(complexPair -> new SimplePair(complexPair.getKey(), complexPair.getValue())))
+                .collect(Collectors.toSet());
+    }
+
+    public void setEntries(Map<String, List<PIDRecordEntry>> entries) {
+        this.entries = entries;
+    }
+
     /**
      * Adds a new key-name-value triplet.
      * 
@@ -91,12 +109,10 @@ public class PIDRecord {
         entry.setKey(propertyIdentifier);
         entry.setName(propertyName);
         entry.setValue(propertyValue);
-        List<PIDRecordEntry> entryList = this.entries.get(propertyIdentifier);
-        if (entryList == null) {
-            entryList = new ArrayList<>();
-            entries.put(propertyIdentifier, entryList);
-        }
-        entryList.add(entry);
+
+        this.entries
+            .computeIfAbsent(propertyIdentifier, key -> new ArrayList<>())
+            .add(entry);
     }
 
     /**
@@ -107,11 +123,12 @@ public class PIDRecord {
      */
     @JsonIgnore
     public void setPropertyName(String propertyIdentifier, String name) {
-          List<PIDRecordEntry> pe = entries.get(propertyIdentifier);
-        if (pe == null) {
-            throw new IllegalArgumentException("Property identifier not listed in this record: " + propertyIdentifier);
+        List<PIDRecordEntry> propertyEntries = this.entries.get(propertyIdentifier);
+        if (propertyEntries == null) {
+            throw new IllegalArgumentException(
+                "Property identifier not listed in this record: " + propertyIdentifier);
         }
-        for (PIDRecordEntry entry : pe) {
+        for (PIDRecordEntry entry : propertyEntries) {
             entry.setName(name);
         }
     }
@@ -143,23 +160,21 @@ public class PIDRecord {
     }
 
     /**
-     * Checks if all mandatory properties of a type (or profile) are available in
-     * this PID record.
-     *
-     * @param typeDef the given type or profile definition.
-     * @return true if all mandatory properties of the type are present.
+     * Returns all missing mandatory attributes from the given Profile, which are not
+     * present in this record.
+     * 
+     * @param profile the given Profile definition.
+     * @return all missing mandatory attributes.
      */
-    public boolean checkTypeConformance(edu.kit.datamanager.pit.domain.TypeDefinition typeDef) {
-        // TODO Validation should be externalized, so validation strategies can be exchanged.
-        // TODO Validation should be kept in one place, e.g. a special module.
-        boolean conf = true;
-        for (String p : typeDef.getAllProperties()) {
-            if (!typeDef.getSubTypes().get(p).isOptional() && !entries.containsKey(p)) {
-                conf = false;
-                break;
+    public Collection<String> getMissingMandatoryTypesOf(TypeDefinition profile) {
+        Collection<String> missing = new ArrayList<>();
+        for (TypeDefinition td : profile.getSubTypes().values()) {
+            String typePid = td.getIdentifier();
+            if (!td.isOptional() && !this.entries.containsKey(typePid)) {
+                missing.add(typePid);
             }
         }
-        return conf;
+        return missing;
     }
 
     /**
@@ -208,7 +223,8 @@ public class PIDRecord {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((pid == null) ? 0 : pid.hashCode());
-        result = prime * result + ((entries == null) ? 0 : entries.hashCode());
+        Set<SimplePair> simpleEntries = this.getSimpleEntries();
+        result = prime * result + ((simpleEntries == null) ? 0 : simpleEntries.hashCode());
         return result;
     }
 
@@ -225,28 +241,33 @@ public class PIDRecord {
         if (getClass() != obj.getClass()) {return false;}
 
         PIDRecord other = (PIDRecord) obj;
-        if (pid == null) {
-            if (other.pid != null) {return false;}
-        } else if (!pid.equals(other.pid)) {
+        boolean isThisPidEmpty = pid == null || pid.isBlank();
+        boolean isOtherPidEmpty = other.pid == null || other.pid.isBlank();
+        boolean isBothPidEmpty = isThisPidEmpty && isOtherPidEmpty;
+        boolean equalPIDs = isBothPidEmpty || (this.pid != null && this.pid.equals(other.pid));
+
+        if (!equalPIDs) {
             return false;
         }
 
-        if (entries == null) {
-            return other.entries == null;
-        } else {
-            // Equal means:
-            // 1. have the same set of keys
-            boolean isEqual = this.entries.keySet().equals(other.getEntries().keySet());
-            if (!isEqual) {return false;}
-            // 2. for each key, have the same values (order does not matter)
-            isEqual &= this.entries.values().stream()
-                .flatMap(List<PIDRecordEntry>::stream)
-                .filter(entry -> other.entries.get(entry.getKey()).stream()
-                    .filter(otherEntry -> otherEntry.getValue().equals(entry.getValue()))
-                    .count() == 0 // keep key-value-pairs with values not present in `other`.
-                )
-                .count() == 0; // there should be no pairs with values which are not available in `other`.
-            return isEqual;
-        }
+        // this ignores attributes order, names, and even duplicates
+        return this.getSimpleEntries().equals(other.getSimpleEntries());
+    }
+
+    @Override
+    public String toString() {
+        return "PIDRecord [pid=" + pid + ", entries=" + entries + "]";
+    }
+
+    /**
+     * Calculates an etag for a record.
+     * 
+     * @return an etag, which is independent of any order or duplicates in the
+     *         entries.
+     */
+    @JsonIgnore
+    @Override
+    public String getEtag() {
+        return Integer.toString(this.hashCode());
     }
 }

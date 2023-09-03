@@ -23,8 +23,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.FetchType;
@@ -54,21 +56,101 @@ public class PidRecordElasticWrapper {
     @Field(type = FieldType.Date, format = DateFormat.basic_date_time)
     private Date lastUpdate;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    private Set<String> supportedTypes = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    private Set<String> supportedLocations = new HashSet<>();
+
     @Field(type = FieldType.Text)
     private List<String> read = new ArrayList<>();
 
-    public PidRecordElasticWrapper(PIDRecord pidRecord, Operations dateOperations) {
+    protected PidRecordElasticWrapper() {
+        // for PidRecordElasticRepository
+    }
+
+    public PidRecordElasticWrapper(PIDRecord pidRecord, Operations recordOperations) {
         pid = pidRecord.getPid();
         PidDatabaseObject simple = new PidDatabaseObject(pidRecord);
         this.attributes = simple.getEntries();
         this.read.add("anonymousUser");
 
+        this.supportedTypes = recordOperations.findSupportedTypes(pidRecord);
+        this.supportedLocations = recordOperations.findSupportedLocations(pidRecord);
+        
         try {
-            this.created = dateOperations.findDateCreated(pidRecord).orElse(null);
-            this.lastUpdate = dateOperations.findDateModified(pidRecord).orElse(null);
+            this.created = recordOperations.findDateCreated(pidRecord).orElse(null);
+            this.lastUpdate = recordOperations.findDateModified(pidRecord).orElse(null);
         } catch (IOException e) {
             LOG.error("Could not retrieve date from record (pid: " + pidRecord.getPid() + ").", e);
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Generated with Lombok
+     */
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((pid == null) ? 0 : pid.hashCode());
+        result = prime * result + ((attributes == null) ? 0 : attributes.hashCode());
+        result = prime * result + ((created == null) ? 0 : created.hashCode());
+        result = prime * result + ((lastUpdate == null) ? 0 : lastUpdate.hashCode());
+        result = prime * result + ((supportedTypes == null) ? 0 : supportedTypes.hashCode());
+        result = prime * result + ((supportedLocations == null) ? 0 : supportedLocations.hashCode());
+        result = prime * result + ((read == null) ? 0 : read.hashCode());
+        return result;
+    }
+
+    /**
+     * Generated with Lombok
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        PidRecordElasticWrapper other = (PidRecordElasticWrapper) obj;
+        if (pid == null) {
+            if (other.pid != null)
+                return false;
+        } else if (!pid.equals(other.pid))
+            return false;
+        if (attributes == null) {
+            if (other.attributes != null)
+                return false;
+        } else if (!attributes.equals(other.attributes))
+            return false;
+        if (created == null) {
+            if (other.created != null)
+                return false;
+        } else if (!created.equals(other.created))
+            return false;
+        if (lastUpdate == null) {
+            if (other.lastUpdate != null)
+                return false;
+        } else if (!lastUpdate.equals(other.lastUpdate))
+            return false;
+        if (supportedTypes == null) {
+            if (other.supportedTypes != null)
+                return false;
+        } else if (!supportedTypes.equals(other.supportedTypes))
+            return false;
+        if (supportedLocations == null) {
+            if (other.supportedLocations != null)
+                return false;
+        } else if (!supportedLocations.equals(other.supportedLocations))
+            return false;
+        if (read == null) {
+            if (other.read != null)
+                return false;
+        } else if (!read.equals(other.read))
+            return false;
+        return true;
     }
 }

@@ -21,7 +21,7 @@ import org.springframework.validation.annotation.Validated;
 )
 public class HandleProtocolProperties {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HandleSystemRESTProperties.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HandleProtocolProperties.class);
 
     public HandleProtocolProperties() {
         LOG.info("Parse HANDLE_PROTOCOL configuration details.");

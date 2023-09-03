@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-
+import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.configuration.HandleProtocolProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
@@ -114,10 +114,10 @@ public class IIdentifierSystemQueryTest {
     @ParameterizedTest
     @MethodSource("implProvider")
     public void queryPropertyOfNonexistent(IIdentifierSystem impl, String pid, String pid_nonexist) throws IOException {
-        assertThrows(IOException.class, () -> {
-            TypeDefinition type = new TypeDefinition();
-            type.setIdentifier("Nonexistent_Property");
-            type.setDescription("FakeType for testing. Does not exist and query should fail somehow.");
+        TypeDefinition type = new TypeDefinition();
+        type.setIdentifier("Nonexistent_Property");
+        type.setDescription("FakeType for testing. Does not exist and query should fail somehow.");
+        assertThrows(PidNotFoundException.class, () -> {
             impl.queryProperty(pid_nonexist, type);
         });
     }

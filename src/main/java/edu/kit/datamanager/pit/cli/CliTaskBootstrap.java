@@ -11,7 +11,9 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import edu.kit.datamanager.entities.messaging.PidRecordMessage;
+import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
+import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticRepository;
@@ -79,7 +81,7 @@ public class CliTaskBootstrap implements ICliTask {
                         LOG.info("Store PID {} in Elasticsearch.", known.getPid());
                         PidRecordElasticWrapper wrapper = new PidRecordElasticWrapper(rec, typingService.getOperations());
                         elastic.save(wrapper);
-                    } catch (IOException e) {
+                    } catch (PidNotFoundException | ExternalServiceException e) {
                         LOG.error("Failed to query PID {}.", known.getPid(), e);
                     }
                 });

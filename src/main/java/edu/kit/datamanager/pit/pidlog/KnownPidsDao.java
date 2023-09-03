@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 
 /**
  * Object to access known PIDs from the database.
@@ -18,6 +19,9 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
  * 
  * as well as the general concept documented in
  * https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#repositories.core-concepts
+ * 
+ * There is a introduction to a more high-level query language (JPQL) at
+ * https://www.baeldung.com/spring-data-jpa-query
  */
 public interface KnownPidsDao extends JpaRepository<KnownPid, String>, JpaSpecificationExecutor<KnownPid> {
     Optional<KnownPid> findByPid(String pid);
@@ -41,4 +45,10 @@ public interface KnownPidsDao extends JpaRepository<KnownPid, String>, JpaSpecif
     long countDistinctPidsByCreatedBetween(Instant from, Instant to);
 
     long countDistinctPidsByModifiedBetween(Instant from, Instant to);
+
+    @Query("SELECT DISTINCT(k) FROM KnownPid k WHERE ?1 MEMBER OF k.supportedLocations")
+    Collection<KnownPid> findBySupportedLocationsContain(String location);
+
+    @Query("SELECT DISTINCT(k) FROM KnownPid k WHERE ?1 MEMBER OF k.supportedTypes")
+    Collection<KnownPid> findBySupportedTypesContain(String type);
 }

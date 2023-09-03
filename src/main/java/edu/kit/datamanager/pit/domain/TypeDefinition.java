@@ -49,9 +49,7 @@ public class TypeDefinition {
     public Set<String> getAllProperties() {
         Set<String> props = new HashSet<>();
         Set<Entry<String, TypeDefinition>> entries = subTypes.entrySet();
-        entries.forEach((entry) -> {
-            props.add(entry.getKey());
-        });
+        entries.forEach(entry -> props.add(entry.getKey()));
 
         return props;
     }
@@ -72,8 +70,6 @@ public class TypeDefinition {
      * @return true if the given value is valid accodting to this type.
      */
     public boolean validate(String document) {
-        // TODO Validation should be externalized, so validation strategies can be exchanged.
-        // TODO Validation should be kept in one place, e.g. a special module.
         LOG.trace("Performing validate({}).", document);
         if (jsonSchema != null) {
             LOG.trace("Using schema-based validation.");

@@ -8,6 +8,8 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
@@ -31,10 +33,99 @@ public class Operations {
         "21.T11148/397d831aa3a9d18eb52c"
     };
 
+    private static final List<String> KNOWN_DIGITAL_OBJECT_TYPE_ATTRIBUTES = List.of(
+        "21.T11148/1c699a5d1b4ad3ba4956"
+    );
+
+    private static final List<String> KNOWN_SUPPORTED_TYPES = List.of(
+        "21.T11148/2694e4a7a5a00d44e62b"
+    );
+
+    private static final List<String> KNOWN_SUPPORTED_LOCATIONS = List.of();
+
     private ITypingService typingService;
 
     public Operations(ITypingService typingService) {
         this.typingService = typingService;
+    }
+
+    public Set<String> findDigitalObjectTypes(PIDRecord pidRecord) throws IOException {
+        Set<String> doTypes = KNOWN_DIGITAL_OBJECT_TYPE_ATTRIBUTES
+            .stream()
+            .map(pidRecord::getPropertyValues)
+            .map(Arrays::asList)
+            .flatMap(List<String>::stream)
+            .collect(Collectors.toSet());
+        if (!doTypes.isEmpty()) {
+            return doTypes;
+        }
+
+        /* TODO try to find types extending or relating otherwise to known types
+         *      (currently not supported by our TypeDefinition) */
+        // we need to resolve types without streams to forward possible exceptions
+        Collection<TypeDefinition> resolvedAttributeDescriptions = new ArrayList<>();
+        for (String attributePid : pidRecord.getPropertyIdentifiers()) {
+            if (this.typingService.isIdentifierRegistered(attributePid)) {
+                TypeDefinition type = this.typingService.describeType(attributePid);
+                resolvedAttributeDescriptions.add(type);
+            }
+        }
+
+        /*
+         * as a last fallback, try find types with human readable names containing
+         * "digitalObjectType".
+         * 
+         * This can be removed as soon as we have some default FAIR DO types new type
+         * definitions can refer to (e.g. "extend" them or declare the same meaning as
+         * our known types, see above)
+         */
+        return resolvedAttributeDescriptions
+            .stream()
+            .filter(type -> type.getName().equals("digitalObjectType"))
+            .map(type -> pidRecord.getPropertyValues(type.getIdentifier()))
+            .map(Arrays::asList)
+            .flatMap(List<String>::stream)
+            .collect(Collectors.toSet());
+    }
+
+    /**
+     * Tries to get supported types. Usually, this property only exists for FAIR DOs
+     * representing operations.
+     * 
+     * Strategy: - try to get it from known "dateModified" types
+     * 
+     * Semantic reasoning in some sense is planned but not yet supported.
+     * 
+     * @param pidRecord the record to extract the information from.
+     * @return the extracted "supported types", if any.
+     */
+    public Set<String> findSupportedTypes(PIDRecord pidRecord) {
+        return KNOWN_SUPPORTED_TYPES
+            .stream()
+            .map(pidRecord::getPropertyValues)
+            .map(Arrays::asList)
+            .flatMap(List<String>::stream)
+            .collect(Collectors.toSet());
+    }
+
+    /**
+     * Tries to get supported types. Usually, this property only exists for FAIR DOs
+     * representing operations.
+     * 
+     * Strategy: - try to get it from known "dateModified" types
+     * 
+     * Semantic reasoning in some sense is planned but not yet supported.
+     * 
+     * @param pidRecord the record to extract the information from.
+     * @return the extracted "supported locations", if any.
+     */
+    public Set<String> findSupportedLocations(PIDRecord pidRecord) {
+        return KNOWN_SUPPORTED_LOCATIONS
+            .stream()
+            .map(pidRecord::getPropertyValues)
+            .map(Arrays::asList)
+            .flatMap(List<String>::stream)
+            .collect(Collectors.toSet());
     }
 
     /**

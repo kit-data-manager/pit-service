@@ -24,7 +24,6 @@ import org.springframework.web.context.WebApplicationContext;
 
 import edu.kit.datamanager.pit.RecordTestHelper;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
-import edu.kit.datamanager.pit.configuration.ApplicationProperties.ValidationStrategy;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
@@ -33,6 +32,7 @@ import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 import edu.kit.datamanager.pit.pidsystem.impl.local.LocalPidSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
+import edu.kit.datamanager.pit.pitservice.impl.NoValidationStrategy;
 
 // org.springframework.mock is for unit testing
 // Source: https://docs.spring.io/spring-framework/docs/current/reference/html/testing.html
@@ -50,7 +50,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 
 import java.time.Instant;
@@ -105,7 +104,7 @@ public class RestWithLocalPidSystemTest {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
         this.mapper = this.webApplicationContext.getBean("OBJECT_MAPPER_BEAN", ObjectMapper.class);
         this.knownPidsDao.deleteAll();
-        this.appProps.setValidationStrategy(ValidationStrategy.EMBEDDED_STRICT);
+        this.typingService.setValidationStrategy(this.appProps.defaultValidationStrategy());
     }
 
     @Test
@@ -148,7 +147,7 @@ public class RestWithLocalPidSystemTest {
                     .accept(MediaType.ALL)
             )
             .andDo(MockMvcResultHandlers.print())
-            .andExpect(MockMvcResultMatchers.status().isConflict());
+            .andExpect(MockMvcResultMatchers.status().isBadRequest());
         // we store PIDs only if the PID was created successfully
         assertEquals(0, this.knownPidsDao.count());
 
@@ -182,7 +181,7 @@ public class RestWithLocalPidSystemTest {
     @DisplayName("Testing PID Records with usual/larger size, with the Local PID system (in-memory db).")
     public void testExtensiveRecord() throws Exception {
         // create mockup of a large record. It contains non-registered PIDs and can not be validated.
-        this.appProps.setValidationStrategy(ValidationStrategy.NONE_DEBUG);
+        this.typingService.setValidationStrategy(new NoValidationStrategy());
         // as we use an in-memory db for testing, lets not make it too large.
         int numAttributes = 100;
         int numValues = 100;
@@ -201,10 +200,11 @@ public class RestWithLocalPidSystemTest {
 
     @Test
     public void testUpdateRecord() throws Exception {
-        PIDRecord record = this.createSomeRecord();
-        record.getEntries().get("21.T11148/b8457812905b83046284").get(0).setValue("https://example.com/anotherUrlAsBefore");
-        PIDRecord updatedRecord = this.updateRecord(record);
-        assertEquals(record, updatedRecord);
+        PIDRecord original = this.createSomeRecord();
+        PIDRecord modified = ApiMockUtils.clone(original);
+        modified.getEntries().get("21.T11148/b8457812905b83046284").get(0).setValue("https://example.com/anotherUrlAsBefore");
+        PIDRecord updatedRecord = this.updateRecord(original, modified);
+        assertEquals(modified, updatedRecord);
     }
 
     @Test
@@ -398,19 +398,9 @@ public class RestWithLocalPidSystemTest {
      * @throws Exception if any assumption breaks. Do not catch, let your test fail
      *                   if this happens.
      */
-    PIDRecord updateRecord(PIDRecord record) throws Exception {
-        assertFalse(record.getPid().isEmpty());
-        MvcResult updated = this.mockMvc
-                .perform(
-                    put("/api/v1/pit/pid/" + record.getPid())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .characterEncoding("utf-8")
-                        .content(mapper.writeValueAsString(record))
-                        .accept(MediaType.ALL)
-                )
-                .andDo(MockMvcResultHandlers.print())
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andReturn();
+    PIDRecord updateRecord(PIDRecord oldRecord, PIDRecord newRecord) throws Exception {
+        assertFalse(newRecord.getPid().isEmpty());
+        MvcResult updated = ApiMockUtils.updateRecordAndReturnMvcResult(mockMvc, oldRecord, newRecord);
             
         String body = updated.getResponse().getContentAsString();
         PIDRecord updatedRecord = mapper.readValue(body, PIDRecord.class);
@@ -423,7 +413,7 @@ public class RestWithLocalPidSystemTest {
     }
 
     /**
-     * Resolves a record and does make some generic tests. This is a reusable test
+     * Resolves a newRecord and does make some generic tests. This is a reusable test
      * component.
      * 
      * @param createdPid
