@@ -6,15 +6,16 @@
 
 package edu.kit.datamanager.pit.web.doip;
 
+import java.io.IOException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -26,7 +27,17 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import edu.kit.datamanager.pit.common.ExternalServiceException;
+import edu.kit.datamanager.pit.common.PidNotFoundException;
+import edu.kit.datamanager.pit.configuration.ApplicationProperties;
+import edu.kit.datamanager.pit.configuration.PidGenerationProperties;
+import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticRepository;
+import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
+import edu.kit.datamanager.pit.pidlog.KnownPid;
+import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
+import edu.kit.datamanager.service.IMessagingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -51,22 +62,40 @@ public class DoipOverHttp {
     private static final Logger LOGGER = LoggerFactory.getLogger(DoipOverHttp.class);
 
     private final String SELF_IDENTIFIER_FALLBACK = "self";
-    private final Collection<DoipOperationId> SERVICE_OPERATIONS = List.of(
+    private final Collection<String> SERVICE_OPERATIONS = Set.of(
         //DoipOperationId.OP_HELLO,
         //DoipOperationId.OP_CREATE,
         //DoipOperationId.OP_RETRIEVE,
         //DoipOperationId.OP_SEARCH,
-        DoipOperationId.OP_LIST
+        DoipOperationId.OP_LIST.value()
     );
-    private final Collection<DoipOperationId> FAIRDO_OPERATIONS = List.of(
+    private final Collection<String> FAIRDO_OPERATIONS = Set.of(
         //DoipOperationId.OP_UPDATE,
         //DoipOperationId.OP_DELETE,
-        DoipOperationId.OP_LIST
+        DoipOperationId.OP_LIST.value()
         //DoipOperationId.OP_VALIDATE
     );
 
     @Autowired
-    ITypingService pit;
+    private ApplicationProperties applicationProps;
+
+    @Autowired
+    protected ITypingService pit;
+
+    @Autowired
+    private IMessagingService messagingService;
+
+    @Autowired
+    private KnownPidsDao localPidStorage;
+
+    @Autowired
+    private Optional<PidRecordElasticRepository> elastic;
+
+    @Autowired
+    private PidSuffixGenerator suffixGenerator;
+
+    @Autowired
+    private PidGenerationProperties pidGenerationProperties;
 
     public DoipResponse op_server_create(
             final DoipOperationId operationId,
@@ -150,17 +179,35 @@ public class DoipOverHttp {
     }
 
     private ResponseEntity<DoipResponse> operation_fairdo_list(
-        String targetId,
-        DoipOperationId operationId,
+        String targetId, // is fairdo to get the known operations for
+        DoipOperationId operationId, // is OP_LIST
         DoipRequest body,
         JsonNode attributes,
         String clientId
     ){
         ObjectMapper mapper = new ObjectMapper();
-        DoipResponse r = new DoipResponse(DoipStatus.OPERATION_SUCCESS);
-        // TODO add other known operations
-        r.setOutput(mapper.valueToTree(FAIRDO_OPERATIONS));
-        return new ResponseEntity<>(r, r.getDoipStatus().getHttpStatus());
+
+        Collection<String> availableOperations = SERVICE_OPERATIONS;
+        try {
+            PIDRecord pidRecord = pit.queryAllProperties(targetId);
+            pit.getOperations().findDigitalObjectTypes(pidRecord)
+                .stream()
+                .map(localPidStorage::findBySupportedTypesContain)
+                .flatMap(Collection::stream)
+                .map(KnownPid::getPid)
+                .forEach(availableOperations::add);
+        } catch (PidNotFoundException noPid) {
+            return new DoipResponse(DoipStatus.DIGITAL_OBJECT_NOT_FOUND).asResponseEntity();
+        } catch (ExternalServiceException connectionIssue) {
+            return new DoipResponse(DoipStatus.OTHER).asResponseEntity();
+        } catch (IOException otherConnectionIssue) {
+            // Do nothing and go on.
+            // This only happens when trying alternative methods in record operations.
+        }
+
+        DoipResponse response = new DoipResponse(DoipStatus.OPERATION_SUCCESS);
+        response.setOutput(mapper.valueToTree(availableOperations));
+        return response.asResponseEntity();
     }
 
     private ResponseEntity<DoipResponse> operation_service_list(
@@ -173,7 +220,7 @@ public class DoipOverHttp {
         ObjectMapper mapper = new ObjectMapper();
         DoipResponse r = new DoipResponse(DoipStatus.OPERATION_SUCCESS);
         r.setOutput(mapper.valueToTree(SERVICE_OPERATIONS));
-        return new ResponseEntity<>(r, r.getDoipStatus().getHttpStatus());
+        return r.asResponseEntity();
 	}
 
 }

@@ -33,6 +33,10 @@ public class Operations {
         "21.T11148/397d831aa3a9d18eb52c"
     };
 
+    private static final List<String> KNOWN_DIGITAL_OBJECT_TYPE_ATTRIBUTES = List.of(
+        "21.T11148/1c699a5d1b4ad3ba4956"
+    );
+
     private static final List<String> KNOWN_SUPPORTED_TYPES = List.of(
         "21.T11148/2694e4a7a5a00d44e62b"
     );
@@ -43,6 +47,45 @@ public class Operations {
 
     public Operations(ITypingService typingService) {
         this.typingService = typingService;
+    }
+
+    public Set<String> findDigitalObjectTypes(PIDRecord pidRecord) throws IOException {
+        Set<String> doTypes = KNOWN_DIGITAL_OBJECT_TYPE_ATTRIBUTES
+            .stream()
+            .map(pidRecord::getPropertyValues)
+            .map(Arrays::asList)
+            .flatMap(List<String>::stream)
+            .collect(Collectors.toSet());
+        if (!doTypes.isEmpty()) {
+            return doTypes;
+        }
+
+        /* TODO try to find types extending or relating otherwise to known types
+         *      (currently not supported by our TypeDefinition) */
+        // we need to resolve types without streams to forward possible exceptions
+        Collection<TypeDefinition> resolvedAttributeDescriptions = new ArrayList<>();
+        for (String attributePid : pidRecord.getPropertyIdentifiers()) {
+            if (this.typingService.isIdentifierRegistered(attributePid)) {
+                TypeDefinition type = this.typingService.describeType(attributePid);
+                resolvedAttributeDescriptions.add(type);
+            }
+        }
+
+        /*
+         * as a last fallback, try find types with human readable names containing
+         * "digitalObjectType".
+         * 
+         * This can be removed as soon as we have some default FAIR DO types new type
+         * definitions can refer to (e.g. "extend" them or declare the same meaning as
+         * our known types, see above)
+         */
+        return resolvedAttributeDescriptions
+            .stream()
+            .filter(type -> type.getName().equals("digitalObjectType"))
+            .map(type -> pidRecord.getPropertyValues(type.getIdentifier()))
+            .map(Arrays::asList)
+            .flatMap(List<String>::stream)
+            .collect(Collectors.toSet());
     }
 
     /**
