@@ -301,7 +301,7 @@ public interface ITypingRestResource {
         path = "/pid/**",
         produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
     )
-    @Operation(summary = "Get the record of the given PID.", description = "Get the record to the given PID, if it exists.")
+    @Operation(summary = "Get the record of the given PID.", description = "Get the record to the given PID, if it exists. No validation is performed by default.")
     @ApiResponses(value = {
         @ApiResponse(
             responseCode = "200",
@@ -311,11 +311,16 @@ public interface ITypingRestResource {
                 @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
             }
         ),
+        @ApiResponse(responseCode = "400", description = "Validation failed. See body for details.", content = @Content(mediaType = "text/plain")),
         @ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = "text/plain")),
         @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = "text/plain")),
         @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
     })
     public ResponseEntity<PIDRecord> getRecord (
+            @Parameter(description = "If true, validation will be run on the resolved PID. On failure, an error will be returned. On success, the PID will be resolved.", required = false)
+            @RequestParam(name = "validation", required = false, defaultValue = "false")
+            boolean validation,
+
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder

@@ -120,10 +120,10 @@ public interface IIdentifierSystem {
      */
     public default String registerPID(final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException, RecordValidationException {
         if (pidRecord.getPid() == null) {
-            throw new RecordValidationException("<null>", "PID must not be null.");
+            throw new RecordValidationException(pidRecord, "PID must not be null.");
         }
         if (pidRecord.getPid().isEmpty()) {
-            throw new RecordValidationException("<empty>", "PID must not be empty.");
+            throw new RecordValidationException(pidRecord, "PID must not be empty.");
         }
         pidRecord.setPid(
             appendPrefixIfAbsent(pidRecord.getPid())

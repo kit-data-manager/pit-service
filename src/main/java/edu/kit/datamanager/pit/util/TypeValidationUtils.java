@@ -39,7 +39,7 @@ public class TypeValidationUtils {
         Collection<String> missing = pidRecord.getMissingMandatoryTypesOf(profile);
         if (!missing.isEmpty()) {
             throw new RecordValidationException(
-                    pidRecord.getPid(),
+                    pidRecord,
                     "Missing mandatory types: " + missing);
         }
     }

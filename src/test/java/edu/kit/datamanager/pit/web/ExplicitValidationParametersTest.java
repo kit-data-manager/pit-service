@@ -21,6 +21,7 @@ import edu.kit.datamanager.pit.RecordTestHelper;
 import edu.kit.datamanager.pit.SpringTestHelper;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.SimplePidRecord;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
 import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
@@ -36,21 +37,27 @@ import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 
 /**
- * This is a dedicated test for the dryrun parameters available for the REST interface.
+ * This is a dedicated test for the validation/dryrun parameters, available for the REST interface.
  * 
  * It ensures that:
  * - validation is being executed
  * - no data is stored
  * 
  * It uses the in-memory implementation for simplicity.
+ * 
+ * Explicit validation parameters are:
+ * - dryrun=true for creating a PID
+ * - validation=true for resolving a PID
  */
 // Default preparation foo for mockMVC
 @AutoConfigureMockMvc
@@ -59,7 +66,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 // Set the in-memory implementation
 @TestPropertySource("/test/application-test.properties")
 @ActiveProfiles("test")
-public class DryRunParameterTest {
+public class ExplicitValidationParametersTest {
 
     static final String EMPTY_RECORD = "{\"pid\": null, \"entries\": {}}";
     static final String RECORD = "{\"entries\":{\"21.T11148/076759916209e5d62bd5\":[{\"key\":\"21.T11148/076759916209e5d62bd5\",\"name\":\"kernelInformationProfile\",\"value\":\"21.T11148/301c6f04763a16f0f72a\"}],\"21.T11148/397d831aa3a9d18eb52c\":[{\"key\":\"21.T11148/397d831aa3a9d18eb52c\",\"name\":\"dateModified\",\"value\":\"2021-12-21T17:36:09.541+00:00\"}],\"21.T11148/8074aed799118ac263ad\":[{\"key\":\"21.T11148/8074aed799118ac263ad\",\"name\":\"digitalObjectPolicy\",\"value\":\"21.T11148/37d0f4689c6ea3301787\"}],\"21.T11148/92e200311a56800b3e47\":[{\"key\":\"21.T11148/92e200311a56800b3e47\",\"name\":\"etag\",\"value\":\"{ \\\"sha256sum\\\": \\\"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\\\" }\"}],\"21.T11148/aafd5fb4c7222e2d950a\":[{\"key\":\"21.T11148/aafd5fb4c7222e2d950a\",\"name\":\"dateCreated\",\"value\":\"2021-12-21T17:36:09.541+00:00\"}],\"21.T11148/b8457812905b83046284\":[{\"key\":\"21.T11148/b8457812905b83046284\",\"name\":\"digitalObjectLocation\",\"value\":\"https://test.repo/file001\"}],\"21.T11148/c692273deb2772da307f\":[{\"key\":\"21.T11148/c692273deb2772da307f\",\"name\":\"version\",\"value\":\"1.0.0\"}],\"21.T11148/c83481d4bf467110e7c9\":[{\"key\":\"21.T11148/c83481d4bf467110e7c9\",\"name\":\"digitalObjectType\",\"value\":\"21.T11148/ManuscriptPage\"}]},\"pid\":\"unregistered-18622\"}";
@@ -80,6 +87,9 @@ public class DryRunParameterTest {
 
     @Autowired
     private KnownPidsDao knownPidsDao;
+
+    @Autowired
+    private InMemoryIdentifierSystem inMemory;
     
     @BeforeEach
     public void setup() throws Exception {
@@ -92,6 +102,7 @@ public class DryRunParameterTest {
     public void checkTestSetup() {
         assertNotNull(this.mockMvc);
         assertNotNull(this.webApplicationContext);
+        assertNotNull(this.inMemory);
         ServletContext servletContext = webApplicationContext.getServletContext();
         assertNotNull(servletContext);
         assertTrue(servletContext instanceof MockServletContext);
@@ -214,5 +225,49 @@ public class DryRunParameterTest {
         
         // we store PIDs only if the PID was created successfully
         assertEquals(0, this.knownPidsDao.count());
+    }
+
+    @Test
+    @DisplayName("Resolve a PID known to be valid, with explicit validation.")
+    public void testResolvingValidRecordWithValidation() throws Exception {
+        this.testExtensiveRecordWithoutDryRun();
+        assertEquals(1, knownPidsDao.count());
+        String validPid = knownPidsDao.findAll().iterator().next().getPid();
+        this.mockMvc
+            .perform(
+                get("/api/v1/pit/pid/" + validPid)
+                    .param("validation", "true")
+                    .accept(SimplePidRecord.CONTENT_TYPE)
+            )
+            .andDo(MockMvcResultHandlers.print())
+            .andExpect(MockMvcResultMatchers.status().isOk());
+    }
+
+    @Test
+    @DisplayName("Resolve a PID known to be invalid, with explicit validation.")
+    public void testResolvingValidRecordWithValidationFail() throws Exception {
+        // note: this test disables validation...
+        this.testExtensiveRecordWithoutDryRun();
+        assertEquals(1, knownPidsDao.count());
+        String validPid = knownPidsDao.findAll().iterator().next().getPid();
+        PIDRecord r = inMemory.queryAllProperties(validPid);
+        String newValue = "someVeryUniqueValue";
+        r.addEntry("something wrong", "", newValue);
+        inMemory.updatePID(r);
+        // ... so we need to re-enable it here:
+        this.typingService.setValidationStrategy(this.appProps.defaultValidationStrategy());
+
+        MvcResult result = this.mockMvc
+            .perform(
+                get("/api/v1/pit/pid/" + validPid)
+                    .param("validation", "true")
+                    .accept(SimplePidRecord.CONTENT_TYPE)
+            )
+            .andDo(MockMvcResultHandlers.print())
+            .andExpect(MockMvcResultMatchers.status().isBadRequest())
+            .andReturn();
+        // The response should contain the invalid record
+        assertTrue(0 < result.getResponse().getContentLength());
+        assertTrue(result.getResponse().getContentAsString().contains(newValue));
     }
 }

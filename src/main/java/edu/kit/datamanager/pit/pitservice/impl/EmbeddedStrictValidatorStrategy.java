@@ -38,7 +38,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
         String profileKey = applicationProps.getProfileKey();
         if (!pidRecord.hasProperty(profileKey)) {
             throw new RecordValidationException(
-                    pidRecord.getPid(),
+                    pidRecord,
                     "Profile attribute not found. Expected key: " + profileKey);
         }
 
@@ -46,7 +46,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
         boolean hasProfile = profilePIDs.length > 0;
         if (!hasProfile) {
             throw new RecordValidationException(
-                    pidRecord.getPid(),
+                    pidRecord,
                     "Profile attribute " + profileKey + " has no values.");
         }
 
@@ -62,7 +62,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
             if (profileDefinition == null) {
                 LOG.error("No type definition found for identifier {}.", profilePID);
                 throw new RecordValidationException(
-                        pidRecord.getPid(),
+                        pidRecord,
                         String.format("No type found for identifier %s.", profilePID));
             }
 
@@ -101,7 +101,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
                 // attributes")
                 // if profile.allowsAdditionalAttributes() {...} else
                 throw new RecordValidationException(
-                        pidRecord.getPid(),
+                        pidRecord,
                         String.format("Attribute %s is not allowed in profile %s",
                                 attributeKey,
                                 profile.getIdentifier()));
@@ -126,7 +126,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
             if (value == null) {
                 LOG.error("'null' record value found for key {}.", attributeKey);
                 throw new RecordValidationException(
-                        pidRecord.getPid(),
+                        pidRecord,
                         String.format("Validation of value %s against type %s failed.",
                                 value,
                                 type.getIdentifier()));
@@ -135,7 +135,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
             if (!type.validate(value)) {
                 LOG.error("Validation of value {} against type {} failed.", value, type.getIdentifier());
                 throw new RecordValidationException(
-                        pidRecord.getPid(),
+                        pidRecord,
                         String.format("Validation of value %s against type %s failed.",
                                 value,
                                 type.getIdentifier()));

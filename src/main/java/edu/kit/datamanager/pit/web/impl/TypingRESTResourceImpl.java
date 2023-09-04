@@ -108,7 +108,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             return ResponseEntity.status(200).build();
         }
         LOG.error("PID record with identifier {} is NOT matching profile with identifier {}.", identifier, profileId);
-        throw new RecordValidationException(identifier,
+        throw new RecordValidationException(pidRecord,
                 "Record with identifier " + identifier + " not matching profile with identifier " + profileId + ".");
     }
 
@@ -142,7 +142,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
 
         LOG.error("PID record with identifier {} is NOT matching type with identifier {}.", identifier, typeId);
-        throw new RecordValidationException(identifier,
+        throw new RecordValidationException(pidRecord,
                 "Record with identifier " + identifier + " not matching type with identifier " + typeId + ".");
     }
 
@@ -206,8 +206,12 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return ResponseEntity.status(HttpStatus.CREATED).eTag(quotedEtag(pidRecord)).body(pidRecord);
     }
 
+    private boolean hasPid(PIDRecord pidRecord) {
+        return pidRecord.getPid() != null && !pidRecord.getPid().isBlank();
+    }
+
     private void setPid(PIDRecord pidRecord) throws IOException {
-        boolean hasCustomPid = pidRecord.getPid() != null && !pidRecord.getPid().isBlank();
+        boolean hasCustomPid = hasPid(pidRecord);
         boolean allowsCustomPids = pidGenerationProperties.isCustomClientPidsEnabled();
 
         if (allowsCustomPids && hasCustomPid) {
@@ -245,9 +249,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         // PID validation
         String pid = getContentPathFromRequest("pid", request);
         String pidInternal = pidRecord.getPid();
-        if (pidInternal != null && !pidInternal.isEmpty() && !pid.equals(pidInternal)) {
+        if (hasPid(pidRecord) && !pid.equals(pidInternal)) {
             throw new RecordValidationException(
-                pid,
+                pidRecord,
                 "PID in record was given, but it was not the same as the PID in the URL. Ignore request, assuming this was not intended.");
         }
         
@@ -335,16 +339,22 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
     @Override
     public ResponseEntity<PIDRecord> getRecord(
+            boolean validation,
+
             final WebRequest request,
             final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder) throws IOException {
+            final UriComponentsBuilder uriBuilder
+    ) throws IOException {
         String pid = getContentPathFromRequest("pid", request);
-        PIDRecord rec = this.typingService.queryAllProperties(pid);
+        PIDRecord pidRecord = this.typingService.queryAllProperties(pid);
         if (applicationProps.getStorageStrategy().storesResolved()) {
             storeLocally(pid, false);
         }
-        this.saveToElastic(rec);
-        return ResponseEntity.ok().eTag(quotedEtag(rec)).body(rec);
+        this.saveToElastic(pidRecord);
+        if (validation) {
+            typingService.validate(pidRecord);
+        }
+        return ResponseEntity.ok().eTag(quotedEtag(pidRecord)).body(pidRecord);
     }
 
     private void saveToElastic(PIDRecord rec) {
