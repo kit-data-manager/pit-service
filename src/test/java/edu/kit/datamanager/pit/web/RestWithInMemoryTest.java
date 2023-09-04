@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import javax.servlet.ServletContext;
@@ -15,7 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.context.WebApplicationContext;
 
 import edu.kit.datamanager.pit.RecordTestHelper;
+import edu.kit.datamanager.pit.SpringTestHelper;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
@@ -108,15 +107,14 @@ public class RestWithInMemoryTest {
         assertNotNull(this.mockMvc);
         assertNotNull(this.webApplicationContext);
         ServletContext servletContext = webApplicationContext.getServletContext();
-        
         assertNotNull(servletContext);
         assertTrue(servletContext instanceof MockServletContext);
-        assertNotNull(webApplicationContext.getBean(ITypingRestResource.class));
-        assertNotNull(webApplicationContext.getBean(InMemoryIdentifierSystem.class));
-        assertThrows(NoSuchBeanDefinitionException.class, () -> {
-            webApplicationContext.getBean(HandleProtocolAdapter.class);
-        });
         assertEquals("false", this.webApplicationContext.getEnvironment().getProperty("repo.messaging.enabled"));
+        
+        SpringTestHelper springTestHelper = new SpringTestHelper(webApplicationContext);
+        springTestHelper.assertSingleBeanInstanceOf(ITypingRestResource.class);
+        springTestHelper.assertSingleBeanInstanceOf(InMemoryIdentifierSystem.class);
+        springTestHelper.assertNoBeanInstanceOf(HandleProtocolAdapter.class);
     }
 
     @Test
