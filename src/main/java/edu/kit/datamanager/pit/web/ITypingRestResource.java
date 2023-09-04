@@ -198,6 +198,10 @@ public interface ITypingRestResource {
     public ResponseEntity<PIDRecord> createPID(
             @RequestBody
             final PIDRecord rec,
+            
+            @Parameter(description = "If true, only validation will be done and no PID will be created. No data will be changed and no services will be notified.", required = false)
+            @RequestParam(name = "dryrun", required = false, defaultValue = "false")
+            boolean dryrun,
 
             final WebRequest request,
             final HttpServletResponse response,
