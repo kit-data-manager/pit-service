@@ -46,6 +46,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -128,12 +129,12 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
 
         LOG.trace("Reading PID record for identifier {}.", identifier);
-        PIDRecord record = typingService.queryAllProperties(identifier);
+        PIDRecord pidRecord = typingService.queryAllProperties(identifier);
         LOG.trace("Validating PID record with identifier {} against type with id {} from request path.", identifier,
                 typeId);
-        if (TypeValidationUtils.isValid(record, typeDef)) {
+        if (TypeValidationUtils.isValid(pidRecord, typeDef)) {
             LOG.trace("PID record with identifier {} is matching type with identifier {}.", identifier, typeId);
-            this.saveToElastic(record);
+            this.saveToElastic(pidRecord);
             if (this.applicationProps.getStorageStrategy().storesResolved()) {
                 this.storeLocally(identifier, false);
             }
@@ -237,14 +238,14 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
     @Override
     public ResponseEntity<PIDRecord> updatePID(
-            PIDRecord record,
+            PIDRecord pidRecord,
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
         // PID validation
         String pid = getContentPathFromRequest("pid", request);
-        String pid_internal = record.getPid();
-        if (pid_internal != null && !pid_internal.isEmpty() && !pid.equals(pid_internal)) {
+        String pidInternal = pidRecord.getPid();
+        if (pidInternal != null && !pidInternal.isEmpty() && !pid.equals(pidInternal)) {
             throw new RecordValidationException(
                 pid,
                 "PID in record was given, but it was not the same as the PID in the URL. Ignore request, assuming this was not intended.");
@@ -258,14 +259,14 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         ControllerUtils.checkEtag(request, existingRecord);
 
         // record validation
-        record.setPid(pid);
-        this.typingService.validate(record);
+        pidRecord.setPid(pid);
+        this.typingService.validate(pidRecord);
 
         // update and send message
-        if (this.typingService.updatePID(record)) {
+        if (this.typingService.updatePID(pidRecord)) {
             // store pid locally
             if (applicationProps.getStorageStrategy().storesModified()) {
-                storeLocally(record.getPid(), true);
+                storeLocally(pidRecord.getPid(), true);
             }
             // distribute pid to other services
             PidRecordMessage message = PidRecordMessage.update(
@@ -274,8 +275,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                     AuthenticationHelper.getPrincipal(),
                     ControllerUtils.getLocalHostname());
             this.messagingService.send(message);
-            this.saveToElastic(record);
-            return ResponseEntity.ok().eTag(quotedEtag(record)).body(record);
+            this.saveToElastic(pidRecord);
+            return ResponseEntity.ok().eTag(quotedEtag(pidRecord)).body(pidRecord);
         } else {
             throw new PidNotFoundException(pid);
         }
@@ -325,7 +326,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
     private String getContentPathFromRequest(String lastPathElement, WebRequest request) {
         String requestedUri = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE,
-                WebRequest.SCOPE_REQUEST);
+                RequestAttributes.SCOPE_REQUEST);
         if (requestedUri == null) {
             throw new CustomInternalServerError("Unable to obtain request URI.");
         }
