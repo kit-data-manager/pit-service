@@ -163,21 +163,21 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
     @Override
     public ResponseEntity<PIDRecord> createPID(
-            PIDRecord record,
+            PIDRecord pidRecord,
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder) throws IOException {
         LOG.info("Creating PID");
 
-        setPid(record);
-        this.typingService.validate(record);
-        String pid = this.typingService.registerPID(record);
+        setPid(pidRecord);
+        this.typingService.validate(pidRecord);
+        String pid = this.typingService.registerPID(pidRecord);
         // store result locally
         if (applicationProps.getStorageStrategy().storesModified()) {
             storeLocally(pid, true);
         }
         // distribute to other services
-        record.setPid(pid);
+        pidRecord.setPid(pid);
         PidRecordMessage message = PidRecordMessage.creation(
                 pid,
                 "", // TODO parameter is depricated and will be removed soon.
@@ -186,10 +186,10 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         try {
             this.messagingService.send(message);
         } catch (Exception e) {
-            LOG.error("Could not notify messaging service about the following message: {}", message.toString());
+            LOG.error("Could not notify messaging service about the following message: {}", message);
         }
-        this.saveToElastic(record);
-        return ResponseEntity.status(HttpStatus.CREATED.value()).eTag(quotedEtag(record)).body(record);
+        this.saveToElastic(pidRecord);
+        return ResponseEntity.status(HttpStatus.CREATED.value()).eTag(quotedEtag(pidRecord)).body(pidRecord);
     }
 
     private void setPid(PIDRecord pidRecord) throws IOException {
