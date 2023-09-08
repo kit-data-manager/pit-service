@@ -84,85 +84,6 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
-    public ResponseEntity<String> isPidMatchingProfile(String identifier,
-            final WebRequest request,
-            final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder) throws IOException {
-        LOG.trace("Performing isPidMatchingProfile({}).", identifier);
-
-        String profileId = getContentPathFromRequest("profile", request);
-        LOG.trace(
-                "Validating PID record with identifier {} against profile with identifier {} from request path.",
-                identifier,
-                profileId
-        );
-
-        PIDRecord pidRecord = this.typingService.queryAllProperties(identifier);
-        this.saveToElastic(pidRecord);
-        if (this.applicationProps.getStorageStrategy().storesResolved()) {
-            this.storeLocally(identifier, false);
-        }
-
-        if (typingService.conformsToType(identifier, profileId)) {
-            LOG.trace("PID record with identifier {} is matching profile with identifier {}.", identifier, profileId);
-            return ResponseEntity.status(200).build();
-        }
-        LOG.error("PID record with identifier {} is NOT matching profile with identifier {}.", identifier, profileId);
-        throw new RecordValidationException(pidRecord,
-                "Record with identifier " + identifier + " not matching profile with identifier " + profileId + ".");
-    }
-
-    @Override
-    public ResponseEntity<String> isResourceMatchingType(String identifier,
-            final WebRequest request,
-            final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder) throws IOException {
-
-        LOG.trace("Performing isResourceMatchingType({}).", identifier);
-        String typeId = getContentPathFromRequest("type", request);
-        LOG.trace("Obtaining type definition for identifier {}.", typeId);
-        TypeDefinition typeDef = typingService.describeType(typeId);
-
-        if (typeDef == null) {
-            LOG.error("No definition found for identifier {}.", typeId);
-            throw new TypeNotFoundException(typeId);
-        }
-
-        LOG.trace("Reading PID record for identifier {}.", identifier);
-        PIDRecord pidRecord = typingService.queryAllProperties(identifier);
-        LOG.trace("Validating PID record with identifier {} against type with id {} from request path.", identifier,
-                typeId);
-        if (TypeValidationUtils.isValid(pidRecord, typeDef)) {
-            LOG.trace("PID record with identifier {} is matching type with identifier {}.", identifier, typeId);
-            this.saveToElastic(pidRecord);
-            if (this.applicationProps.getStorageStrategy().storesResolved()) {
-                this.storeLocally(identifier, false);
-            }
-            return ResponseEntity.ok().build();
-        }
-
-        LOG.error("PID record with identifier {} is NOT matching type with identifier {}.", identifier, typeId);
-        throw new RecordValidationException(pidRecord,
-                "Record with identifier " + identifier + " not matching type with identifier " + typeId + ".");
-    }
-
-    @Override
-    public ResponseEntity<TypeDefinition> getProfile(
-            final WebRequest request,
-            final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder) throws IOException {
-        String profileId = getContentPathFromRequest("profile", request);
-
-        // read profile from type registry
-        TypeDefinition profileDef = typingService.describeType(profileId);
-        if (profileDef == null) {
-            LOG.error("No definition found for identifier {}.", profileId);
-            throw new TypeNotFoundException(profileId);
-        }
-        return ResponseEntity.status(HttpStatus.FOUND.value()).body(profileDef);
-    }
-
-    @Override
     public ResponseEntity<PIDRecord> createPID(
             PIDRecord pidRecord,
             boolean dryrun,
@@ -283,28 +204,6 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             return ResponseEntity.ok().eTag(quotedEtag(pidRecord)).body(pidRecord);
         } else {
             throw new PidNotFoundException(pid);
-        }
-    }
-
-    @Override
-    public ResponseEntity<String> isPidRegistered(
-            final WebRequest request,
-            final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder) throws IOException {
-        String pid = getContentPathFromRequest("pid", request);
-        LOG.trace("Obtained PID {} from request.", pid);
-
-        PIDRecord pidRecord = typingService.queryAllProperties(pid);
-        if (pidRecord != null) {
-            LOG.trace("PID successfully checked.");
-            if (applicationProps.getStorageStrategy().storesResolved()) {
-                this.storeLocally(pid, false);
-            }
-            this.saveToElastic(pidRecord);
-            return ResponseEntity.ok().body("PID is registered.");
-        } else {
-            LOG.error("PID {} not found at configured identifier system.", pid);
-            throw new PidNotFoundException("Identifier with value " + pid + " not found.");
         }
     }
 

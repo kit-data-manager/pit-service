@@ -56,94 +56,6 @@ import org.springframework.data.web.PageableDefault;
 public interface ITypingRestResource {
 
     /**
-     * Check if a certain resource with a given PID is matching a profile. The
-     * profile is identified by its PID provided as path segment(s), whereas the
-     * resource is identified via its PID as request param.
-     * 
-     * Important note: Validation may take up to 30+ seconds. For details, see the
-     * documentation of "POST /pid/".
-     *
-     * @param identifier The resource identifier
-     *
-     * @return either 200 or 400, indicating whether the PID is registered or
-     *         not registered
-     * @throws IOException
-     */
-    @RequestMapping(path = "/profile/**", method = RequestMethod.HEAD)
-    @Operation(summary = "PID matching profile?",
-            description = "Check if the PID record accessible via the provided identifier is matching the profile provided "
-            + "as the last path segment(s). The check only includes the test for mandatory fields according to the profile. For "
-            + "in-depth tests endpoint /type/{identifier} should be used.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Resource is matching the profile."),
-        @ApiResponse(responseCode = "400", description = "Resource is NOT matching the profile.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
-        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
-        @ApiResponse(responseCode = "500", description = "Unexpected server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
-    })
-    public ResponseEntity<String> isPidMatchingProfile(
-            @RequestParam("identifier")
-            String identifier,
-            final WebRequest request,
-            final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder
-    ) throws IOException;
-
-    /**
-     * Check if a certain resource with a given PID is matching a type. The type
-     * is identified by its PID provided as path segment(s), whereas the
-     * resource is identified via its PID as request param.
-     * 
-     * Important note: Validation may take up to 30+ seconds. For details, see the
-     * documentation of "POST /pid/".
-     *
-     * @param identifier The resource identifier
-     *
-     * @return either 200 or 400, indicating whether the PID is registered or
-     *         not registered
-     * @throws IOException
-     */
-    @RequestMapping(path = "/type/**", method = RequestMethod.HEAD)
-    @Operation(summary = "Resource matching type?",
-            description = "Check if the resource accessible via the provided identifier is matching the "
-            + "type provided as the last path segment(s). The check includes the test if all mandatory properties are in the record as well as "
-            + "an in-depth tests of the single elements for matching the sub-type's schema.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Resource is matching the type."),
-        @ApiResponse(responseCode = "400", description = "Resource is NOT matching the type.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
-        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
-        @ApiResponse(responseCode = "500", description = "Unexpected server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
-    })
-    public ResponseEntity<String> isResourceMatchingType(
-            @RequestParam("identifier")
-            String identifier,
-            final WebRequest request,
-            final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder
-    ) throws IOException;
-
-    /**
-     * Get a profile or type by its identifier presented by the last path segment(s).
-     *
-     * @return either 200 or 404, indicating whether the profile is registered
-     * or not registered
-     *
-     * @throws IOException
-     */
-    @GetMapping("/profile/**")
-    @Operation(summary = "Get a profile", description = "Obtain the profile identified by the PID provided as the last path segment(s).")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Found", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = TypeDefinition.class))),
-        @ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
-        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
-        @ApiResponse(responseCode = "500", description = "Unexpected server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
-    })
-    public ResponseEntity<TypeDefinition> getProfile(
-            final WebRequest request,
-            final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder
-    ) throws IOException;
-
-    /**
      * Create a new PID using the record information provided in the request body.
      * The record is expected to contain the identifier of the matching profile.
      * Before creating the record, the record information will be validated against
@@ -265,33 +177,7 @@ public interface ITypingRestResource {
     ) throws IOException;
 
     /**
-     * Check if a certain PID provided as path segment(s) exist.
-     *
-     * @return either 200 or 404, indicating whether the PID is registered or
-     * not registered
-     *
-     * @throws IOException
-     */
-    @RequestMapping(path = "/pid/**", method = RequestMethod.HEAD)
-    @Operation(
-        summary = "Check if the given PID exists.",
-        description = "Check if the PID with the idenfifier provided as the last path segment(s) is registered and resolvable."
-                + "The body will contain a short human readable string, notifying about the result."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Found", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
-        @ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
-        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
-        @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
-    })
-    public ResponseEntity<String> isPidRegistered(
-            final WebRequest request,
-            final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder
-    ) throws IOException;
-
-    /**
-     * Get the record of the given PID.
+     * Get the record of the given PID (or test if it exists).
      *
      * @return the record.
      *
