@@ -75,10 +75,10 @@ public interface ITypingRestResource {
             + "as the last path segment(s). The check only includes the test for mandatory fields according to the profile. For "
             + "in-depth tests endpoint /type/{identifier} should be used.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Resource is matching the profile.", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "400", description = "Resource is NOT matching the profile.", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "500", description = "Unexpected server error. See body for details.", content = @Content(mediaType = "text/plain"))
+        @ApiResponse(responseCode = "200", description = "Resource is matching the profile."),
+        @ApiResponse(responseCode = "400", description = "Resource is NOT matching the profile.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "500", description = "Unexpected server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
     public ResponseEntity<String> isPidMatchingProfile(
             @RequestParam("identifier")
@@ -108,10 +108,10 @@ public interface ITypingRestResource {
             + "type provided as the last path segment(s). The check includes the test if all mandatory properties are in the record as well as "
             + "an in-depth tests of the single elements for matching the sub-type's schema.")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Resource is matching the type.", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "400", description = "Resource is NOT matching the type.", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "500", description = "Unexpected server error. See body for details.", content = @Content(mediaType = "text/plain"))
+        @ApiResponse(responseCode = "200", description = "Resource is matching the type."),
+        @ApiResponse(responseCode = "400", description = "Resource is NOT matching the type.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "500", description = "Unexpected server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
     public ResponseEntity<String> isResourceMatchingType(
             @RequestParam("identifier")
@@ -132,10 +132,10 @@ public interface ITypingRestResource {
     @GetMapping("/profile/**")
     @Operation(summary = "Get a profile", description = "Obtain the profile identified by the PID provided as the last path segment(s).")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TypeDefinition.class))),
-        @ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "500", description = "Unexpected server error. See body for details.", content = @Content(mediaType = "text/plain"))
+        @ApiResponse(responseCode = "200", description = "Found", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = TypeDefinition.class))),
+        @ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "500", description = "Unexpected server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
     public ResponseEntity<TypeDefinition> getProfile(
             final WebRequest request,
@@ -188,12 +188,12 @@ public interface ITypingRestResource {
                 @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
                 @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
         }),
-        @ApiResponse(responseCode = "400", description = "Validation failed. See body for details.", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "406", description = "Provided input is invalid with regard to the supported accept header (Not acceptable)", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "415", description = "Provided input is invalid with regard to the supported content types. (Unsupported Mediatype)", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "409", description = "If providing an own PID is enabled 409 indicates, that the PID already exists.", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
+        @ApiResponse(responseCode = "400", description = "Validation failed. See body for details. Contains also the validated record.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "406", description = "Provided input is invalid with regard to the supported accept header (Not acceptable)", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "415", description = "Provided input is invalid with regard to the supported content types. (Unsupported Mediatype)", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "409", description = "If providing an own PID is enabled 409 indicates, that the PID already exists.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
     public ResponseEntity<PIDRecord> createPID(
             @RequestBody
@@ -247,13 +247,13 @@ public interface ITypingRestResource {
                 @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
                 @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
             }),
-        @ApiResponse(responseCode = "400", description = "Validation failed. See body for details.", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "406", description = "Provided input is invalid with regard to the supported accept header (Not acceptable)", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "415", description = "Provided input is invalid with regard to the supported content types. (Unsupported Mediatype)", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "412", description = "ETag comparison failed (Precondition failed)", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "428", description = "No ETag given in If-Match header (Precondition required)", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
+        @ApiResponse(responseCode = "400", description = "Validation failed. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "406", description = "Provided input is invalid with regard to the supported accept header (Not acceptable)", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "415", description = "Provided input is invalid with regard to the supported content types. (Unsupported Mediatype)", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "412", description = "ETag comparison failed (Precondition failed)", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "428", description = "No ETag given in If-Match header (Precondition required)", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
     public ResponseEntity<PIDRecord> updatePID(
             @RequestBody
@@ -279,10 +279,10 @@ public interface ITypingRestResource {
                 + "The body will contain a short human readable string, notifying about the result."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Found", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
+        @ApiResponse(responseCode = "200", description = "Found", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
     public ResponseEntity<String> isPidRegistered(
             final WebRequest request,
@@ -311,10 +311,10 @@ public interface ITypingRestResource {
                 @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
             }
         ),
-        @ApiResponse(responseCode = "400", description = "Validation failed. See body for details.", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = "text/plain")),
-        @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
+        @ApiResponse(responseCode = "400", description = "Validation failed. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "404", description = "Not found", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
     public ResponseEntity<PIDRecord> getRecord (
             @Parameter(description = "If true, validation will be run on the resolved PID. On failure, an error will be returned. On success, the PID will be resolved.", required = false)
@@ -354,9 +354,9 @@ public interface ITypingRestResource {
                 @ApiResponse(
                         responseCode = "404",
                         description = "If the PID is unknown.",
-                        content = @Content(mediaType = "text/plain")
+                        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
                 ),
-                @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
+                @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
         }
     )
     @GetMapping(path = "/known-pid/**")
@@ -400,7 +400,7 @@ public interface ITypingRestResource {
                 description = "If the request was valid. May return an empty list.",
                 content = @Content(array = @ArraySchema(schema = @Schema(implementation = KnownPid.class)))
             ),
-            @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
+            @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
         }
     )
     @GetMapping(path = "/known-pid")
@@ -460,7 +460,7 @@ public interface ITypingRestResource {
                 description = "If the request was valid. May return an empty list.",
                 content = @Content(schema = @Schema(implementation = TabulatorPaginationFormat.class))
             ),
-            @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = "text/plain"))
+            @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
         }
     )
     @GetMapping(path = "/known-pid", produces={"application/tabulator+json"}, headers = "Accept=application/tabulator+json")
