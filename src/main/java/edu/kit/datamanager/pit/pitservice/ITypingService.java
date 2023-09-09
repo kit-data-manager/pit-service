@@ -6,7 +6,6 @@ import edu.kit.datamanager.pit.domain.Operations;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import java.io.IOException;
-import java.util.List;
 
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 
@@ -31,8 +30,6 @@ public interface ITypingService extends IIdentifierSystem {
      * @throws IOException
      */
     public TypeDefinition describeType(String typeIdentifier) throws IOException;
-
-    public boolean conformsToType(String pid, String typeIdentifier) throws IOException;
 
     /**
      * Queries a single property from the PID.
@@ -67,22 +64,6 @@ public interface ITypingService extends IIdentifierSystem {
      * @throws IOException
      */
     public PIDRecord queryByType(String pid, String typeIdentifier, boolean includePropertyNames) throws IOException;
-
-    /**
-     * Same as {@link #queryByType}, but also performs a type conformance check.
-     * The result of the check will be available from the PID information record
-     * returned.
-     *
-     * @param pid
-     * @param typeIdentifier
-     * @param includePropertyNames
-     * @return a PID information record with property information and
-     * conformance check results.
-     * @throws IOException
-     */
-    public PIDRecord queryByTypeWithConformance(String pid, String typeIdentifier, boolean includePropertyNames) throws IOException;
-
-    public PIDRecord queryByTypeWithConformance(String pid, List<String> typeIdentifiers, boolean includePropertyNames) throws IOException;
 
     /**
      * Returns an operations instance, configured with this typingService.

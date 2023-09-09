@@ -120,46 +120,6 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public boolean conformsToType(String pid, String typeIdentifier) throws IOException {
-        // resolve type record
-        LOG.trace("Performing conformsToType({}, {}).", pid, typeIdentifier);
-        TypeDefinition typeDef = null;
-        try {
-            LOG.trace("Query for type with identifier {}.", typeIdentifier);
-            typeDef = typeCache.get(typeIdentifier);
-        } catch (ExecutionException ex) {
-            throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
-        }
-
-        if (typeDef == null) {
-            LOG.error("Unable to retrieve type for identifier {}.", typeIdentifier);
-            throw new TypeNotFoundException(typeIdentifier);
-        }
-        // resolve PID
-        LOG.trace("Resolving PID {}.", pid);
-        PIDRecord pidInfo = identifierSystem.queryAllProperties(pid);
-        /*
-         * Now go through all mandatory properties of the type and check whether
-         * they are in the pid data. Remember: both the keys of the pid data map
-         * and the type definition record properties are property identifiers
-         * (not names)!
-         */
-        LOG.trace("Validating {} record properties against type with identifier {}.", pidInfo.getEntries().size(), typeIdentifier);
-        for (String prop : typeDef.getAllProperties()) {
-            LOG.trace("Checking property {} from type definition.", prop);
-            if (!typeDef.isOptional(prop) && !pidInfo.hasProperty(prop)) {
-                LOG.error("Property {} is not optional and was not found in record. Record {} is not matching type {}.", prop, pid, typeIdentifier);
-                //property 'prop' is missing from type info
-                return false;
-            } else {
-                LOG.trace("Property {} found in record.", prop);
-            }
-        }
-        LOG.trace("All mandatory properties were found in record. Record {} is matching type {}.", pid, typeIdentifier);
-        return true;
-    }
-
-    @Override
     public PIDRecord queryAllProperties(String pid) throws PidNotFoundException, ExternalServiceException {
         LOG.trace("Performing queryAllProperties({}).", pid);
         PIDRecord pidRecord = identifierSystem.queryAllProperties(pid);
@@ -244,62 +204,6 @@ public class TypingService implements ITypingService {
             enrichPIDInformationRecord(result);
         }
         return result;
-    }
-
-    @Override
-    public PIDRecord queryByTypeWithConformance(String pid, String typeIdentifier, boolean includePropertyNames)
-            throws IOException {
-        TypeDefinition typeDef;
-
-        try {
-            typeDef = typeCache.get(typeIdentifier);
-        } catch (ExecutionException ex) {
-            throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
-        }
-
-        if (typeDef == null) {
-            return null;
-        }
-        // now query PID record
-        PIDRecord result = identifierSystem.queryByType(pid, typeDef);
-        if (includePropertyNames) {
-            enrichPIDInformationRecord(result);
-        }
-        result.getMissingMandatoryTypesOf(typeDef);
-        return result;
-    }
-
-    @Override
-    public PIDRecord queryByTypeWithConformance(String pid, List<String> typeIdentifiers,
-            boolean includePropertyNames) throws IOException {
-        if (typeIdentifiers.isEmpty()) {
-            return null;
-        }
-        /*
-		 * Query PID record - retrieve all properties, then filter. This is not
-		 * the most economical way of doing this, but proper filtering would
-		 * require a different additional method.
-         */
-        PIDRecord pidInfo = identifierSystem.queryAllProperties(pid);
-        if (includePropertyNames) {
-            enrichPIDInformationRecord(pidInfo);
-        }
-        HashSet<String> propertiesInTypes = new HashSet<>();
-        for (String typeIdentifier : typeIdentifiers) {
-            TypeDefinition typeDef = null;
-            try {
-                typeDef = typeCache.get(typeIdentifier);
-            } catch (ExecutionException ex) {
-                throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
-            }
-            if (typeDef == null) {
-                return null;
-            }
-            propertiesInTypes.addAll(typeDef.getAllProperties());
-            pidInfo.getMissingMandatoryTypesOf(typeDef);
-        }
-        pidInfo.removePropertiesNotListed(propertiesInTypes);
-        return pidInfo;
     }
 
     public ITypeRegistry getTypeRegistry() {
