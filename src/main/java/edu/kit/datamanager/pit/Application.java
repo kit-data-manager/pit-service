@@ -110,8 +110,7 @@ public class Application {
     }
 
     @Bean
-    public ITypingService typingService(IIdentifierSystem identifierSystem, ApplicationProperties props)
-            throws IOException {
+    public ITypingService typingService(IIdentifierSystem identifierSystem, ApplicationProperties props) {
         return new TypingService(identifierSystem, typeRegistry(), typeLoader(props));
     }
 

@@ -1,6 +1,5 @@
 package edu.kit.datamanager.pit.pidsystem.impl.local;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
