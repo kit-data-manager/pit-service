@@ -190,9 +190,12 @@ jacocoTestReport {
         //exclude some classes/package from code coverage report
         classDirectories.setFrom(files(classDirectories.files.collect {
                     fileTree(dir: it, exclude: [\
-            'edu/kit/datamanager/collection/configuration/**', \
-            'edu/kit/datamanager/collection/filters/**', \
-            'edu/kit/datamanager/collection/Application*'
+            'edu/kit/datamanager/pit/configuration/**', \
+            'edu/kit/datamanager/pit/web/converter/**', \
+            'edu/kit/datamanager/pit/web/ExtendedErrorAttributes**', \
+            'edu/kit/datamanager/pit/web/UncontrolledExceptionHandler**', \
+            'edu/kit/datamanager/pit/common/**', \
+            'edu/kit/datamanager/pit/Application*'
                         ])
                 }))
     }
