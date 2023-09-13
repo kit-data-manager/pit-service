@@ -37,6 +37,7 @@ import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
@@ -249,26 +250,23 @@ public class ExplicitValidationParametersTest {
         this.testExtensiveRecordWithoutDryRun();
         assertEquals(1, knownPidsDao.count());
         String validPid = knownPidsDao.findAll().iterator().next().getPid();
+
         PIDRecord r = inMemory.queryAllProperties(validPid);
-        String newValue = "someVeryUniqueValue";
-        r.addEntry("something wrong", "", newValue);
+        r.addEntry("21.T11148/076759916209e5d62bd5", "", "21.T11148/b9b76f887845e32d29f7");
+        r.addEntry("something wrong", "", "someVeryUniqueValue");
         inMemory.updatePID(r);
-        // ... so we need to re-enable it here:
+        // ... so we need to re-enable validation here:
         this.typingService.setValidationStrategy(this.appProps.defaultValidationStrategy());
 
-        /*MvcResult result = */this.mockMvc
+        MvcResult result = this.mockMvc
             .perform(
                 get("/api/v1/pit/pid/" + validPid)
                     .param("validation", "true")
-                    .accept(SimplePidRecord.CONTENT_TYPE)
+                    .accept(MediaType.APPLICATION_JSON)
             )
             .andDo(MockMvcResultHandlers.print())
             .andExpect(MockMvcResultMatchers.status().isBadRequest())
             .andReturn();
-        // The response should contain the invalid record
-        // FIXME can not test this as error responses are for unknown reasons not yet included.
-        //       Use a REST client to test this in the meanwhile.
-        //assertTrue(0 < result.getResponse().getContentLength());
-        //assertTrue(result.getResponse().getContentAsString().contains(newValue));
+        assertTrue(0 < result.getResponse().getErrorMessage().length());
     }
 }
