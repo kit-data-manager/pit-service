@@ -27,12 +27,13 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.firewall.DefaultHttpFirewall;
 import org.springframework.security.web.firewall.HttpFirewall;
@@ -47,11 +48,8 @@ import org.springframework.web.filter.CorsFilter;
 @Configuration
 @AutoConfigureAfter(value = KeycloakJwtProperties.class)
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true)
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
-
-  @Autowired
-  private Logger logger;
+@EnableMethodSecurity(prePostEnabled = true)
+public class WebSecurityConfig {
 
   @Autowired
   private KeycloakJwtProperties properties;
@@ -64,15 +62,15 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
   @Value("${pit.security.allowedOriginPattern:http*://localhost:[*]}")
   private String allowedOriginPattern;
 
-  @Override
-  protected void configure(HttpSecurity http) throws Exception {
+  @Bean
+  protected SecurityFilterChain filterChain(HttpSecurity http, Logger logger) throws Exception {
     http
         .cors()
         .and()
         // everyone, even unauthenticated users may do HTTP OPTIONS on urls.
         .authorizeHttpRequests()
-        .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-        .antMatchers("/api/v1/**").authenticated()
+        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+        .requestMatchers("/api/v1/**").authenticated()
         .and()
         // do not store sessions (use stateless "sessions")
         .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -88,12 +86,14 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     if (!config.isAuthEnabled()) {
       logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
+      AuthenticationManager defaultAuthenticationManager = http.getSharedObject(AuthenticationManager.class);
       http.addFilterAfter(
-          new NoAuthenticationFilter(config.getJwtSecret(), authenticationManager()),
+          new NoAuthenticationFilter(config.getJwtSecret(), defaultAuthenticationManager),
           KeycloakTokenFilter.class);
     } else {
       logger.info("Authentication is ENABLED.");
     }
+    return http.build();
   }
 
   public KeycloakTokenFilter keycloaktokenFilterBean() {
@@ -113,9 +113,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     return firewall;
   }
 
-  @Override
-  public void configure(WebSecurity web) throws Exception {
-    web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
+  @Bean
+  public WebSecurityCustomizer webSecurity() {
+    return web -> web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
   }
 
   @Bean
