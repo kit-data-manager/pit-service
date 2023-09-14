@@ -15,6 +15,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import edu.kit.datamanager.pit.SpringTestHelper;
+import edu.kit.datamanager.pit.pitservice.impl.NoValidationStrategy;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 // Might be needed for WebApp testing according to https://www.baeldung.com/integration-testing-in-spring
@@ -35,7 +38,12 @@ public class ITypingRestResourceTest {
 
     @BeforeEach
     public void setup() throws Exception {
-        this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
+        this.mockMvc = MockMvcBuilders
+                .webAppContextSetup(this.webApplicationContext)
+                .build();
+        // Make sure validation tests are really validating
+        new SpringTestHelper(webApplicationContext)
+                .assertNoBeanInstanceOf(NoValidationStrategy.class);
     }
 
     /**

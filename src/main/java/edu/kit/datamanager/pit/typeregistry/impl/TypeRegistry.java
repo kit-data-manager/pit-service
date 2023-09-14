@@ -23,7 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -34,7 +33,6 @@ import org.springframework.web.util.UriComponentsBuilder;
  * whether a given PID might be a type or property registered at this
  * TypeRegistry.
  */
-@Component
 public class TypeRegistry implements ITypeRegistry {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypeRegistry.class);
@@ -210,6 +208,7 @@ public class TypeRegistry implements ITypeRegistry {
 
         LOG.trace("Finalizing and returning type definition.");
         properties.keySet().forEach(pd -> result.addSubType(properties.get(pd)));
+        this.typeCache.put(identifier, result);
         return result;
     }
 }

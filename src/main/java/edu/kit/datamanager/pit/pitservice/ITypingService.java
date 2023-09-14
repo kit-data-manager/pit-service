@@ -1,11 +1,11 @@
 package edu.kit.datamanager.pit.pitservice;
 
-import edu.kit.datamanager.pit.common.InconsistentRecordsException;
+import edu.kit.datamanager.pit.common.ExternalServiceException;
+import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.Operations;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import java.io.IOException;
-import java.util.List;
 
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 
@@ -16,15 +16,11 @@ import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
  */
 public interface ITypingService extends IIdentifierSystem {
 
-//**
-//   * Retrieves a property definition
-//   *
-//   * @param propertyIdentifier
-//   * @return null if there is no property with given identifier, the definition
-//   * record otherwise.
-//   * @throws IOException
-//   */
-//  public PropertyDefinition describeProperty(String propertyIdentifier) throws IOException;
+    public void setValidationStrategy(IValidationStrategy strategy);
+
+    public void validate(PIDRecord pidRecord)
+            throws RecordValidationException, ExternalServiceException;
+
     /**
      * Retrieves a type definition
      *
@@ -35,20 +31,6 @@ public interface ITypingService extends IIdentifierSystem {
      */
     public TypeDefinition describeType(String typeIdentifier) throws IOException;
 
-    public boolean conformsToType(String pid, String typeIdentifier) throws IOException;
-
-//    /**
-//     * Resolves the given PID without previous knowledge about the kind of
-//     * entity it identifies (e.g. a common PID record, a property or type
-//     * definition etc.).
-//     *
-//     * @param pid
-//     * @return The returned object can be either a PID record, a property
-//     * definition or a type definition. It can also be null, indicating the PID
-//     * is not registered at all.
-//     * @throws IOException
-//     */
-//    public Object genericResolve(String pid) throws IOException;
     /**
      * Queries a single property from the PID.
      *
@@ -62,7 +44,7 @@ public interface ITypingService extends IIdentifierSystem {
      */
     public PIDRecord queryProperty(String pid, String propertyIdentifier) throws IOException;
 
-    public PIDRecord queryAllProperties(String pid, boolean includePropertyNames) throws IOException, InconsistentRecordsException;
+    public PIDRecord queryAllProperties(String pid, boolean includePropertyNames) throws IOException;
 
     /**
      * Queries all properties of a type available from the given PID. If
@@ -80,40 +62,8 @@ public interface ITypingService extends IIdentifierSystem {
      * PID that are also specified by the type (mandatory or optional). If the
      * pid is not registered, the method returns null.
      * @throws IOException
-     * @throws InconsistentRecordsException
      */
-    public PIDRecord queryByType(String pid, String typeIdentifier, boolean includePropertyNames) throws IOException, InconsistentRecordsException;
-
-    /**
-     * Same as {@link #queryByType}, but also performs a type conformance check.
-     * The result of the check will be available from the PID information record
-     * returned.
-     *
-     * @param pid
-     * @param typeIdentifier
-     * @param includePropertyNames
-     * @return a PID information record with property information and
-     * conformance check results.
-     * @throws IOException
-     * @throws InconsistentRecordsException
-     */
-    public PIDRecord queryByTypeWithConformance(String pid, String typeIdentifier, boolean includePropertyNames) throws IOException,
-            InconsistentRecordsException;
-
-    public PIDRecord queryByTypeWithConformance(String pid, List<String> typeIdentifiers, boolean includePropertyNames) throws IOException,
-            InconsistentRecordsException;
-
-//  /**
-//   * Determines whether the given identifier references a simple object, a
-//   * property, a type etc. Note that the method may contact a remote registry to
-//   * answer the request since information may not be encoded in the identifier
-//   * string.
-//   *
-//   * @param identifier
-//   * @return a value of {@link EntityClass}
-//   * @throws IOException
-//   */
-//  public EntityClass determineEntityClass(String identifier) throws IOException;
+    public PIDRecord queryByType(String pid, String typeIdentifier, boolean includePropertyNames) throws IOException;
 
     /**
      * Returns an operations instance, configured with this typingService.

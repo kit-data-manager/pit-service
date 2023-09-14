@@ -70,7 +70,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         .cors()
         .and()
         // everyone, even unauthenticated users may do HTTP OPTIONS on urls.
-        .authorizeRequests()
+        .authorizeHttpRequests()
         .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
         .antMatchers("/api/v1/**").authenticated()
         .and()
@@ -82,8 +82,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         .headers().cacheControl().disable();
 
     if (!enableCsrf) {
-      // TODO disables csrf. https://developer.mozilla.org/en-US/docs/Glossary/CSRF
-      http.csrf().disable();
+        // TODO disables csrf. https://developer.mozilla.org/en-US/docs/Glossary/CSRF
+        http.csrf(csrf -> csrf.disable());
     }
 
     if (!config.isAuthEnabled()) {
@@ -96,7 +96,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
   }
 
-  public KeycloakTokenFilter keycloaktokenFilterBean() throws Exception {
+  public KeycloakTokenFilter keycloaktokenFilterBean() {
     return new KeycloakTokenFilter(KeycloakTokenValidator.builder()
         .readTimeout(properties.getReadTimeoutms())
         .connectTimeout(properties.getConnectTimeoutms())
