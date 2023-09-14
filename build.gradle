@@ -53,6 +53,7 @@ repositories {
 ext {
     springDocVersion  = '1.7.0'
 }
+ext['spring-security.version']='5.8.6'
 
 dependencies {
     // Due to the spring boot gradle plugin, we can omit versions in org.springframework.*
