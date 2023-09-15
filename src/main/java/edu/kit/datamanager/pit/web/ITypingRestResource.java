@@ -73,7 +73,7 @@ public interface ITypingRestResource {
      * @throws IOException
      */
     @PostMapping(
-        path = "/pid/",
+        path = "pid/",
         consumes = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE},
         produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
     )
@@ -132,7 +132,7 @@ public interface ITypingRestResource {
      * @throws IOException
      */
     @PutMapping(
-        path = "/pid/**",
+        path = "pid/**",
         consumes = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE},
         produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
     )
@@ -181,7 +181,7 @@ public interface ITypingRestResource {
      * @throws IOException
      */
     @GetMapping(
-        path = "/pid/**",
+        path = "pid/**",
         produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
     )
     @Operation(summary = "Get the record of the given PID.", description = "Get the record to the given PID, if it exists. No validation is performed by default.")
@@ -242,7 +242,7 @@ public interface ITypingRestResource {
                 @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
         }
     )
-    @GetMapping(path = "/known-pid/**")
+    @GetMapping(path = "known-pid/**")
     public ResponseEntity<KnownPid> findByPid(
             final WebRequest request,
             
@@ -286,7 +286,7 @@ public interface ITypingRestResource {
             @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
         }
     )
-    @GetMapping(path = "/known-pid")
+    @GetMapping(path = "known-pid")
     @PageableAsQueryParam
     public ResponseEntity<List<KnownPid>> findAll(
             @Parameter(name = "created_after", description = "The UTC time of the earliest creation timestamp of a returned PID.", required = false)
@@ -346,7 +346,7 @@ public interface ITypingRestResource {
             @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
         }
     )
-    @GetMapping(path = "/known-pid", produces={"application/tabulator+json"}, headers = "Accept=application/tabulator+json")
+    @GetMapping(path = "known-pid", produces={"application/tabulator+json"}, headers = "Accept=application/tabulator+json")
     @PageableAsQueryParam
     public ResponseEntity<TabulatorPaginationFormat<KnownPid>> findAllForTabular(
             @Parameter(name = "created_after", description = "The UTC time of the earliest creation timestamp of a returned PID.", required = false)
