@@ -212,3 +212,8 @@ release {
         requireBranch.set("master")
     }
 }
+
+tasks.withType(Jar).all { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
+tasks.withType(Tar).all { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
+tasks.withType(Copy).all { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
+tasks.withType(Zip).all { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
