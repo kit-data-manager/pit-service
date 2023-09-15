@@ -19,9 +19,7 @@ plugins {
     id 'jacoco'
     // Adds coveralls task for CI to send results to the coveralls service.
     id "com.github.kt3k.coveralls" version "2.12.2"
-    //id "com.github.kt3k.coveralls" version "2.12.0" 
     id "org.owasp.dependencycheck" version "8.4.0"
-    id 'org.asciidoctor.jvm.convert' version '3.3.2'
     // include build and git information via Spring Actuator
     id "com.gorylenko.gradle-git-properties" version "2.4.1"
 }
@@ -119,12 +117,6 @@ bootJar {
         // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/#packaging-executable.configuring.main-class
         // https://docs.spring.io/spring-boot/docs/current/api/org/springframework/boot/loader/PropertiesLauncher.html
         attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'
-    }
-
-    // Include documentation to be available on runtime.
-    dependsOn asciidoctor
-    from ("${asciidoctor.outputDir}/html5") {
-        into 'static/docs'
     }
 
     // Make the Typed PID Maker executable without `java -jar`
