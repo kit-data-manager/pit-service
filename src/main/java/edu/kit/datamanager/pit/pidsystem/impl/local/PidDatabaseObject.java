@@ -5,11 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
 
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.PIDRecordEntry;
@@ -39,7 +39,7 @@ public class PidDatabaseObject {
      * an issue for mid-to-large records. We need to increase the length of stings
      * in this case:
      * 
-     * int javax.persistence.Column.length() (Optional) The column length. (Applies
+     * int jakarta.xpersistence.Column.length() (Optional) The column length. (Applies
      * only if a string-valued column is used.) Default: 255
      * 
      * The h2 database we use for testing has a CHARACTER VARYING limit of
