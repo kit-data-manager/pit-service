@@ -42,9 +42,10 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
+import org.hamcrest.Matchers;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-
 
 /**
  * This is a dedicated test for the validation/dryrun parameters, available for the REST interface.
@@ -266,7 +267,8 @@ public class ExplicitValidationParametersTest {
             )
             .andDo(MockMvcResultHandlers.print())
             .andExpect(MockMvcResultMatchers.status().isBadRequest())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.detail", Matchers.containsString("Missing mandatory types: [")))
             .andReturn();
-        assertTrue(0 < result.getResponse().getErrorMessage().length());
+        assertTrue(0 < result.getResponse().getContentAsString().length());
     }
 }

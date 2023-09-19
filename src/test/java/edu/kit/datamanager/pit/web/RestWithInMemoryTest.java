@@ -11,6 +11,7 @@ import jakarta.servlet.ServletContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -198,12 +199,13 @@ public class RestWithInMemoryTest {
             )
             .andDo(MockMvcResultHandlers.print())
             .andExpect(MockMvcResultMatchers.status().isBadRequest())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.detail", Matchers.containsString("Missing mandatory types: [")))
             .andReturn();
         
         // we store PIDs only if the PID was created successfully
         assertEquals(0, this.knownPidsDao.count());
         // assume error parsed from body
-        assertTrue(0 < result.getResponse().getErrorMessage().length());
+        assertTrue(0 < result.getResponse().getContentAsString().length());
     }
 
     @Test
