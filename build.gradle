@@ -26,12 +26,12 @@ plugins {
 
 lombok {
     // check here for new versions: https://projectlombok.org/download
-    version = '1.18.22'
+    version = '1.18.28'
 }
 
 jacoco {
     // check here for new versions: https://www.jacoco.org/jacoco/
-    toolVersion = "0.8.7"
+    toolVersion = "0.8.10"
 }
 
 archivesBaseName = 'TypedPIDMaker'
