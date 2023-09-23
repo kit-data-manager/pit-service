@@ -82,7 +82,7 @@ public class ApiMockUtils {
         Instant modifiedBefore,
         Optional<Pageable> pageable
     ) throws Exception {
-        MockHttpServletRequestBuilder request =  get("/api/v1/pit/known-pid/");
+        MockHttpServletRequestBuilder request =  get("/api/v1/pit/known-pid");
         if (pageable.isPresent()) {
             request.param("page", String.valueOf(pageable.get().getPageNumber()));
             request.param("size", String.valueOf(pageable.get().getPageSize()));
@@ -117,7 +117,7 @@ public class ApiMockUtils {
         Instant modifiedBefore,
         Optional<Pageable> pageable
     ) throws Exception {
-        MockHttpServletRequestBuilder request =  get("/api/v1/pit/known-pid/");
+        MockHttpServletRequestBuilder request =  get("/api/v1/pit/known-pid");
         if (pageable.isPresent()) {
             request.param("page", String.valueOf(pageable.get().getPageNumber()));
             request.param("size", String.valueOf(pageable.get().getPageSize()));
