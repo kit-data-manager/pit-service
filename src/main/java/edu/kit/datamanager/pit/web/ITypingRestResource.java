@@ -245,11 +245,9 @@ public interface ITypingRestResource {
     @GetMapping(path = "known-pid/**")
     public ResponseEntity<KnownPid> findByPid(
             final WebRequest request,
-            
             final HttpServletResponse response,
-            
             final UriComponentsBuilder uriBuilder
-     ) throws IOException;
+    ) throws IOException;
 
     /**
      * Returns all known PIDs, limited by the given page size and number.
