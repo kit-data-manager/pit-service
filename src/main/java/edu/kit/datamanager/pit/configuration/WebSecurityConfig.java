@@ -70,6 +70,9 @@ public class WebSecurityConfig {
         // everyone, even unauthenticated users may do HTTP OPTIONS on urls.
         .authorizeHttpRequests()
         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+        .requestMatchers(HttpMethod.GET, "/swagger-ui.html").permitAll()
+        .requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()
+        .requestMatchers(HttpMethod.GET, "/v3/**").permitAll()
         .requestMatchers("/api/v1/**").authenticated()
         .and()
         // do not store sessions (use stateless "sessions")
