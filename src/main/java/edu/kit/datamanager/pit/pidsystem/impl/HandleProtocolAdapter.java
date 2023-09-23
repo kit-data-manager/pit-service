@@ -514,21 +514,27 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         private final Collection<HandleValue> toUpdate = new ArrayList<>();
         private final Collection<HandleValue> toRemove = new ArrayList<>();
 
-        HandleDiff(final Map<Integer, HandleValue> recordOld, final Map<Integer, HandleValue> recordNew)
-                throws PidUpdateException {
-            // old_indexes should only contain indexes we do not override/update anyway, so
-            // we can delete them afterwards.
+        HandleDiff(
+            final Map<Integer, HandleValue> recordOld,
+            final Map<Integer, HandleValue> recordNew
+        ) throws PidUpdateException {
             for (Entry<Integer, HandleValue> old : recordOld.entrySet()) {
                 boolean wasRemoved = !recordNew.containsKey(old.getKey());
                 if (wasRemoved) {
+                    // if a row in the record is not available anymore, we need to delete it
                     toRemove.add(old.getValue());
                 } else {
+                    // otherwise, we should go and update it.
+                    // we could also check for equality, but this is the safe and easy way.
+                    // (the handlevalue classes can be complicated and we'd have to check their
+                    // equality implementation)
                     toUpdate.add(recordNew.get(old.getKey()));
                 }
             }
             for (Entry<Integer, HandleValue> e : recordNew.entrySet()) {
                 boolean isNew = !recordOld.containsKey(e.getKey());
                 if (isNew) {
+                    // if there is a record which is not in the oldRecord, we need to add it.
                     toAdd.add(e.getValue());
                 }
             }
