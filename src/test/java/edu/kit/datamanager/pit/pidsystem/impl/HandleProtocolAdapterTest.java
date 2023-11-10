@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter.HandleDiff;
 import net.handle.hdllib.HandleValue;
 
-public class HandleProtocolAdapterTest {
+class HandleProtocolAdapterTest {
     @Test
     void testDiffOldRecordEmpty() {
         Map<Integer, HandleValue> oldRecord = new HashMap<>();

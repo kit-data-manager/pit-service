@@ -67,7 +67,7 @@ import java.util.Optional;
 @TestPropertySource("/test/application-test.properties")
 // TODO why a testing profile?
 @ActiveProfiles("test")
-public class RestWithInMemoryTest {
+class RestWithInMemoryTest {
 
     static final String EMPTY_RECORD = "{\"pid\": null, \"entries\": {}}";
     static final String RECORD = "{\"entries\":{\"21.T11148/076759916209e5d62bd5\":[{\"key\":\"21.T11148/076759916209e5d62bd5\",\"name\":\"kernelInformationProfile\",\"value\":\"21.T11148/301c6f04763a16f0f72a\"}],\"21.T11148/397d831aa3a9d18eb52c\":[{\"key\":\"21.T11148/397d831aa3a9d18eb52c\",\"name\":\"dateModified\",\"value\":\"2021-12-21T17:36:09.541+00:00\"}],\"21.T11148/8074aed799118ac263ad\":[{\"key\":\"21.T11148/8074aed799118ac263ad\",\"name\":\"digitalObjectPolicy\",\"value\":\"21.T11148/37d0f4689c6ea3301787\"}],\"21.T11148/92e200311a56800b3e47\":[{\"key\":\"21.T11148/92e200311a56800b3e47\",\"name\":\"etag\",\"value\":\"{ \\\"sha256sum\\\": \\\"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\\\" }\"}],\"21.T11148/aafd5fb4c7222e2d950a\":[{\"key\":\"21.T11148/aafd5fb4c7222e2d950a\",\"name\":\"dateCreated\",\"value\":\"2021-12-21T17:36:09.541+00:00\"}],\"21.T11148/b8457812905b83046284\":[{\"key\":\"21.T11148/b8457812905b83046284\",\"name\":\"digitalObjectLocation\",\"value\":\"https://test.repo/file001\"}],\"21.T11148/c692273deb2772da307f\":[{\"key\":\"21.T11148/c692273deb2772da307f\",\"name\":\"version\",\"value\":\"1.0.0\"}],\"21.T11148/c83481d4bf467110e7c9\":[{\"key\":\"21.T11148/c83481d4bf467110e7c9\",\"name\":\"digitalObjectType\",\"value\":\"21.T11148/ManuscriptPage\"}]},\"pid\":\"unregistered-18622\"}";
@@ -96,7 +96,7 @@ public class RestWithInMemoryTest {
     private static final Instant TOMORROW = NOW.plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
     
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() throws Exception {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
         this.mapper = this.webApplicationContext.getBean("OBJECT_MAPPER_BEAN", ObjectMapper.class);
         this.knownPidsDao.deleteAll();
@@ -104,7 +104,7 @@ public class RestWithInMemoryTest {
     }
 
     @Test
-    public void checkTestSetup() {
+    void checkTestSetup() {
         assertNotNull(this.mockMvc);
         assertNotNull(this.webApplicationContext);
         ServletContext servletContext = webApplicationContext.getServletContext();
@@ -119,7 +119,7 @@ public class RestWithInMemoryTest {
     }
 
     @Test
-    public void testNotFound() throws Exception {
+    void testNotFound() throws Exception {
         this.mockMvc.perform(
                 get("/api/v1/pit/pid/prefix/pid")
             )
@@ -129,7 +129,7 @@ public class RestWithInMemoryTest {
     }
 
     @Test
-    public void testCreateEmptyRecord() throws Exception {
+    void testCreateEmptyRecord() throws Exception {
         this.mockMvc
             .perform(
                 post("/api/v1/pit/pid/")
@@ -147,7 +147,7 @@ public class RestWithInMemoryTest {
 
     @Test
     @DisplayName("Testing PID Records with usual/larger size, with the InMemory PID system.")
-    public void testExtensiveRecord() throws Exception {
+    void testExtensiveRecord() throws Exception {
         // create mockup of a large record. It contains non-registered PIDs and can not be validated.
         this.typingService.setValidationStrategy(new NoValidationStrategy());
         // as we use an in-memory data structure, lets not make it too large.
@@ -167,7 +167,7 @@ public class RestWithInMemoryTest {
     }
 
     @Test
-    public void testNontypeRecord() throws Exception {
+    void testNontypeRecord() throws Exception {
         PIDRecord r = new PIDRecord();
         r.addEntry("unregisteredType", "for Testing", "hello");
         this.mockMvc
@@ -186,7 +186,7 @@ public class RestWithInMemoryTest {
     }
 
     @Test
-    public void testInvalidRecordWithProfile() throws Exception {
+    void testInvalidRecordWithProfile() throws Exception {
         PIDRecord r = new PIDRecord();
         r.addEntry("21.T11148/076759916209e5d62bd5", "for Testing", "21.T11148/301c6f04763a16f0f72a");
         MvcResult result = this.mockMvc
@@ -209,7 +209,7 @@ public class RestWithInMemoryTest {
     }
 
     @Test
-    public void testCreateValidRecord() throws Exception {
+    void testCreateValidRecord() throws Exception {
         // test create
         PIDRecord createdRecord = ApiMockUtils.registerSomeRecord(this.mockMvc);
         String createdPid = createdRecord.getPid();
@@ -231,7 +231,7 @@ public class RestWithInMemoryTest {
     }
 
     @Test
-    public void testUpdateRecord() throws Exception {
+    void testUpdateRecord() throws Exception {
         PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
         PIDRecord modified = ApiMockUtils.clone(original);
         modified.getEntries().get("21.T11148/b8457812905b83046284").get(0).setValue("https://example.com/anotherUrlAsBefore");
@@ -240,7 +240,7 @@ public class RestWithInMemoryTest {
     }
 
     @Test
-    public void testIdPidRegisteredFails() throws Exception {
+    void testIdPidRegisteredFails() throws Exception {
         // Nothing is registered, our local storags contains no PIDs
         PIDRecord nonRegistered = mapper.readValue(RECORD, PIDRecord.class);
         boolean isRegistered = isPidRegistered(nonRegistered.getPid());
@@ -249,7 +249,7 @@ public class RestWithInMemoryTest {
     }
 
     @Test
-    public void testIsPidRecordRegisteredSucceeds() throws Exception {
+    void testIsPidRecordRegisteredSucceeds() throws Exception {
         PIDRecord existing = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // We know a PID after we create one.
         assertEquals(1, this.knownPidsDao.count());

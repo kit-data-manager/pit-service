@@ -39,7 +39,7 @@ import edu.kit.datamanager.pit.pidsystem.IIdentifierSystemQueryTest;
     properties = "pit.pidsystem.implementation=LOCAL"
 )
 @ActiveProfiles("test")
-public class LocalPidSystemTest {
+class LocalPidSystemTest {
     IIdentifierSystemQueryTest systemTests = new IIdentifierSystemQueryTest();
     
     @Autowired

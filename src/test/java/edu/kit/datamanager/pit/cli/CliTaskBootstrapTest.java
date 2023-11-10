@@ -30,7 +30,7 @@ import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
     locations = "/test/application-test.properties"
 )
 @ActiveProfiles("test")
-public class CliTaskBootstrapTest {
+class CliTaskBootstrapTest {
 
     @Autowired
     ConfigurableApplicationContext context;

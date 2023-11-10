@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
  * Test Ensure the Entry of Insertion And Extraction of the class
  */
 
-public class PIDRecordTest {
+class PIDRecordTest {
     private static final String PID = "fake/pid/42";
 
     @Test

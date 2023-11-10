@@ -32,7 +32,7 @@ import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
     }
 )
 @ActiveProfiles("test")
-public class HandleProtocolSetupTest {
+class HandleProtocolSetupTest {
 
     @Autowired
     private ApplicationContext app;

@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenConstant;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 
-public class PidSuffixGenPrefixedTest {
+class PidSuffixGenPrefixedTest {
     @Test
     void makesPrefixes() {
         PidSuffixGenerator c = new PidSuffixGenConstant();

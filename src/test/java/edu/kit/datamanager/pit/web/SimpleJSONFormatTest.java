@@ -36,7 +36,7 @@ class SimpleJSONFormatTest {
     private MockMvc mockMvc;
 
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() throws Exception {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
     }
 

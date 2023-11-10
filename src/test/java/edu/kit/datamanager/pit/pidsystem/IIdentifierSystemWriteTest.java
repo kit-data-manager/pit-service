@@ -35,7 +35,7 @@ import edu.kit.datamanager.pit.pidsystem.impl.local.LocalPidSystem;
     properties = "pit.pidsystem.implementation=LOCAL"
 )
 @ActiveProfiles("test")
-public class IIdentifierSystemWriteTest {
+class IIdentifierSystemWriteTest {
 
     @Autowired
     private LocalPidSystem localPidSystem;

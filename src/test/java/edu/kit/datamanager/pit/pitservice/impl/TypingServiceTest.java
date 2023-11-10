@@ -16,7 +16,7 @@ import edu.kit.datamanager.pit.pitservice.IValidationStrategy;
 @SpringBootTest
 @TestPropertySource("/test/application-test.properties")
 @ActiveProfiles("test")
-public class TypingServiceTest {
+class TypingServiceTest {
 
     @Autowired
     private ApplicationContext app;

@@ -14,7 +14,7 @@ import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 
-public class InMemoryIdentifierSystemTest {
+class InMemoryIdentifierSystemTest {
 
     private InMemoryIdentifierSystem sys;
     private TypeDefinition profile;
@@ -23,7 +23,7 @@ public class InMemoryIdentifierSystemTest {
     private TypeDefinition t3;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         this.sys = new InMemoryIdentifierSystem();
         this.t1 = new TypeDefinition();
         this.t1.setIdentifier("attribute1");

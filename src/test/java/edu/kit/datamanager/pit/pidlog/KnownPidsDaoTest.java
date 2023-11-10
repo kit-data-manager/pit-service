@@ -25,7 +25,7 @@ import org.springframework.test.context.TestPropertySource;
 @SpringBootTest
 @TestPropertySource("/test/application-test.properties")
 @ActiveProfiles("test")
-public class KnownPidsDaoTest {
+class KnownPidsDaoTest {
 
     @Autowired
     private KnownPidsDao knownPidsDao;
@@ -40,21 +40,21 @@ public class KnownPidsDaoTest {
     private static final Instant TOO_LATE = NOW.plus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
 
     @BeforeAll
-    public static void setUpClass() {
+    static void setUpClass() {
 
     }
 
     @AfterAll
-    public static void tearDownClass() {
+    static void tearDownClass() {
     }
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         prepareDataBase();
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
     }
 
     private void prepareDataBase() {
