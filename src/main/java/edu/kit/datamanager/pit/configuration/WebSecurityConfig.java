@@ -51,16 +51,22 @@ import org.springframework.web.filter.CorsFilter;
 @EnableMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig {
 
-  @Autowired
-  private KeycloakJwtProperties properties;
+  private final KeycloakJwtProperties properties;
 
-  @Autowired
-  private ApplicationProperties config;
+  private final ApplicationProperties config;
 
   @Value("${pit.security.enable-csrf:true}")
   private boolean enableCsrf;
   @Value("${pit.security.allowedOriginPattern:http*://localhost:[*]}")
   private String allowedOriginPattern;
+
+  public WebSecurityConfig(
+    @Autowired KeycloakJwtProperties properties,
+    @Autowired ApplicationProperties config
+  ) {
+    this.properties = properties;
+    this.config = config;
+  }
 
   @Bean
   protected SecurityFilterChain filterChain(HttpSecurity http, Logger logger) throws Exception {
