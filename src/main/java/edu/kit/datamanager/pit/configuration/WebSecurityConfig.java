@@ -70,28 +70,27 @@ public class WebSecurityConfig {
 
   @Bean
   protected SecurityFilterChain filterChain(HttpSecurity http, Logger logger) throws Exception {
-    http
-        .cors()
-        .and()
-        // everyone, even unauthenticated users may do HTTP OPTIONS on urls.
-        .authorizeHttpRequests()
-        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-        .requestMatchers(HttpMethod.GET, "/swagger-ui.html").permitAll()
-        .requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()
-        .requestMatchers(HttpMethod.GET, "/v3/**").permitAll()
-        .requestMatchers("/api/v1/**").authenticated()
-        .and()
-        // do not store sessions (use stateless "sessions")
-        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-        .and()
-        .addFilterAfter(keycloaktokenFilterBean(), BasicAuthenticationFilter.class)
-        // TODO why?
-        .headers().cacheControl().disable();
-
-    if (!enableCsrf) {
-        // TODO disables csrf. https://developer.mozilla.org/en-US/docs/Glossary/CSRF
-        http.csrf(csrf -> csrf.disable());
-    }
+      http.authorizeHttpRequests(
+        authorize -> authorize
+          // everyone, even unauthenticated users may do HTTP OPTIONS on urls or access swagger
+          .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+          .requestMatchers(HttpMethod.GET, "/swagger-ui.html").permitAll()
+          .requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()
+          .requestMatchers(HttpMethod.GET, "/v3/**").permitAll()
+          // only the actual API is protected
+          .requestMatchers("/api/v1/**").authenticated()
+      )
+      // do not store sessions (use stateless "sessions")
+      .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+      .addFilterAfter(keycloaktokenFilterBean(), BasicAuthenticationFilter.class)
+      .headers(headers -> headers.cacheControl(cache -> cache.disable()))
+      .csrf(csrf -> {
+        if (!enableCsrf) {
+          logger.info("Disable CSRF");
+          // https://developer.mozilla.org/en-US/docs/Glossary/CSRF
+          csrf.disable();
+        }
+      });
 
     if (!config.isAuthEnabled()) {
       logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
