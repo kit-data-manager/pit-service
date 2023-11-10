@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffix;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 
-public class PidSuffixGenUuid4Test {
+class PidSuffixGenUuid4Test {
     @Test
     void generatesUUID() {
         PidSuffixGenerator g = new PidSuffixGenUuid4();

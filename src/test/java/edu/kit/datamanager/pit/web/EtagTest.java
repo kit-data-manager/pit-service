@@ -50,7 +50,7 @@ class EtagTest {
      */
     @BeforeEach
     @Test
-    public void setup() throws Exception {
+    void setup() throws Exception {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
 
         MockHttpServletResponse response = ApiMockUtils.registerSomeRecordAndReturnMvcResult(this.mockMvc).getResponse();

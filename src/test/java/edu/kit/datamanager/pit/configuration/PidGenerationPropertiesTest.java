@@ -14,7 +14,7 @@ import edu.kit.datamanager.pit.configuration.PidGenerationProperties.Mode;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 import edu.kit.datamanager.pit.pidgeneration.generators.HexChunksGeneratorTest;
 
-public class PidGenerationPropertiesTest {
+class PidGenerationPropertiesTest {
 
     /**
      * Makes assertions on the default PIDs. If this test breaks, we break the

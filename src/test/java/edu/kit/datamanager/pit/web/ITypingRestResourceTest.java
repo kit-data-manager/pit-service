@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 // Set the in-memory implementation
 @TestPropertySource("/test/application-test.properties")
 @ActiveProfiles("test")
-public class ITypingRestResourceTest {
+class ITypingRestResourceTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
@@ -37,7 +37,7 @@ public class ITypingRestResourceTest {
     private MockMvc mockMvc;
 
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() throws Exception {
         this.mockMvc = MockMvcBuilders
                 .webAppContextSetup(this.webApplicationContext)
                 .build();

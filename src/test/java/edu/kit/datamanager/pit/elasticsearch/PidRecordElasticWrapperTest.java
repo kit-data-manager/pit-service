@@ -19,7 +19,7 @@ import edu.kit.datamanager.pit.web.ApiMockUtils;
 // Set the in-memory implementation
 @TestPropertySource("/test/application-test.properties")
 @ActiveProfiles("test")
-public class PidRecordElasticWrapperTest {
+class PidRecordElasticWrapperTest {
 
     @Autowired
     ITypingService typingService;

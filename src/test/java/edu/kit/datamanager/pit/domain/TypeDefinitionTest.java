@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Disabled("Does not work yet due to the complexity of the TypeDefinition implementation. See TODO below.")
-public class TypeDefinitionTest {
+class TypeDefinitionTest {
 
     @Test
     // TODO We should change the domain model so this or similar tests will run.

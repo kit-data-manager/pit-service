@@ -18,7 +18,7 @@ import org.springframework.test.context.TestPropertySource;
 // Set the in-memory implementation
 @TestPropertySource(locations = "/test/application-test.properties", properties = "pit.pidsystem.implementation = LOCAL")
 @ActiveProfiles("test")
-public class TypeRegistryTest {
+class TypeRegistryTest {
 
     @Autowired
     TypeRegistry typeRegistry;

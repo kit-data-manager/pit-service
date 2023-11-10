@@ -19,7 +19,7 @@ import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 @SpringBootTest
 @TestPropertySource("/test/application-test.properties")
 @ActiveProfiles("test")
-public class InMemorySetupTest {
+class InMemorySetupTest {
 
     @Autowired
     ApplicationContext app;

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.http.entity.ContentType;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +36,7 @@ class SimpleJSONFormatTest {
     private MockMvc mockMvc;
 
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() throws Exception {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
     }
 
@@ -69,14 +70,15 @@ class SimpleJSONFormatTest {
     void testCreateWithUnsupportedAcceptType() throws Exception {
         SimplePidRecord input = new SimplePidRecord(ApiMockUtils.getSomePidRecordInstance());
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
-        String responseBody = ApiMockUtils.registerRecord(
+        String detailMessage = "Acceptable representations: [" + ContentType.APPLICATION_JSON.getMimeType() + ", " + SimplePidRecord.CONTENT_TYPE + "].";
+        ApiMockUtils.registerRecordAndGetResultActions(
             mockMvc,
             requestBody,
             SimplePidRecord.CONTENT_TYPE,
-            ContentType.APPLICATION_SVG_XML.getMimeType(),
-            MockMvcResultMatchers.status().isNotAcceptable());
-        // Spring does not give a message in the body in this case.
-        assertTrue(responseBody.isBlank());
+            ContentType.APPLICATION_SVG_XML.getMimeType()
+        )
+            .andExpect(MockMvcResultMatchers.status().isNotAcceptable())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.detail", Matchers.is(detailMessage)));
     }
 
     /**
@@ -90,14 +92,15 @@ class SimpleJSONFormatTest {
     void testCreateWithUnsupportedContentType() throws Exception {
         SimplePidRecord input = new SimplePidRecord(ApiMockUtils.getSomePidRecordInstance());
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
-        String responseBody = ApiMockUtils.registerRecord(
+        String detailMessage = "Content-Type '" + ContentType.APPLICATION_SVG_XML.getMimeType() + "' is not supported.";
+        ApiMockUtils.registerRecordAndGetResultActions(
             mockMvc,
             requestBody,
             ContentType.APPLICATION_SVG_XML.getMimeType(),
-            SimplePidRecord.CONTENT_TYPE,
-            MockMvcResultMatchers.status().isUnsupportedMediaType());
-        // Spring does not give a message in the body in this case.
-        assertTrue(responseBody.isBlank());
+            SimplePidRecord.CONTENT_TYPE
+        )
+            .andExpect(MockMvcResultMatchers.status().isUnsupportedMediaType())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.detail", Matchers.is(detailMessage)));
     }
 
     /**
@@ -111,14 +114,15 @@ class SimpleJSONFormatTest {
     void testCreateWithUnsupportedMediaTypes() throws Exception {
         SimplePidRecord input = new SimplePidRecord(ApiMockUtils.getSomePidRecordInstance());
         String requestBody = ApiMockUtils.getJsonMapper().writeValueAsString(input);
-        String responseBody = ApiMockUtils.registerRecord(
+        String detailMessage = "Content-Type '" + ContentType.APPLICATION_SVG_XML.getMimeType() + "' is not supported.";
+        ApiMockUtils.registerRecordAndGetResultActions(
             mockMvc,
             requestBody,
             ContentType.APPLICATION_SVG_XML.getMimeType(),
-            SimplePidRecord.CONTENT_TYPE,
-            MockMvcResultMatchers.status().isUnsupportedMediaType());
-        // Spring does not give a message in the body in this case.
-        assertTrue(responseBody.isBlank());
+            SimplePidRecord.CONTENT_TYPE
+        )
+            .andExpect(MockMvcResultMatchers.status().isUnsupportedMediaType())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.detail", Matchers.is(detailMessage)));
     }
 
     /**

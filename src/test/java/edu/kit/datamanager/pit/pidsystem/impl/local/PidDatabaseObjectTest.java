@@ -10,7 +10,7 @@ import com.fasterxml.jackson.core.JacksonException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.web.ApiMockUtils;
 
-public class PidDatabaseObjectTest {
+class PidDatabaseObjectTest {
     @Test
     void testConversion() throws JacksonException {
         PIDRecord original = ApiMockUtils.getSomePidRecordInstance();

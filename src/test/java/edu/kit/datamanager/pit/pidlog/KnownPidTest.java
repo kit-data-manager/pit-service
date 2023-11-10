@@ -8,7 +8,7 @@ import java.time.temporal.ChronoUnit;
 
 import org.junit.jupiter.api.Test;
 
-public class KnownPidTest {
+class KnownPidTest {
 
     private static final Instant NOW = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     private static final Instant LATER = NOW.plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
@@ -30,7 +30,7 @@ public class KnownPidTest {
     void testTrivialEquivalence() {
         KnownPid p = new KnownPid();
         assertEquals(p, p);
-        assertNotEquals(p, null); // pid is null
+        assertNotEquals(null, p);
 
         KnownPid b = new KnownPid();
         assertEquals(p, b);

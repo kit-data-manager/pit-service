@@ -1,10 +1,8 @@
 package edu.kit.datamanager.pit.pidlog;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -27,7 +25,7 @@ import org.springframework.test.context.TestPropertySource;
 @SpringBootTest
 @TestPropertySource("/test/application-test.properties")
 @ActiveProfiles("test")
-public class KnownPidsDaoTest {
+class KnownPidsDaoTest {
 
     @Autowired
     private KnownPidsDao knownPidsDao;
@@ -42,21 +40,21 @@ public class KnownPidsDaoTest {
     private static final Instant TOO_LATE = NOW.plus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
 
     @BeforeAll
-    public static void setUpClass() {
+    static void setUpClass() {
 
     }
 
     @AfterAll
-    public static void tearDownClass() {
+    static void tearDownClass() {
     }
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         prepareDataBase();
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
     }
 
     private void prepareDataBase() {
@@ -97,15 +95,10 @@ public class KnownPidsDaoTest {
         long numOfAll = knownPidsDao.count();
         assertEquals(7, numOfAll);
         long num = knownPidsDao.countDistinctPidsByCreatedBetween(MIN, MAX);
+        long numInstantMinMax = knownPidsDao.countDistinctPidsByCreatedBetween(MIN, Instant.MAX);
+        assertEquals(num, numInstantMinMax);
         assertEquals(numOfAll, num);
-        // Seems like some component does not support Instant.MIN or Instant.MAX:
-        assertThrows(
-            DateTimeException.class,
-            () -> knownPidsDao.countDistinctPidsByCreatedBetween(Instant.MIN, MAX));
-        assertThrows(
-            DateTimeException.class,
-            () -> knownPidsDao.countDistinctPidsByCreatedBetween(MIN, Instant.MAX));
-        // It also does not support null:
+        // Seems like some component does not support null:
         num = knownPidsDao.countDistinctPidsByCreatedBetween(null, MAX);
         assertEquals(0, num);
         num = knownPidsDao.countDistinctPidsByCreatedBetween(MIN, null);

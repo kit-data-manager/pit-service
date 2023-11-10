@@ -17,50 +17,35 @@ package edu.kit.datamanager.pit.configuration;
  */
 
 import edu.kit.datamanager.configuration.SearchConfiguration;
-import org.elasticsearch.client.RestHighLevelClient;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.elasticsearch.client.ClientConfiguration;
-import org.springframework.data.elasticsearch.client.RestClients;
-import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
-import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
-import org.springframework.http.HttpHeaders;
+import org.springframework.data.elasticsearch.client.elc.ElasticsearchConfiguration;
 
+/*
+ * https://docs.spring.io/spring-boot/docs/3.0.x/reference/html/data.html#data.nosql.elasticsearch.connecting-using-rest.javaapiclient
+ * https://docs.spring.io/spring-data/elasticsearch/docs/current/reference/html/#elasticsearch.clients.restclient
+ */
 @Configuration
-@EnableElasticsearchRepositories(basePackages = "edu.kit.datamanager.repo")
-@ComponentScan(basePackages = {"edu.kit.datamanager"})
-@ConditionalOnProperty(prefix = "repo.search", name = "enabled", havingValue = "true")
-public class ElasticConfiguration {
+@ConditionalOnProperty(prefix = "repo.search", name="enabled", havingValue = "true", matchIfMissing = false)
+public class ElasticConfiguration extends ElasticsearchConfiguration {
 
-    @Autowired
-    private SearchConfiguration searchConfiguration;
-
-    @Bean
-    public RestHighLevelClient client() {
-        //required for compatibility to Elastic 8.X ... might not work and should be removed with spring-boot 3.X
-        HttpHeaders compatibilityHeaders = new HttpHeaders();
-        compatibilityHeaders.add("Accept", "application/vnd.elasticsearch+json;compatible-with=7");
-        compatibilityHeaders.add("Content-Type", "application/vnd.elasticsearch+json;compatible-with=7");
-
-        String indexUrl = searchConfiguration.getUrl().toString();
-        String hostnamePort = indexUrl.substring(indexUrl.indexOf("//") + 2);
-
-        ClientConfiguration clientConfiguration
-                = ClientConfiguration.builder()
-                        .connectedTo(hostnamePort)
-                        .withDefaultHeaders(compatibilityHeaders)
-                        .build();
-
-        return RestClients.create(clientConfiguration).rest();
+    private final SearchConfiguration searchConfiguration;
+    
+    public ElasticConfiguration(@Autowired SearchConfiguration searchConfiguration) {
+        this.searchConfiguration = searchConfiguration;
     }
 
-    @Bean
-    public ElasticsearchOperations elasticsearchTemplate() {
-        return new ElasticsearchRestTemplate(client());
-    }
+    @Override
+	public ClientConfiguration clientConfiguration() {
+        String serverUrl = searchConfiguration.getUrl().toString();
+        serverUrl = serverUrl.replace("http://", "");
+        serverUrl = serverUrl.replace("https://", "");
 
+        return ClientConfiguration.builder()
+                .connectedTo(serverUrl)
+                .build();
+    }
 }

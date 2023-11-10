@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 
-public class TabulatorPaginationFormatTest {
+class TabulatorPaginationFormatTest {
     @Test
     void testConstructorAssignments() {
         List<String> list = new ArrayList<>();

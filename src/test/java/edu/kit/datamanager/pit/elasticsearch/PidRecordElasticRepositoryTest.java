@@ -27,7 +27,7 @@ import edu.kit.datamanager.pit.web.ApiMockUtils;
 )
 @ActiveProfiles({"test", "elastic"})
 @Disabled("We need an instance of elasticsearch for these tests")
-public class PidRecordElasticRepositoryTest {
+class PidRecordElasticRepositoryTest {
 
     @Autowired
     private PidRecordElasticRepository dao;
@@ -36,7 +36,7 @@ public class PidRecordElasticRepositoryTest {
     private ITypingService typingService;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         dao.deleteAll();
     }
 
