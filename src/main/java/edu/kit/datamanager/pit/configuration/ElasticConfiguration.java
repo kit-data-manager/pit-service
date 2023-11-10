@@ -32,8 +32,11 @@ import org.springframework.data.elasticsearch.client.elc.ElasticsearchConfigurat
 @ConditionalOnProperty(prefix = "repo.search", name="enabled", havingValue = "true", matchIfMissing = false)
 public class ElasticConfiguration extends ElasticsearchConfiguration {
 
-    @Autowired
-    SearchConfiguration searchConfiguration;
+    private final SearchConfiguration searchConfiguration;
+    
+    public ElasticConfiguration(@Autowired SearchConfiguration searchConfiguration) {
+        this.searchConfiguration = searchConfiguration;
+    }
 
     @Override
 	public ClientConfiguration clientConfiguration() {
