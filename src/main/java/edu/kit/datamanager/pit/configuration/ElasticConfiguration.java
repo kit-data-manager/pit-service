@@ -20,19 +20,16 @@ import edu.kit.datamanager.configuration.SearchConfiguration;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.elasticsearch.client.ClientConfiguration;
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchConfiguration;
-import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 
 /*
  * https://docs.spring.io/spring-boot/docs/3.0.x/reference/html/data.html#data.nosql.elasticsearch.connecting-using-rest.javaapiclient
+ * https://docs.spring.io/spring-data/elasticsearch/docs/current/reference/html/#elasticsearch.clients.restclient
  */
 @Configuration
-@EnableElasticsearchRepositories(basePackages = "edu.kit.datamanager.repo")
-@ComponentScan(basePackages = {"edu.kit.datamanager"})
-@ConditionalOnProperty(prefix = "repo.search", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "repo.search", name="enabled", havingValue = "true", matchIfMissing = false)
 public class ElasticConfiguration extends ElasticsearchConfiguration {
 
     @Autowired
@@ -40,9 +37,9 @@ public class ElasticConfiguration extends ElasticsearchConfiguration {
 
     @Override
 	public ClientConfiguration clientConfiguration() {
-        // URL and API key
         String serverUrl = searchConfiguration.getUrl().toString();
-        // String apiKey = searchConfiguration.get???;
+        serverUrl = serverUrl.replace("http://", "");
+        serverUrl = serverUrl.replace("https://", "");
 
         return ClientConfiguration.builder()
                 .connectedTo(serverUrl)
