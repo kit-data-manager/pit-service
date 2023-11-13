@@ -27,12 +27,13 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.firewall.DefaultHttpFirewall;
 import org.springframework.security.web.firewall.HttpFirewall;
@@ -47,56 +48,63 @@ import org.springframework.web.filter.CorsFilter;
 @Configuration
 @AutoConfigureAfter(value = KeycloakJwtProperties.class)
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true)
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+@EnableMethodSecurity(prePostEnabled = true)
+public class WebSecurityConfig {
 
-  @Autowired
-  private Logger logger;
+  private final KeycloakJwtProperties properties;
 
-  @Autowired
-  private KeycloakJwtProperties properties;
-
-  @Autowired
-  private ApplicationProperties config;
+  private final ApplicationProperties config;
 
   @Value("${pit.security.enable-csrf:true}")
   private boolean enableCsrf;
   @Value("${pit.security.allowedOriginPattern:http*://localhost:[*]}")
   private String allowedOriginPattern;
 
-  @Override
-  protected void configure(HttpSecurity http) throws Exception {
-    http
-        .cors()
-        .and()
-        // everyone, even unauthenticated users may do HTTP OPTIONS on urls.
-        .authorizeRequests()
-        .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-        .antMatchers("/api/v1/**").authenticated()
-        .and()
-        // do not store sessions (use stateless "sessions")
-        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-        .and()
-        .addFilterAfter(keycloaktokenFilterBean(), BasicAuthenticationFilter.class)
-        // TODO why?
-        .headers().cacheControl().disable();
+  public WebSecurityConfig(
+    @Autowired KeycloakJwtProperties properties,
+    @Autowired ApplicationProperties config
+  ) {
+    this.properties = properties;
+    this.config = config;
+  }
 
-    if (!enableCsrf) {
-      // TODO disables csrf. https://developer.mozilla.org/en-US/docs/Glossary/CSRF
-      http.csrf().disable();
-    }
+  @Bean
+  protected SecurityFilterChain filterChain(HttpSecurity http, Logger logger) throws Exception {
+      http.authorizeHttpRequests(
+        authorize -> authorize
+          // everyone, even unauthenticated users may do HTTP OPTIONS on urls or access swagger
+          .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+          .requestMatchers(HttpMethod.GET, "/swagger-ui.html").permitAll()
+          .requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()
+          .requestMatchers(HttpMethod.GET, "/v3/**").permitAll()
+          // only the actual API is protected
+          .requestMatchers("/api/v1/**").authenticated()
+      )
+      // do not store sessions (use stateless "sessions")
+      .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+      .addFilterAfter(keycloaktokenFilterBean(), BasicAuthenticationFilter.class)
+      .headers(headers -> headers.cacheControl(cache -> cache.disable()))
+      .csrf(csrf -> {
+        if (!enableCsrf) {
+          logger.info("Disable CSRF");
+          // https://developer.mozilla.org/en-US/docs/Glossary/CSRF
+          csrf.disable();
+        }
+      });
 
     if (!config.isAuthEnabled()) {
       logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
+      AuthenticationManager defaultAuthenticationManager = http.getSharedObject(AuthenticationManager.class);
       http.addFilterAfter(
-          new NoAuthenticationFilter(config.getJwtSecret(), authenticationManager()),
+          new NoAuthenticationFilter(config.getJwtSecret(), defaultAuthenticationManager),
           KeycloakTokenFilter.class);
     } else {
       logger.info("Authentication is ENABLED.");
     }
+    return http.build();
   }
 
-  public KeycloakTokenFilter keycloaktokenFilterBean() throws Exception {
+  public KeycloakTokenFilter keycloaktokenFilterBean() {
     return new KeycloakTokenFilter(KeycloakTokenValidator.builder()
         .readTimeout(properties.getReadTimeoutms())
         .connectTimeout(properties.getConnectTimeoutms())
@@ -113,9 +121,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     return firewall;
   }
 
-  @Override
-  public void configure(WebSecurity web) throws Exception {
-    web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
+  @Bean
+  public WebSecurityCustomizer webSecurity() {
+    return web -> web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
   }
 
   @Bean

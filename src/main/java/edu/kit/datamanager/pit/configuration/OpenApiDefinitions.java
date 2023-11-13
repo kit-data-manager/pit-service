@@ -29,27 +29,31 @@ import org.springframework.context.annotation.Configuration;
  * @author jejkal
  */
 @Configuration
-public class OpenApiDefinitions{
+public class OpenApiDefinitions {
 
-  @Bean
-  public OpenAPI customOpenAPI(){
-    return new OpenAPI()
-            .components(new Components())
-            .info(new Info().title("Typed PID Maker - RESTful API").
-                    description("The KIT DM 2.0 Typed PID Maker is a service for obtaining and validating PID Infortion Types and Kernel Information Profiles, as defined by the Research Data Alliance.").
-                    version("0.1").
-                    contact(
-                            new Contact().
-                                    name("KIT Data Manager Support").
-                                    url("https://github.com/kit-data-manager").
-                                    email("support@datamanager.kit.edu")).
-                    license(
-                            new License().
-                                    name("Apache 2.0").
-                                    url("http://www.apache.org/licenses/LICENSE-2.0.html"))
-            ).components(new Components().addSecuritySchemes("bearer-jwt",
-                    new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")
-                            .in(SecurityScheme.In.HEADER).name("Authorization")));
-  }
+    private static final String DESCRIPTION = "The Typed PID Maker is a service for creating, updating, obtaining and validating PID record information using Kernel Information Profiles, as defined by the Research Data Alliance.";
+
+    @Bean
+    public OpenAPI customOpenAPI() {
+        return new OpenAPI().components(new Components())
+                .info(new Info()
+                        .title("Typed PID Maker - RESTful API")
+                        .description(DESCRIPTION)
+                        .version("2.0.0")
+                        .contact(new Contact()
+                            .name("KIT Data Manager Support")
+                            .url("https://github.com/kit-data-manager")
+                            .email("support@datamanager.kit.edu"))
+                        .license(new License()
+                                .name("Apache 2.0")
+                                .url("http://www.apache.org/licenses/LICENSE-2.0.html"))
+                ).components(new Components()
+                        .addSecuritySchemes("bearer-jwt", new SecurityScheme()
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")
+                                .in(SecurityScheme.In.HEADER)
+                                .name("Authorization")));
+    }
 
 }

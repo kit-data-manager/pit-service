@@ -14,7 +14,6 @@ import org.springframework.test.context.TestPropertySource;
 import edu.kit.datamanager.pit.SpringTestHelper;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties.IdentifierSystemImpl;
 import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
-import edu.kit.datamanager.pit.pidsystem.impl.HandleSystemRESTAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 
 @SpringBootTest(
@@ -33,7 +32,7 @@ import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
     }
 )
 @ActiveProfiles("test")
-public class HandleProtocolSetupTest {
+class HandleProtocolSetupTest {
 
     @Autowired
     private ApplicationContext app;
@@ -68,7 +67,5 @@ public class HandleProtocolSetupTest {
         helper.assertSingleBeanInstanceOf(HandleProtocolProperties.class);
         helper.assertSingleBeanInstanceOf(HandleProtocolAdapter.class);
         helper.assertNoBeanInstanceOf(InMemoryIdentifierSystem.class);
-        helper.assertNoBeanInstanceOf(HandleSystemRESTAdapter.class);
-        helper.assertNoBeanInstanceOf(HandleSystemRESTProperties.class);
     }
 }

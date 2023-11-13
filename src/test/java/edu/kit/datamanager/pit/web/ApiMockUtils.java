@@ -5,13 +5,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.http.HttpHeaders;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
@@ -21,10 +24,10 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.Application;
@@ -79,7 +82,7 @@ public class ApiMockUtils {
         Instant modifiedBefore,
         Optional<Pageable> pageable
     ) throws Exception {
-        MockHttpServletRequestBuilder request =  get("/api/v1/pit/known-pid/");
+        MockHttpServletRequestBuilder request =  get("/api/v1/pit/known-pid");
         if (pageable.isPresent()) {
             request.param("page", String.valueOf(pageable.get().getPageNumber()));
             request.param("size", String.valueOf(pageable.get().getPageSize()));
@@ -114,7 +117,7 @@ public class ApiMockUtils {
         Instant modifiedBefore,
         Optional<Pageable> pageable
     ) throws Exception {
-        MockHttpServletRequestBuilder request =  get("/api/v1/pit/known-pid/");
+        MockHttpServletRequestBuilder request =  get("/api/v1/pit/known-pid");
         if (pageable.isPresent()) {
             request.param("page", String.valueOf(pageable.get().getPageNumber()));
             request.param("size", String.valueOf(pageable.get().getPageSize()));
@@ -145,39 +148,86 @@ public class ApiMockUtils {
     /**
      * Updates a PID record.
      * 
-     * @param record the record, containing the information as it should be after
+     * @param newRecord the record, containing the information as it should be after
      *               the update.
      * @return the record as it is after the update.
      * @throws Exception if any assumption breaks.
      */
-    public static PIDRecord updateRecord(MockMvc mockMvc, PIDRecord record) throws Exception {
+    public static PIDRecord updateRecord(MockMvc mockMvc, PIDRecord oldRecord, PIDRecord newRecord) throws Exception {
         String body = updateRecord(
             mockMvc,
-            record.getPid(),
-            getJsonMapper().writeValueAsString(record),
+            oldRecord,
+            newRecord,
             MediaType.APPLICATION_JSON_VALUE,
             MediaType.ALL_VALUE
         );
-        PIDRecord updatedRecord = getJsonMapper().readValue(body, PIDRecord.class);
-        return updatedRecord;
+        return deserializeRecord(body);
+    }
+
+    public static MvcResult updateRecordAndReturnMvcResult(
+        MockMvc mockMvc,
+        PIDRecord oldRecord,
+        PIDRecord newRecord) throws Exception
+    {
+        String pid = oldRecord.getPid();
+        String etag = oldRecord.getEtag();
+        String body = serialize(newRecord);
+        assertEquals(oldRecord.getPid(), newRecord.getPid());
+        return updateRecordAndReturnMvcResult(mockMvc, pid, body, etag, MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE);
     }
 
     /**
-     * Updates a PID record.
-     * 
+     * Updates a PID record. 
+     *
      * @param mockMvc instance that mocks the REST API.
-     * @param pid the PID to update.
-     * @param body the updated pid record to send.
+     * @param oldRecord
+     * @param newRecord
      * @param bodyContentType type of the body.
      * @param acceptContentType type to expect.
      * @return the response body.
      * @throws Exception if response is not OK (HTTP 200).
      */
-    public static String updateRecord(MockMvc mockMvc, String pid, String body, String bodyContentType, String acceptContentType) throws Exception {
+    public static String updateRecord(
+            MockMvc mockMvc,
+            PIDRecord oldRecord,
+            PIDRecord newRecord,
+            String bodyContentType,
+            String acceptContentType) throws Exception
+    {
+        String pid = oldRecord.getPid();
+        String etag = oldRecord.getEtag();
+        String body = serialize(newRecord);
+        assertEquals(oldRecord.getPid(), newRecord.getPid());
+        return updateRecordAndReturnMvcResult(mockMvc, pid, body, etag, bodyContentType, acceptContentType)
+            .getResponse().getContentAsString();
+    }
+
+    public static String updateRecord(
+        MockMvc mockMvc,
+        String pid,
+        String body,
+        String etag,
+        String bodyContentType,
+        String acceptContentType) throws Exception
+    {
+        return updateRecordAndReturnMvcResult(mockMvc, pid, body, etag, bodyContentType, acceptContentType)
+            .getResponse().getContentAsString();
+    }
+
+    private static MvcResult updateRecordAndReturnMvcResult(
+            MockMvc mockMvc,
+            String pid,
+            String body,
+            String etag,
+            String bodyContentType,
+            String acceptContentType) throws Exception
+    {
         assertFalse(pid.isEmpty());
-        MockHttpServletRequestBuilder request = put("/api/v1/pit/pid/" + pid)
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders
+            .put("/api/v1/pit/pid/".concat(pid))
             .characterEncoding("utf-8")
-            .content(body);
+            .content(body)
+            .header(HttpHeaders.IF_MATCH, quoted(etag));
         boolean hasAcceptContentType = acceptContentType != null && !acceptContentType.isEmpty();
         boolean hasBodyContentType = bodyContentType != null && !bodyContentType.isEmpty();
         if (hasAcceptContentType) {
@@ -186,12 +236,11 @@ public class ApiMockUtils {
         if (hasBodyContentType) {
             request = request.contentType(bodyContentType);
         }
-        MvcResult updated = mockMvc
+        return mockMvc
                 .perform(request)
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andReturn();
-        return updated.getResponse().getContentAsString();
     }
 
     /**
@@ -232,66 +281,23 @@ public class ApiMockUtils {
      * @throws Exception if any assumption breaks.
      */
     private static String resolveRecord(MockMvc mockMvc, String pid, String contentType) throws Exception {
+        return resolveRecordAndReturnMvcResult(mockMvc, pid, contentType).getResponse().getContentAsString();
+    }
+
+    public static MvcResult resolveRecordAndReturnMvcResult(MockMvc mockMvc, String pid) throws Exception {
+        return ApiMockUtils.resolveRecordAndReturnMvcResult(mockMvc, pid, null);
+    }
+
+    private static MvcResult resolveRecordAndReturnMvcResult(MockMvc mockMvc, String pid, String contentType) throws Exception {
         MockHttpServletRequestBuilder request = get("/api/v1/pit/pid/".concat(pid));
         if (contentType != null && !contentType.isEmpty()) {
             request = request.accept(contentType);
         }
-        MvcResult resolved = mockMvc
+        return mockMvc
             .perform(request)
             .andDo(MockMvcResultHandlers.print())
             .andExpect(MockMvcResultMatchers.status().isOk())
             .andReturn();
-        return resolved.getResponse().getContentAsString();
-    }
-
-    /**
-     * Creates a record and does make some generic tests.
-     * 
-     * @param mockMvc instance that mocks the REST API.
-     * @return The created PID record.
-     * @throws Exception if any assumption breaks.
-     */
-    public static PIDRecord createSomeRecord(MockMvc mockMvc) throws Exception {
-        String createdBody = ApiMockUtils.createRecord(mockMvc, ApiMockUtils.JSON_RECORD, MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE);
-        PIDRecord createdRecord = getJsonMapper().readValue(createdBody, PIDRecord.class);
-        String createdPid = createdRecord.getPid();
-        assertFalse(createdPid.isEmpty());
-        return createdRecord;
-    }
-
-    /**
-     * Generic method to do a "create" request.
-     * 
-     * @param mockMvc instance that mocks the REST API
-     * @param body the PID record to create
-     * @param bodyContentType type of the body
-     * @param acceptContentType type to expect
-     * @return the body of the response as string.
-     * @throws Exception on any error.
-     */
-    public static String createRecord(MockMvc mockMvc, String body, String bodyContentType, String acceptContentType) throws Exception {
-        MockHttpServletRequestBuilder request = post("/api/v1/pit/pid/")
-            .contentType(MediaType.APPLICATION_JSON)
-            .characterEncoding("utf-8")
-            .content(body);
-        boolean hasAcceptContentType = acceptContentType != null && !acceptContentType.isEmpty();
-        boolean hasBodyContentType = bodyContentType != null && !bodyContentType.isEmpty();
-        if (hasAcceptContentType) {
-            request = request.accept(acceptContentType);
-        } else {
-            request = request.accept(MediaType.ALL);
-        }
-        if (hasBodyContentType) {
-            request = request.contentType(bodyContentType);
-        } else {
-            request = request.contentType(MediaType.APPLICATION_JSON);
-        }
-        MvcResult created = mockMvc
-            .perform(request)
-            .andDo(MockMvcResultHandlers.print())
-            .andExpect(MockMvcResultMatchers.status().isCreated())
-            .andReturn();
-        return created.getResponse().getContentAsString();
     }
 
     /**
@@ -309,7 +315,15 @@ public class ApiMockUtils {
         return createdRecord;
     }
 
-        /**
+    public static MvcResult registerSomeRecordAndReturnMvcResult(MockMvc mockMvc) throws Exception {
+    return ApiMockUtils.registerRecordAndGetMvcResult(
+        mockMvc,
+        ApiMockUtils.JSON_RECORD, // some default record
+        MediaType.APPLICATION_JSON_VALUE,
+        MediaType.ALL_VALUE);
+    }
+
+    /**
      * Generic method to do a "create" request. Expects HTTP 201.
      * 
      * @param mockMvc instance that mocks the REST API
@@ -356,14 +370,13 @@ public class ApiMockUtils {
         return registerRecordAndGetMvcResult(mockMvc, body, bodyContentType, acceptContentType, MockMvcResultMatchers.status().isCreated());
     }
 
-    public static MvcResult registerRecordAndGetMvcResult(
+    public static ResultActions registerRecordAndGetResultActions(
         MockMvc mockMvc,
         String body,
         String bodyContentType,
-        String acceptContentType,
-        ResultMatcher expectHttpCode) throws Exception
-    {
-        MockHttpServletRequestBuilder request = post("/api/v1/pit/pid/")
+        String acceptContentType
+    ) throws Exception {
+            MockHttpServletRequestBuilder request = post("/api/v1/pit/pid/")
             .contentType(MediaType.APPLICATION_JSON)
             .characterEncoding("utf-8")
             .content(body);
@@ -379,12 +392,26 @@ public class ApiMockUtils {
         } else {
             request = request.contentType(MediaType.APPLICATION_JSON);
         }
-        MvcResult created = mockMvc
+        return mockMvc
             .perform(request)
-            .andDo(MockMvcResultHandlers.print())
+            .andDo(MockMvcResultHandlers.print());
+        }
+
+    public static MvcResult registerRecordAndGetMvcResult(
+        MockMvc mockMvc,
+        String body,
+        String bodyContentType,
+        String acceptContentType,
+        ResultMatcher expectHttpCode) throws Exception
+    {
+        return registerRecordAndGetResultActions(
+            mockMvc,
+            body,
+            bodyContentType,
+            acceptContentType
+        )
             .andExpect(expectHttpCode)
             .andReturn();
-        return created;
     }
 
     public static PIDRecord clone(PIDRecord original) throws JsonMappingException, JsonProcessingException {

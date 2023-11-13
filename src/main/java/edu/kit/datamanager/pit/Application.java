@@ -62,13 +62,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Scope;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.http.client.BufferingClientHttpRequestFactory;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.web.client.RestTemplate;
 
 /**
  *
@@ -110,8 +106,8 @@ public class Application {
     }
 
     @Bean
-    public ITypingService typingService(IIdentifierSystem identifierSystem, ApplicationProperties props) throws IOException {
-        return new TypingService(identifierSystem, typeRegistry(), typeCache(props));
+    public ITypingService typingService(IIdentifierSystem identifierSystem, ApplicationProperties props) {
+        return new TypingService(identifierSystem, typeRegistry(), typeLoader(props));
     }
 
     @Bean(name = "OBJECT_MAPPER_BEAN")
@@ -121,17 +117,6 @@ public class Application {
                 .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) // ISODate
                 .modules(new JavaTimeModule())
                 .build();
-    }
-
-    @Bean
-    public RestTemplate restTemplate() {
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        RestTemplate restTemplate = new RestTemplate(requestFactory);
-        // BufferingClientHttpRequestFactory allows us to read the response more than
-        // once - Necessary for debugging.
-        restTemplate.setRequestFactory(
-                new BufferingClientHttpRequestFactory(new HttpComponentsClientHttpRequestFactory(httpClient())));
-        return restTemplate;
     }
 
     @Bean
@@ -154,8 +139,18 @@ public class Application {
                 .build();
     }
 
+    /**
+     * This loader is a cache, which will retrieve `TypeDefinition`s, if required.
+     * 
+     * Therefore, it can be used instead of the ITypeRegistry implementations.
+     * Retrieve it using Autowire or from the application context.
+     * 
+     * @param props the applications properties set by the administration at the
+     *              start of this application.
+     * @return the cache
+     */
     @Bean
-    public LoadingCache<String, TypeDefinition> typeCache(ApplicationProperties props){
+    public LoadingCache<String, TypeDefinition> typeLoader(ApplicationProperties props) {
         int maximumsize = props.getMaximumSize();
         long expireafterwrite = props.getExpireAfterWrite();
         return CacheBuilder.newBuilder()

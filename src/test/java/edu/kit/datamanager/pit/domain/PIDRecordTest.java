@@ -2,6 +2,7 @@ package edu.kit.datamanager.pit.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -15,7 +16,7 @@ import org.junit.jupiter.api.Test;
  * Test Ensure the Entry of Insertion And Extraction of the class
  */
 
-public class PIDRecordTest {
+class PIDRecordTest {
     private static final String PID = "fake/pid/42";
 
     @Test
@@ -149,5 +150,75 @@ public class PIDRecordTest {
         propertiesToKeep.remove(id1);
         rec.removePropertiesNotListed(propertiesToKeep);
         assertFalse(rec.hasProperty(id1));
+    }
+
+    @Test
+    void testEqualityOfEmpty() {
+        PIDRecord first = new PIDRecord();
+        PIDRecord second = new PIDRecord();
+        this.equals(first, second);
+
+        PIDRecord third = new PIDRecord().withPID(null);
+        PIDRecord fourth = new PIDRecord().withPID("");
+        this.equals(third, fourth);
+    }
+
+    @Test
+    void testEqualityViaPid() {
+        PIDRecord first = new PIDRecord().withPID("pid");
+        PIDRecord second = new PIDRecord().withPID("pid");
+        this.equals(first, second);
+    }
+
+    @Test
+    void testInequalityViaPid() {
+        PIDRecord first = new PIDRecord();
+        PIDRecord second = new PIDRecord().withPID("first");
+        this.notEquals(first, second);
+
+        PIDRecord third = new PIDRecord().withPID("other");
+        this.notEquals(first, third);
+        this.notEquals(second, third);
+    }
+
+    @Test
+    void testEqualityAlthoughNamedAttribute() {
+        PIDRecord first = new PIDRecord();
+        PIDRecord second = new PIDRecord();
+        PIDRecord third = new PIDRecord();
+
+        first.addEntry("key", "name", "value");
+        second.addEntry("key", null, "value");
+        third.addEntry("key", "", "value");
+        
+        this.equals(first, second);
+        this.equals(second, third);
+    }
+
+    @Test
+    void testEqualityAlthoughDifferentOrder() {
+        PIDRecord first = new PIDRecord();
+        PIDRecord second = new PIDRecord();
+
+        first.addEntry("key", "name", "value1");
+        first.addEntry("key", "name", "value2");
+        second.addEntry("key", "name", "value2");
+        second.addEntry("key", "name", "value1");
+        
+        this.equals(first, second);
+    }
+
+    private void equals(PIDRecord first, PIDRecord second) {
+        assertEquals(first, second);
+        assertEquals(second, first);
+        assertEquals(first.hashCode(), second.hashCode());
+        assertEquals(first.getEtag(), second.getEtag());
+    }
+
+    private void notEquals(PIDRecord first, PIDRecord second) {
+        assertNotEquals(first, second);
+        assertNotEquals(second, first);
+        assertNotEquals(first.hashCode(), second.hashCode());
+        assertNotEquals(first.getEtag(), second.getEtag());
     }
 }

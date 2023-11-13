@@ -1,12 +1,12 @@
 plugins {
     // Spring boot & dependency management:
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
-    id 'org.springframework.boot' version '2.7.15'
+    id 'org.springframework.boot' version '3.1.5'
     // https://docs.spring.io/dependency-management-plugin/docs/current-SNAPSHOT/reference/html/
     id "io.spring.dependency-management" version "1.1.3"
     // Lombok generates getter and setter and more. https://projectlombok.org/
     // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
-    id "io.freefair.lombok" version "8.3"
+    id "io.freefair.lombok" version "8.4"
     // Release tagging with `./gradlew release`
     // Check for new versions here: https://plugins.gradle.org/plugin/net.researchgate.release
     // Usage: https://github.com/researchgate/gradle-release
@@ -19,21 +19,19 @@ plugins {
     id 'jacoco'
     // Adds coveralls task for CI to send results to the coveralls service.
     id "com.github.kt3k.coveralls" version "2.12.2"
-    //id "com.github.kt3k.coveralls" version "2.12.0" 
     id "org.owasp.dependencycheck" version "8.4.0"
-    id 'org.asciidoctor.jvm.convert' version '3.3.2'
     // include build and git information via Spring Actuator
     id "com.gorylenko.gradle-git-properties" version "2.4.1"
 }
 
 lombok {
     // check here for new versions: https://projectlombok.org/download
-    version = '1.18.22'
+    version = '1.18.30'
 }
 
 jacoco {
     // check here for new versions: https://www.jacoco.org/jacoco/
-    toolVersion = "0.8.7"
+    toolVersion = "0.8.11"
 }
 
 archivesBaseName = 'TypedPIDMaker'
@@ -51,16 +49,16 @@ repositories {
 }
 
 ext {
-    springDocVersion  = '1.7.0'
+    springDocVersion  = '2.2.0'
 }
 
 dependencies {
     // Due to the spring boot gradle plugin, we can omit versions in org.springframework.*
     // dependencies. It will automatically choose the fitting ones.
-    implementation("edu.kit.datamanager:service-base:1.1.1")
-    implementation("edu.kit.datamanager:repo-core:1.1.2")
+    implementation("edu.kit.datamanager:service-base:1.2.0")
+    implementation("edu.kit.datamanager:repo-core:1.2.1")
     // com.google.common, LoadingCache
-    implementation("com.google.guava:guava:32.1.2-jre")
+    implementation("com.google.guava:guava:32.1.3-jre")
     // Required by Spring/Javers at runtime
     implementation 'com.google.code.gson:gson:2.10.1'
 
@@ -79,9 +77,8 @@ dependencies {
     // @EnableJPARepositories
     implementation "org.springframework.boot:spring-boot-starter-data-jpa"
     // springdoc / openapi / swagger
-    implementation "org.springdoc:springdoc-openapi-ui:${springDocVersion}"
-    implementation "org.springdoc:springdoc-openapi-data-rest:${springDocVersion}"
-    implementation "org.springdoc:springdoc-openapi-webmvc-core:${springDocVersion}"
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springDocVersion}"
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${springDocVersion}"
     // spring + elasticsearch communication
     implementation "org.springframework.data:spring-data-elasticsearch"
 
@@ -102,6 +99,8 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
     testImplementation("org.springframework.security:spring-security-test")
+
+    testImplementation("com.jayway.jsonpath:json-path:2.8.0")
 }
 
 application {
@@ -119,12 +118,6 @@ bootJar {
         // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/#packaging-executable.configuring.main-class
         // https://docs.spring.io/spring-boot/docs/current/api/org/springframework/boot/loader/PropertiesLauncher.html
         attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'
-    }
-
-    // Include documentation to be available on runtime.
-    dependsOn asciidoctor
-    from ("${asciidoctor.outputDir}/html5") {
-        into 'static/docs'
     }
 
     // Make the Typed PID Maker executable without `java -jar`
@@ -190,9 +183,12 @@ jacocoTestReport {
         //exclude some classes/package from code coverage report
         classDirectories.setFrom(files(classDirectories.files.collect {
                     fileTree(dir: it, exclude: [\
-            'edu/kit/datamanager/collection/configuration/**', \
-            'edu/kit/datamanager/collection/filters/**', \
-            'edu/kit/datamanager/collection/Application*'
+            'edu/kit/datamanager/pit/configuration/**', \
+            'edu/kit/datamanager/pit/web/converter/**', \
+            'edu/kit/datamanager/pit/web/ExtendedErrorAttributes**', \
+            'edu/kit/datamanager/pit/web/UncontrolledExceptionHandler**', \
+            'edu/kit/datamanager/pit/common/**', \
+            'edu/kit/datamanager/pit/Application*'
                         ])
                 }))
     }
@@ -209,3 +205,8 @@ release {
         requireBranch.set("master")
     }
 }
+
+tasks.withType(Jar).all { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
+tasks.withType(Tar).all { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
+tasks.withType(Copy).all { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
+tasks.withType(Zip).all { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }

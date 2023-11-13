@@ -42,7 +42,7 @@ class CustomPidsTest {
     private MockMvc mockMvc;
 
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() throws Exception {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
         this.props.setCustomClientPidsEnabled(true);
     }

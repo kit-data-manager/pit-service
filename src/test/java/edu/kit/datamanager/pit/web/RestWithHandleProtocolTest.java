@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -43,7 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @TestPropertySource("/test/application-test.properties")
 // TODO why a testing profile?
 @ActiveProfiles("test")
-public class RestWithHandleProtocolTest {
+class RestWithHandleProtocolTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
@@ -55,13 +55,13 @@ public class RestWithHandleProtocolTest {
     static final String pid = "21.T11148/076759916209e5d62bd5";
 
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() throws Exception {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
         this.mapper = this.webApplicationContext.getBean("OBJECT_MAPPER_BEAN", ObjectMapper.class);
     }
 
     @Test
-    public void checkTestSetup() {
+    void checkTestSetup() {
         assertNotNull(this.mockMvc);
         assertNotNull(this.webApplicationContext);
         ServletContext servletContext = webApplicationContext.getServletContext();
@@ -76,7 +76,7 @@ public class RestWithHandleProtocolTest {
     }
 
     @Test
-    public void resolveSomething() throws Exception {
+    void resolveSomething() throws Exception {
         MvcResult resolved = this.mockMvc
             .perform(
                 get("/api/v1/pit/pid/".concat(pid))

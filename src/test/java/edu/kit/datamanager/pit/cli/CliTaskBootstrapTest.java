@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -31,7 +30,7 @@ import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
     locations = "/test/application-test.properties"
 )
 @ActiveProfiles("test")
-public class CliTaskBootstrapTest {
+class CliTaskBootstrapTest {
 
     @Autowired
     ConfigurableApplicationContext context;

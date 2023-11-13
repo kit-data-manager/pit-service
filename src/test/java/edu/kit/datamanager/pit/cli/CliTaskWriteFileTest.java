@@ -8,7 +8,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
-public class CliTaskWriteFileTest {
+class CliTaskWriteFileTest {
     @Test
     void testCreateFilename() {
         Stream<String> pids = Stream.of("pid1", "pid2");

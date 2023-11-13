@@ -26,7 +26,7 @@ class PidDatabaseObjectDaoTest {
     private PidDatabaseObjectDao dao;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         PidDatabaseObject a = new PidDatabaseObject("first", "first");
         PidDatabaseObject b = new PidDatabaseObject("second", "second");
         PidDatabaseObject c = new PidDatabaseObject("second", "third");

@@ -3,6 +3,7 @@ package edu.kit.datamanager.pit.elasticsearch;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,7 +26,8 @@ import edu.kit.datamanager.pit.web.ApiMockUtils;
         }
 )
 @ActiveProfiles({"test", "elastic"})
-public class PidRecordElasticRepositoryTest {
+@Disabled("We need an instance of elasticsearch for these tests")
+class PidRecordElasticRepositoryTest {
 
     @Autowired
     private PidRecordElasticRepository dao;
@@ -34,17 +36,17 @@ public class PidRecordElasticRepositoryTest {
     private ITypingService typingService;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         dao.deleteAll();
     }
 
-    //@Test
+    @Test
     @Transactional
     void testEmpty() {
         assertEquals(0, dao.count());
     }
 
-    //@Test
+    @Test
     @Transactional
     void testStorage() throws JacksonException {
         PIDRecord r = ApiMockUtils.getSomePidRecordInstance();
@@ -54,7 +56,7 @@ public class PidRecordElasticRepositoryTest {
         assertEquals(1, dao.count());
     }
 
-    //@Test
+    @Test
     @Transactional
     void testMultipleValues() throws JacksonException {
         PIDRecord r = ApiMockUtils.getSomePidRecordInstance();
@@ -68,7 +70,7 @@ public class PidRecordElasticRepositoryTest {
         assertEquals(1, dao.count());
     }
 
-    //@Test
+    @Test
     @Transactional
     void testStorageWithDateNull() throws JacksonException {
         PIDRecord r = new PIDRecord();

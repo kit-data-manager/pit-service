@@ -21,7 +21,7 @@ import edu.kit.datamanager.pit.web.ApiMockUtils;
 // Set the in-memory implementation
 @TestPropertySource("/test/application-test.properties")
 @ActiveProfiles("test")
-public class OperationsTest {
+class OperationsTest {
 
     public static final String VALID_DATE = "2021-12-21T17:36:09.541+00:00";
     public static final String TYPE_PROFILE = "21.T11148/076759916209e5d62bd5";

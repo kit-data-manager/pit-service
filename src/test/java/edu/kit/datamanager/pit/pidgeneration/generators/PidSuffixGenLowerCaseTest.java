@@ -9,7 +9,7 @@ import edu.kit.datamanager.pit.pidgeneration.PidSuffix;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenConstant;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 
-public class PidSuffixGenLowerCaseTest {
+class PidSuffixGenLowerCaseTest {
     @Test
     void makesLowerCase() {
         PidSuffixGenerator cGen = new PidSuffixGenConstant();
