@@ -19,7 +19,7 @@ plugins {
     id 'jacoco'
     // Adds coveralls task for CI to send results to the coveralls service.
     id "com.github.kt3k.coveralls" version "2.12.2"
-    id "org.owasp.dependencycheck" version "8.4.3"
+    id "org.owasp.dependencycheck" version "9.0.9"
     // include build and git information via Spring Actuator
     id "com.gorylenko.gradle-git-properties" version "2.4.1"
 }
