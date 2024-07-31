@@ -42,7 +42,7 @@ jobs:
     - name: Build and Test with Gradle
       run: ./gradlew build
     - name: Do one Coveralls test report
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/gradle-build-action@v3
       if: matrix.operating-system == 'ubuntu-latest' && matrix.jdk == 17
       with:
         gradle-home-cache-cleanup: true
