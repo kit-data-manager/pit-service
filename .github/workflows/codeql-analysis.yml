@@ -49,15 +49,12 @@ jobs:
       with:
         java-version: 17
         distribution: 'zulu'  # =openJDK
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
     - name: Validate Gradle wrapper
       uses: gradle/wrapper-validation-action@v3
-    - name: Build (no tests)
-      uses: gradle/gradle-build-action@v2
-      with:
-        gradle-home-cache-cleanup: true
-        arguments: clean build -x test
+    - name: Setup gradle
+      uses: gradle/actions/setup-gradle@v3
+    - name: build without tests
+      run: ./gradlew clean build -x test
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
