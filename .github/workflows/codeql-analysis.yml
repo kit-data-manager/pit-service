@@ -52,7 +52,7 @@ jobs:
     - name: Validate Gradle wrapper
       uses: gradle/wrapper-validation-action@v3
     - name: Setup gradle
-      uses: gradle/actions/setup-gradle@v3
+      uses: gradle/actions/setup-gradle@v4
     - name: build without tests
       run: ./gradlew clean build -x test
 
