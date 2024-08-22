@@ -45,9 +45,6 @@ public class HandleCredentials {
     @NotNull
     private Path privateKeyPath;
 
-    // We get the passphrase out of an environment variable
-    // instead of a path to a file containing the passphrase in a properties file.
-    // Optional, as key might be unencrypted.
     /**
      * The passphrase for the key file stored at privateKeyPath.
      * 
