@@ -67,6 +67,9 @@ public class HandleCredentials {
     }
 
     public String getHandleIdentifierPrefix() {
+        if (!this.handleIdentifierPrefix.endsWith("/")) {
+            this.handleIdentifierPrefix += "/";
+        }
         return handleIdentifierPrefix;
     }
 
