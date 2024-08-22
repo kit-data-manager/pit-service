@@ -20,6 +20,8 @@ import edu.kit.datamanager.pit.common.InvalidConfigException;
 @Validated
 @Configuration
 public class HandleCredentials {
+    private static final String HANDLE_SEPARATOR = "/";
+
     /**
      * The handle PID of the user / account to create PIDs.
      */
@@ -64,8 +66,8 @@ public class HandleCredentials {
     }
 
     public String getHandleIdentifierPrefix() {
-        if (!this.handleIdentifierPrefix.endsWith("/")) {
-            this.handleIdentifierPrefix += "/";
+        if (!this.handleIdentifierPrefix.endsWith(HANDLE_SEPARATOR)) {
+            this.handleIdentifierPrefix += HANDLE_SEPARATOR;
         }
         return handleIdentifierPrefix;
     }
