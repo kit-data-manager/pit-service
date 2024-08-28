@@ -1,13 +1,14 @@
 package edu.kit.datamanager.pit.typeregistry.impl;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.ProvenanceInformation;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
@@ -15,8 +16,11 @@ import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.Date;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import org.apache.commons.lang3.stream.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,8 +40,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class TypeRegistry implements ITypeRegistry {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypeRegistry.class);
+
     @Autowired
-    public LoadingCache<String, TypeDefinition> typeCache;
+    public AsyncLoadingCache<String, TypeDefinition> typeCache;
     @Autowired
     private ApplicationProperties applicationProperties;
 
@@ -66,111 +71,59 @@ public class TypeRegistry implements ITypeRegistry {
      * Helper method to construct a type definition from a JSON response
      * received from the TypeRegistry.
      *
-     * @param rootNode The type definition.
-     *
+     * @param registryRepresentation The type definition.
      * @return The TypeDefinition as object.
      */
-    private TypeDefinition constructTypeDefinition(JsonNode rootNode)
+    private TypeDefinition constructTypeDefinition(JsonNode registryRepresentation)
             throws JsonProcessingException, IOException, URISyntaxException {
         // TODO We are doing things too complicated here. Deserialization should be
         // easy.
         // But before we change the domain model to do so, we need a lot of tests to
         // make sure things work as before after the changes.
         LOG.trace("Performing constructTypeDefinition(<rootNode>).");
-        JsonNode entry = rootNode;
-        Map<String, TypeDefinition> properties = new HashMap<>();
-        LOG.trace("Checking for 'properties' attribute.");
-        if (entry.has("properties")) {
-            LOG.trace("'properties' attribute found. Transferring properties to type definition.");
-            for (JsonNode entryKV : entry.get("properties")) {
-                LOG.trace("Checking for 'name' property.");
-                if (!entryKV.has("name")) {
-                    LOG.trace("No 'name' property found. Skipping property {}.", entryKV);
-                    continue;
-                }
-
-                String key = entryKV.get("name").asText();
-
-                if (!entryKV.has("identifier")) {
-                    LOG.trace("No 'identifier' property found. Skipping property {}.", entryKV);
-                    continue;
-                }
-
-                String value = entryKV.get("identifier").asText();
-                LOG.trace("Creating type definition instance for identifier {}.", value);
-                TypeDefinition type_def;
-
-                try {
-                    type_def = typeCache.get(value);
-                } catch (ExecutionException ex) {
-                    throw new IOException("Failed to obtain type definition via cache.", ex);
-                }
-
-                LOG.trace("Checking for sub-types in 'representationsAndSemantics' property.");
-                if (entryKV.has("representationsAndSemantics")) {
-                    LOG.trace(
-                            "'representationsAndSemantics' attribute found. Transferring properties to type definition.");
-                    JsonNode semNode = entryKV.get("representationsAndSemantics");
-                    semNode = semNode.get(0);
-                    LOG.trace("Checking for 'expression' property.");
-                    if (semNode.has("expression")) {
-                        LOG.trace("Setting 'expression' value {}.", semNode.get("expression").asText());
-                        type_def.setExpression(semNode.get("expression").asText());
-                    }
-
-                    LOG.trace("Checking for 'value' property.");
-                    if (semNode.has("value")) {
-                        LOG.trace("Setting 'value' value {}.", semNode.get("value").asText());
-                        type_def.setValue(semNode.get("value").asText());
-                    }
-
-                    LOG.trace("Checking for 'obligation' property.");
-                    if (semNode.has("obligation")) {
-                        LOG.trace("Setting 'obligation' value {}.", semNode.get("obligation").asText());
-                        String obligation = semNode.get("obligation").asText();
-                        type_def.setOptional("Optional".equalsIgnoreCase(obligation));
-                    }
-
-                    LOG.trace("Checking for 'repeatable' property.");
-                    if (semNode.has("repeatable")) {
-                        LOG.trace("Setting 'repeatable' value {}.", semNode.get("repeatable").asText());
-                        String repeatable = semNode.get("repeatable").asText();
-                        type_def.setRepeatable(!"No".equalsIgnoreCase(repeatable));
-                    }
-                }
-                LOG.trace("Adding new sub-type with key {}.", key);
-                properties.put(key, type_def);
-            }
-        }
-        String typeUseExpl = null;
-        if (entry.has("description")) {
-            typeUseExpl = entry.get("description").asText();
-        }
-        String name = null;
-        if (entry.has("name")) {
-            name = entry.get("name").asText();
-        }
-
-        if (!entry.has("identifier")) {
-            LOG.error("No 'identifier' property found in entry: {}", entry);
+        final String identifier = registryRepresentation.path("identifier").asText(null);
+        if (identifier == null) {
+            LOG.error("No 'identifier' property found in entry: {}", registryRepresentation);
             throw new IOException("No 'identifier' attribute found in type definition.");
         }
-        String identifier = entry.get("identifier").asText();
+
+        LOG.trace("Checking for 'properties' attribute.");
+        Map<String, TypeDefinition> properties = new ConcurrentHashMap<>();
+        List<CompletableFuture<?>> propertiesHandling = Streams.stream(StreamSupport.stream(
+                        registryRepresentation.path("properties").spliterator(), false))
+                .filter(property -> property.hasNonNull("name"))
+                .filter(property -> property.hasNonNull("identifier"))
+                .map(property -> {
+                    final String name = property.path("name").asText();
+                    final String pid = property.path("identifier").asText();
+                    return typeCache.get(pid).thenAcceptAsync(
+                            typeDefinition -> {
+                                final JsonNode semantics = property.path("representationsAndSemantics").path(0);
+                                final String expression = semantics.path("expression").asText(null);
+                                typeDefinition.setExpression(expression);
+                                final String value = semantics.path("value").asText(null);
+                                typeDefinition.setValue(value);
+                                final String obligation = semantics.path("obligation").asText("Mandatory");
+                                typeDefinition.setOptional("Optional".equalsIgnoreCase(obligation));
+                                final String repeatable = semantics.path("repeatable").asText("No");
+                                typeDefinition.setRepeatable(!"No".equalsIgnoreCase(repeatable));
+                                properties.put(name, typeDefinition);
+                            });
+                })
+                .collect(Collectors.toList());
 
         TypeDefinition result = new TypeDefinition();
-        result.setName(name);
-        result.setDescription(typeUseExpl);
         result.setIdentifier(identifier);
-        LOG.trace("Checking for 'validationSchema' property.");
-        if (entry.has("validationSchema")) {
-            String validationSchema = entry.get("validationSchema").asText();
-            result.setSchema(validationSchema);
-        }
+        final String description = registryRepresentation.path("description").asText(null);
+        result.setDescription(description);
+        final String name = registryRepresentation.path("name").asText(null);
+        result.setName(name);
+        final String validationSchema = registryRepresentation.path("validationSchema").asText(null);
+        result.setSchema(validationSchema);
 
-        LOG.trace("Checking for 'provenance' property.");
-        if (entry.has("provenance")) {
+        if (registryRepresentation.has("provenance")) {
             ProvenanceInformation prov = new ProvenanceInformation();
-            JsonNode provNode = entry.get("provenance");
+            JsonNode provNode = registryRepresentation.get("provenance");
             if (provNode.has("creationDate")) {
                 String creationDate = provNode.get("creationDate").asText();
                 try {
@@ -192,13 +145,13 @@ public class TypeRegistry implements ITypeRegistry {
                 String contributorName = null;
                 String details = null;
 
-                if (entry.has("identifiedBy")) {
+                if (registryRepresentation.has("identifiedBy")) {
                     identified = entryKV.get("identifiedBy").asText();
                 }
-                if (entry.has("name")) {
+                if (registryRepresentation.has("name")) {
                     contributorName = entryKV.get("name").asText();
                 }
-                if (entry.has("details")) {
+                if (registryRepresentation.has("details")) {
                     details = entryKV.get("details").asText();
                 }
                 prov.addContributor(identified, contributorName, details);
@@ -207,8 +160,9 @@ public class TypeRegistry implements ITypeRegistry {
         }
 
         LOG.trace("Finalizing and returning type definition.");
+        CompletableFuture.allOf(propertiesHandling.toArray(new CompletableFuture<?>[0])).join();
         properties.keySet().forEach(pd -> result.addSubType(properties.get(pd)));
-        this.typeCache.put(identifier, result);
+        this.typeCache.put(identifier, CompletableFuture.completedFuture(result));
         return result;
     }
 }

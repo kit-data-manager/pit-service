@@ -6,6 +6,7 @@ import edu.kit.datamanager.pit.domain.Operations;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 
@@ -29,7 +30,7 @@ public interface ITypingService extends IIdentifierSystem {
      * record otherwise.
      * @throws IOException
      */
-    public TypeDefinition describeType(String typeIdentifier) throws IOException;
+    public CompletableFuture<TypeDefinition> describeType(String typeIdentifier) throws IOException;
 
     /**
      * Queries a single property from the PID.

@@ -1,16 +1,13 @@
 package edu.kit.datamanager.pit.pitservice.impl;
 
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
-import edu.kit.datamanager.pit.common.TypeNotFoundException;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
@@ -21,6 +18,8 @@ import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.domain.Operations;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
+
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import org.slf4j.Logger;
@@ -39,7 +38,7 @@ public class TypingService implements ITypingService {
     private static final String LOG_MSG_QUERY_TYPE = "Querying for type with identifier {}.";
 
 
-    protected final LoadingCache<String, TypeDefinition> typeCache;
+    protected final AsyncLoadingCache<String, TypeDefinition> typeCache;
     protected final IIdentifierSystem identifierSystem;
     protected final ITypeRegistry typeRegistry;
 
@@ -54,7 +53,7 @@ public class TypingService implements ITypingService {
     protected IValidationStrategy defaultStrategy = null;
 
     public TypingService(IIdentifierSystem identifierSystem, ITypeRegistry typeRegistry,
-            LoadingCache<String, TypeDefinition> typeCache) {
+            AsyncLoadingCache<String, TypeDefinition> typeCache) {
         super();
         this.identifierSystem = identifierSystem;
         this.typeRegistry = typeRegistry;
@@ -108,12 +107,12 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public TypeDefinition describeType(String typeIdentifier) throws IOException {
+    public CompletableFuture<TypeDefinition> describeType(String typeIdentifier) throws IOException {
         LOG.trace("Performing describeType({}).", typeIdentifier);
         try {
             LOG.trace(LOG_MSG_QUERY_TYPE, typeIdentifier);
             return typeCache.get(typeIdentifier);
-        } catch (ExecutionException ex) {
+        } catch (RuntimeException ex) {
             LOG.error("Failed to query for type with identifier " + typeIdentifier + ".", ex);
             throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
         }
@@ -152,10 +151,9 @@ public class TypingService implements ITypingService {
         TypeDefinition typeDef;
         try {
             LOG.trace(LOG_MSG_QUERY_TYPE, propertyIdentifier);
-            typeDef = typeCache.get(propertyIdentifier);
-        } catch (ExecutionException ex) {
+            typeDef = typeCache.get(propertyIdentifier).get();
+        } catch (ExecutionException | InterruptedException ex) {
             LOG.error(LOG_MSG_QUERY_TYPE, propertyIdentifier);
-
             throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
         }
 
@@ -172,8 +170,8 @@ public class TypingService implements ITypingService {
         for (String typeIdentifier : pidInfo.getPropertyIdentifiers()) {
             TypeDefinition typeDef;
             try {
-                typeDef = typeCache.get(typeIdentifier);
-            } catch (ExecutionException ex) {
+                typeDef = typeCache.get(typeIdentifier).get();
+            } catch (ExecutionException | InterruptedException ex) {
                 throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
             }
 
@@ -190,8 +188,8 @@ public class TypingService implements ITypingService {
             throws IOException {
         TypeDefinition typeDef;
         try {
-            typeDef = typeCache.get(typeIdentifier);
-        } catch (ExecutionException ex) {
+            typeDef = typeCache.get(typeIdentifier).get();
+        } catch (ExecutionException | InterruptedException ex) {
             throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
         }
 

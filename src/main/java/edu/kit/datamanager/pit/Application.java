@@ -19,11 +19,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalNotification;
+import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
 import edu.kit.datamanager.pit.cli.CliTaskBootstrap;
 import edu.kit.datamanager.pit.cli.CliTaskWriteFile;
 import edu.kit.datamanager.pit.cli.ICliTask;
@@ -41,8 +39,10 @@ import edu.kit.datamanager.pit.web.converter.SimplePidRecordConverter;
 import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
+import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -91,6 +91,8 @@ public class Application {
     
     protected static final String ERROR_COMMUNICATION = "Communication error: {}";
     protected static final String ERROR_CONFIGURATION = "Configuration error: {}";
+
+    protected static final Executor EXECUTOR = Executors.newWorkStealingPool(35);
 
 
     @Bean
@@ -150,21 +152,20 @@ public class Application {
      * @return the cache
      */
     @Bean
-    public LoadingCache<String, TypeDefinition> typeLoader(ApplicationProperties props) {
-        int maximumsize = props.getMaximumSize();
-        long expireafterwrite = props.getExpireAfterWrite();
-        return CacheBuilder.newBuilder()
-                .maximumSize(maximumsize)
-                .expireAfterWrite(expireafterwrite, TimeUnit.MINUTES)
-                .removalListener((RemovalNotification<String, TypeDefinition> rn) -> LOG.trace(
-                        "Removing type definition located at {} from schema cache. Cause: {}", rn.getKey(),
-                        rn.getCause()))
-                .build(new CacheLoader<String, TypeDefinition>() {
-                    @Override
-                    public TypeDefinition load(String typeIdentifier) throws IOException, URISyntaxException {
-                        LOG.trace("Loading type definition for identifier {} to cache.", typeIdentifier);
-                        return typeRegistry().queryTypeDefinition(typeIdentifier);
-                    }
+    public AsyncLoadingCache<String, TypeDefinition> typeLoader(ApplicationProperties props) {
+        int maximumSize = props.getMaximumSize();
+        long expireAfterWrite = props.getExpireAfterWrite();
+        return Caffeine.newBuilder()
+                .maximumSize(maximumSize)
+                .executor(EXECUTOR)
+                .refreshAfterWrite(Duration.ofMinutes(expireAfterWrite / 2))
+                .expireAfterWrite(expireAfterWrite, TimeUnit.MINUTES)
+                .removalListener((key, value, cause) ->
+                        LOG.trace("Removing type definition located at {} from schema cache. Cause: {}", key, cause)
+                )
+                .buildAsync(pid -> {
+                    LOG.trace("Loading type definition for identifier {} to cache.", pid);
+                    return typeRegistry().queryTypeDefinition(pid);
                 });
     }
 

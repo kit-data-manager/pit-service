@@ -1,5 +1,6 @@
 package edu.kit.datamanager.pit.pitservice.impl;
 
+import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
@@ -8,13 +9,15 @@ import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pitservice.IValidationStrategy;
 import edu.kit.datamanager.pit.util.TypeValidationUtils;
 
-import java.util.concurrent.ExecutionException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.stream.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import com.google.common.cache.LoadingCache;
 
 /**
  * Validates a PID record using embedded profile(s).
@@ -28,7 +31,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedStrictValidatorStrategy.class);
 
     @Autowired
-    public LoadingCache<String, TypeDefinition> typeLoader;
+    public AsyncLoadingCache<String, TypeDefinition> typeLoader;
 
     @Autowired
     ApplicationProperties applicationProps;
@@ -50,25 +53,43 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
                     "Profile attribute " + profileKey + " has no values.");
         }
 
-        for (String profilePID : profilePIDs) {
-            TypeDefinition profileDefinition;
-            try {
-                profileDefinition = this.typeLoader.get(profilePID);
-            } catch (ExecutionException e) {
-                LOG.error("Could not resolve identifier {}.", profilePID);
-                throw new ExternalServiceException(
-                        applicationProps.getTypeRegistryUri().toString());
-            }
-            if (profileDefinition == null) {
-                LOG.error("No type definition found for identifier {}.", profilePID);
-                throw new RecordValidationException(
-                        pidRecord,
-                        String.format("No type found for identifier %s.", profilePID));
-            }
+        List<CompletableFuture<?>> futures = Streams.stream(Arrays.stream(profilePIDs))
+                .map(profilePID -> {
+                    try {
+                        return this.typeLoader.get(profilePID)
+                                .thenAcceptAsync(profileDefinition -> {
+                                    if (profileDefinition == null) {
+                                        LOG.error("No type definition found for identifier {}.", profilePID);
+                                        throw new RecordValidationException(
+                                                pidRecord,
+                                                String.format("No type found for identifier %s.", profilePID));
+                                    }
+                                    this.strictProfileValidation(pidRecord, profileDefinition);
+                                });
+                    } catch (RuntimeException e) {
+                        LOG.error("Could not resolve identifier {}.", profilePID);
+                        throw new ExternalServiceException(
+                                applicationProps.getTypeRegistryUri().toString());
+                    }
+                })
+                .collect(Collectors.toList());
+        try {
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture<?>[0])).join();
+        } catch (CompletionException e) {
+            throwRecordValidationExceptionCause(e);
+            throw new ExternalServiceException(
+                    applicationProps.getTypeRegistryUri().toString());
+        } catch (CancellationException e) {
+            throwRecordValidationExceptionCause(e);
+            throw new RecordValidationException(
+                    pidRecord,
+                    String.format("Validation task was cancelled for %s. Please report.", pidRecord.getPid()));
+        }
+    }
 
-            LOG.debug("validating profile {}", profilePID);
-            this.strictProfileValidation(pidRecord, profileDefinition);
-            LOG.debug("successfully validated {}", profilePID);
+    private static void throwRecordValidationExceptionCause(Throwable e) {
+        if (e.getCause() instanceof RecordValidationException rve) {
+            throw rve;
         }
     }
 
@@ -87,7 +108,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
         // return profile.validate(jsonRecord);
         // }
 
-        LOG.trace("Validating PID record against type definition.");
+        LOG.trace("Validating PID record against profile {}.", profile.getIdentifier());
 
         TypeValidationUtils.checkMandatoryAttributes(pidRecord, profile);
 
@@ -109,6 +130,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
 
             validateValuesForKey(pidRecord, attributeKey, type);
         }
+        LOG.debug("successfully validated {}", profile.getIdentifier());
     }
 
     /**
