@@ -36,7 +36,7 @@ class TypeRegistryTest {
         assertEquals(
                 null,
                 typeRegistry.typeCache.getIfPresent(profileIdentifier));
-        assertEquals(0, typeRegistry.typeCache.size());
+        assertEquals(0, typeRegistry.typeCache.synchronous().estimatedSize());
 
         typeRegistry.queryTypeDefinition(profileIdentifier);
         assertNotEquals(
@@ -44,6 +44,6 @@ class TypeRegistryTest {
                 typeRegistry.typeCache.getIfPresent(profileIdentifier));
         // A profile definition contains type definitions.
         // The cache therefore should have more than one identifiers in cache.
-        assertTrue(typeRegistry.typeCache.size() > 1);
+        assertTrue(typeRegistry.typeCache.synchronous().estimatedSize() > 1);
     }
 }

@@ -8,7 +8,10 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.stream.Streams;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
@@ -69,14 +72,17 @@ public class Operations {
 
         /* TODO try to find types extending or relating otherwise to known types
          *      (currently not supported by our TypeDefinition) */
-        // we need to resolve types without streams to forward possible exceptions
         Collection<TypeDefinition> types = new ArrayList<>();
-        for (String attributePid : pidRecord.getPropertyIdentifiers()) {
-            if (this.typingService.isIdentifierRegistered(attributePid)) {
-                TypeDefinition type = this.typingService.describeType(attributePid);
-                types.add(type);
-            }
-        }
+        List<CompletableFuture<?>> futures = Streams
+                .stream(pidRecord.getPropertyIdentifiers().stream())
+                .filter(attributePid -> this.typingService.isIdentifierRegistered(attributePid))
+                .map(attributePid -> {
+                    return this.typingService
+                            .describeType(attributePid)
+                            .thenAcceptAsync(types::add);
+                })
+                .collect(Collectors.toList());
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
 
         /*
          * as a last fallback, try find types with human readable names containing
@@ -134,14 +140,17 @@ public class Operations {
 
         /* TODO try to find types extending or relating otherwise to known types
          *      (currently not supported by our TypeDefinition) */
-        // we need to resolve types without streams to forward possible exceptions
         Collection<TypeDefinition> types = new ArrayList<>();
-        for (String attributePid : pidRecord.getPropertyIdentifiers()) {
-            if (this.typingService.isIdentifierRegistered(attributePid)) {
-                TypeDefinition type = this.typingService.describeType(attributePid);
-                types.add(type);
-            }
-        }
+        List<CompletableFuture<?>> futures = Streams
+                .stream(pidRecord.getPropertyIdentifiers().stream())
+                .filter(attributePid -> this.typingService.isIdentifierRegistered(attributePid))
+                .map(attributePid -> {
+                    return this.typingService
+                            .describeType(attributePid)
+                            .thenAcceptAsync(types::add);
+                })
+                .collect(Collectors.toList());
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
 
         /*
          * as a last fallback, try find types with human readable names containing
