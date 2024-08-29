@@ -40,6 +40,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class TypeRegistry implements ITypeRegistry {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypeRegistry.class);
+    protected static final Executor EXECUTOR = Executors.newWorkStealingPool(20);
 
     @Autowired
     public AsyncLoadingCache<String, TypeDefinition> typeCache;
@@ -108,7 +109,7 @@ public class TypeRegistry implements ITypeRegistry {
                                 final String repeatable = semantics.path("repeatable").asText("No");
                                 typeDefinition.setRepeatable(!"No".equalsIgnoreCase(repeatable));
                                 properties.put(name, typeDefinition);
-                            });
+                            }, EXECUTOR);
                 })
                 .collect(Collectors.toList());
 

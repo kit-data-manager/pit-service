@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedStrictValidatorStrategy.class);
+    protected static final Executor EXECUTOR = Executors.newWorkStealingPool();
 
     @Autowired
     public AsyncLoadingCache<String, TypeDefinition> typeLoader;
@@ -65,7 +66,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
                                                 String.format("No type found for identifier %s.", profilePID));
                                     }
                                     this.strictProfileValidation(pidRecord, profileDefinition);
-                                });
+                                }, EXECUTOR);
                     } catch (RuntimeException e) {
                         LOG.error("Could not resolve identifier {}.", profilePID);
                         throw new ExternalServiceException(
