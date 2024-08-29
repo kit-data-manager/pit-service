@@ -92,7 +92,7 @@ public class Application {
     protected static final String ERROR_COMMUNICATION = "Communication error: {}";
     protected static final String ERROR_CONFIGURATION = "Configuration error: {}";
 
-    protected static final Executor EXECUTOR = Executors.newWorkStealingPool(35);
+    protected static final Executor EXECUTOR = Executors.newWorkStealingPool();
 
 
     @Bean
