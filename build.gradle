@@ -6,7 +6,7 @@ plugins {
     id "io.spring.dependency-management" version "1.1.6"
     // Lombok generates getter and setter and more. https://projectlombok.org/
     // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
-    id "io.freefair.lombok" version "8.4"
+    id "io.freefair.lombok" version "8.10.2"
     // Release tagging with `./gradlew release`
     // Check for new versions here: https://plugins.gradle.org/plugin/net.researchgate.release
     // Usage: https://github.com/researchgate/gradle-release
@@ -21,7 +21,7 @@ plugins {
     id "com.github.kt3k.coveralls" version "2.12.2"
     id "org.owasp.dependencycheck" version "9.0.9"
     // include build and git information via Spring Actuator
-    id "com.gorylenko.gradle-git-properties" version "2.4.1"
+    id "com.gorylenko.gradle-git-properties" version "2.4.2"
 }
 
 lombok {
@@ -58,7 +58,7 @@ dependencies {
     implementation("edu.kit.datamanager:service-base:1.2.0")
     implementation("edu.kit.datamanager:repo-core:1.2.1")
     // com.google.common, LoadingCache
-    implementation("com.google.guava:guava:33.2.1-jre")
+    implementation("com.google.guava:guava:33.3.0-jre")
     // Required by Spring/Javers at runtime
     implementation 'com.google.code.gson:gson:2.10.1'
 
@@ -91,7 +91,7 @@ dependencies {
 
     implementation("net.handle:handle-client:9.3.1")
 
-    testImplementation(platform('org.junit:junit-bom:5.10.3'))
+    testImplementation(platform('org.junit:junit-bom:5.11.1'))
 	testImplementation('org.junit.jupiter:junit-jupiter')
     testImplementation('org.junit.jupiter:junit-jupiter-params')
 

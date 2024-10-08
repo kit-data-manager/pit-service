@@ -20,6 +20,8 @@ import edu.kit.datamanager.pit.common.InvalidConfigException;
 @Validated
 @Configuration
 public class HandleCredentials {
+    private static final String HANDLE_SEPARATOR = "/";
+
     /**
      * The handle PID of the user / account to create PIDs.
      */
@@ -45,9 +47,6 @@ public class HandleCredentials {
     @NotNull
     private Path privateKeyPath;
 
-    // We get the passphrase out of an environment variable
-    // instead of a path to a file containing the passphrase in a properties file.
-    // Optional, as key might be unencrypted.
     /**
      * The passphrase for the key file stored at privateKeyPath.
      * 
@@ -67,6 +66,9 @@ public class HandleCredentials {
     }
 
     public String getHandleIdentifierPrefix() {
+        if (!this.handleIdentifierPrefix.endsWith(HANDLE_SEPARATOR)) {
+            this.handleIdentifierPrefix += HANDLE_SEPARATOR;
+        }
         return handleIdentifierPrefix;
     }
 
