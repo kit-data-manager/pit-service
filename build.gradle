@@ -101,7 +101,7 @@ dependencies {
     testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
     testImplementation("org.springframework.security:spring-security-test")
 
-    testImplementation("com.jayway.jsonpath:json-path:2.8.0")
+    testImplementation("com.jayway.jsonpath:json-path:2.9.0")
 }
 
 application {
