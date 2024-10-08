@@ -6,7 +6,7 @@ ARG SERVICE_DIRECTORY=/typid
 ####################################################
 
 
-FROM eclipse-temurin:21 as build-typid
+FROM eclipse-temurin:21 AS build-typid
 LABEL maintainer="webmaster@datamanager.kit.edu"
 LABEL stage=build
 RUN mkdir -p ${SERVICE_DIRECTORY}/
@@ -17,7 +17,7 @@ RUN ./gradlew build --stacktrace && \
 
 
 # Create a clean, minimal image
-FROM eclipse-temurin:17 as typed-pid-maker
+FROM eclipse-temurin:17 AS typed-pid-maker
 LABEL maintainer="webmaster@datamanager.kit.edu"
 LABEL stage=run
 

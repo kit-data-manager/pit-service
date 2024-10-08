@@ -23,7 +23,7 @@ fi
 echo -n "run container: "
 docker run -p 8090:8090 --detach --name $container $tag
 # give the application and container some time:
-sleep 30 # seconds
+sleep 60 # seconds
 
 #####################################
 ### tests ###########################
