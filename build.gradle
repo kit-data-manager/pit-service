@@ -74,7 +74,8 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-validation"
     // required for messaging
     implementation "org.springframework.boot:spring-boot-starter-actuator"
-    // @EnableJPARepositories
+    // @EnableJPARepositories, JTA related things which are needed at runtime
+    implementation "jakarta.transaction:jakarta.transaction-api:2.0.1"
     implementation "org.springframework.boot:spring-boot-starter-data-jpa"
     // springdoc / openapi / swagger
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springDocVersion}"
@@ -117,7 +118,7 @@ bootJar {
         // Docs:
         // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/#packaging-executable.configuring.main-class
         // https://docs.spring.io/spring-boot/docs/current/api/org/springframework/boot/loader/PropertiesLauncher.html
-        attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'
+        attributes 'Main-Class': 'org.springframework.boot.loader.launch.PropertiesLauncher'
     }
 
     // Make the Typed PID Maker executable without `java -jar`
