@@ -6,7 +6,7 @@ ARG SERVICE_DIRECTORY=/typid
 ####################################################
 
 
-FROM eclipse-temurin:17 AS build-typid
+FROM eclipse-temurin:21 as build-typid
 LABEL maintainer="webmaster@datamanager.kit.edu"
 LABEL stage=build
 RUN mkdir -p ${SERVICE_DIRECTORY}/
