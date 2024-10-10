@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import edu.kit.datamanager.pit.recordDecoration.RecordModifier;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.constraints.NotNull;
 
@@ -215,27 +216,35 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         // TODO add options to add additional adminValues e.g. for user lists?
         ArrayList<HandleValue> admin = new ArrayList<>();
         admin.add(this.adminValue);
-        ArrayList<HandleValue> futurePairs = this.handleValuesFrom(pidRecord, Optional.of(admin));
+        PIDRecord preparedRecord = pidRecord;
+        for (RecordModifier modifier : this.props.getConfiguredModifiers()) {
+            preparedRecord = modifier.apply(preparedRecord);
+        }
+        ArrayList<HandleValue> futurePairs = this.handleValuesFrom(preparedRecord, Optional.of(admin));
 
         HandleValue[] futurePairsArray = futurePairs.toArray(new HandleValue[] {});
 
         try {
-            this.client.createHandle(pidRecord.getPid(), futurePairsArray);
+            this.client.createHandle(preparedRecord.getPid(), futurePairsArray);
         } catch (HandleException e) {
             if (e.getCode() == HandleException.HANDLE_ALREADY_EXISTS) {
                 // Should not happen as this has to be checked on the REST handler level.
-                throw new PidAlreadyExistsException(pidRecord.getPid());
+                throw new PidAlreadyExistsException(preparedRecord.getPid());
             } else {
                 throw new ExternalServiceException(SERVICE_NAME_HANDLE, e);
             }
         }
-        return pidRecord.getPid();
+        return preparedRecord.getPid();
     }
 
     @Override
-    public boolean updatePID(PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
+    public boolean updatePID(final PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
         if (!this.isValidPID(pidRecord.getPid())) {
             return false;
+        }
+        PIDRecord preparedRecord = pidRecord;
+        for (RecordModifier modifier : this.props.getConfiguredModifiers()) {
+            preparedRecord = modifier.apply(preparedRecord);
         }
         // We need to override the old record as the user has no possibility to update
         // single values, and matching is hard.
@@ -250,30 +259,30 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         // 4) then add, update, delete in this order.
 
         // index value
-        Map<Integer, HandleValue> recordOld = this.queryAllHandleValues(pidRecord.getPid())
+        Map<Integer, HandleValue> recordOld = this.queryAllHandleValues(preparedRecord.getPid())
                 .stream()
-                .collect(Collectors.toMap(v -> v.getIndex(), v -> v));
+                .collect(Collectors.toMap(HandleValue::getIndex, v -> v));
         // Streams.stream makes a stream failable, i.e. allows filtering with
         // exceptions. A new Java version **might** solve this.
-        List<HandleValue> valuesToKeep = Streams.stream(this.queryAllHandleValues(pidRecord.getPid()).stream())
+        List<HandleValue> valuesToKeep = Streams.failableStream(this.queryAllHandleValues(preparedRecord.getPid()).stream())
                 .filter(this::isHandleInternalValue)
                 .collect(Collectors.toList());
 
         // Merge requested record and things we want to keep.
-        Map<Integer, HandleValue> recordNew = handleValuesFrom(pidRecord, Optional.of(valuesToKeep))
+        Map<Integer, HandleValue> recordNew = handleValuesFrom(preparedRecord, Optional.of(valuesToKeep))
                 .stream()
-                .collect(Collectors.toMap(v -> v.getIndex(), v -> v));
+                .collect(Collectors.toMap(HandleValue::getIndex, v -> v));
 
         try {
             HandleDiff diff = new HandleDiff(recordOld, recordNew);
             if (diff.added().length > 0) {
-                this.client.addHandleValues(pidRecord.getPid(), diff.added());
+                this.client.addHandleValues(preparedRecord.getPid(), diff.added());
             }
             if (diff.updated().length > 0) {
-                this.client.updateHandleValues(pidRecord.getPid(), diff.updated());
+                this.client.updateHandleValues(preparedRecord.getPid(), diff.updated());
             }
             if (diff.removed().length > 0) {
-                this.client.deleteHandleValues(pidRecord.getPid(), diff.removed());
+                this.client.deleteHandleValues(preparedRecord.getPid(), diff.removed());
             }
         } catch (HandleException e) {
             if (e.getCode() == HandleException.HANDLE_DOES_NOT_EXIST) {
