@@ -94,6 +94,10 @@ public class PIDRecord implements EtagSupport {
         this.entries = entries;
     }
 
+    public void addEntry(String propertyIdentifier, String propertyValue) {
+        this.addEntry(propertyIdentifier, "", propertyValue);
+    }
+
     /**
      * Adds a new key-name-value triplet.
      * 

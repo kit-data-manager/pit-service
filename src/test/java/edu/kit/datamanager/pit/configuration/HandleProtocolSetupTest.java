@@ -16,19 +16,13 @@ import edu.kit.datamanager.pit.configuration.ApplicationProperties.IdentifierSys
 import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 
-@SpringBootTest(
-    properties = {
-        //"pit.pidsystem.handle-protocol.credentials.user-handle = fakeUserHandle/forTesting",
-        //"pit.pidsystem.handle-protocol.credentials.private-key-path = key.file",
-        //"pit.pidsystem.handle-protocol.credentials.private-key-index = 123",
-        //"pit.pidsystem.handle-protocol.credentials.handle-identifier-prefix = testing",
-    }
-)
+@SpringBootTest()
 @TestPropertySource(
     locations = "/test/application-test.properties",
     properties = {
         "pit.pidsystem.implementation = HANDLE_PROTOCOL",
-    //   "handleProtocolPrivateKeyPassphrase=test123"
+    //   "handleProtocolPrivateKeyPassphrase=test123",
+        "pit.pidsystem.handle-protocol.handleRedirectAttributes = {'a','b','c'}"
     }
 )
 @ActiveProfiles("test")
@@ -67,5 +61,11 @@ class HandleProtocolSetupTest {
         helper.assertSingleBeanInstanceOf(HandleProtocolProperties.class);
         helper.assertSingleBeanInstanceOf(HandleProtocolAdapter.class);
         helper.assertNoBeanInstanceOf(InMemoryIdentifierSystem.class);
+    }
+
+    @Test
+    void testHandleRedirectAttributes() {
+        assertEquals(3, handleProps.handleRedirectAttributes.size());
+        assertEquals(1, handleProps.getConfiguredModifiers().size());
     }
 }
