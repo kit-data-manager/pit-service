@@ -17,7 +17,7 @@ import java.util.Set;
 /**
  * The internal representation for a PID record, offering methods to manipulate
  * the record.
- * 
+ * <p>
  * While other representations exist, they are only used for easier database
  * communication or representation for the outside. In contrast, this is the
  * internal representation offering methods for manipulation.
@@ -40,13 +40,9 @@ public class PIDRecord implements EtagSupport {
      */
     public PIDRecord(PidDatabaseObject dbo) {
         this.setPid(dbo.getPid());
-        dbo.getEntries().entrySet().stream().forEach(entry -> {
-            String key = entry.getKey();
-            entry
-                .getValue() // ArrayList<String>
-                .stream()
-                .forEach( value -> this.addEntry(key, "", value) );
-        });
+        dbo.getEntries().forEach(
+                (key, valueList) -> valueList.forEach(
+                        value -> this.addEntry(key, value)));
     }
 
     public PIDRecord(SimplePidRecord rec) {
@@ -154,13 +150,7 @@ public class PIDRecord implements EtagSupport {
      * @param propertiesToKeep a collection of property identifiers to keep.
      */
     public void removePropertiesNotListed(Collection<String> propertiesToKeep) {
-        Iterator<String> iter = entries.keySet().iterator();
-        while (iter.hasNext()) {
-            String propID = iter.next();
-            if (!propertiesToKeep.contains(propID)) {
-                iter.remove();
-            }
-        }
+        entries.keySet().removeIf(propID -> !propertiesToKeep.contains(propID));
     }
 
     public void removeAllValuesOf(String attribute) {
@@ -204,7 +194,7 @@ public class PIDRecord implements EtagSupport {
         if (entry == null) {
             return "";
         }
-        return entry.get(0).getValue();
+        return entry.getFirst().getValue();
     }
 
     /**
@@ -238,7 +228,7 @@ public class PIDRecord implements EtagSupport {
 
     /**
      * Checks if two PIDRecords are equivalent.
-     * 
+     * <p>
      * - Ignores the name attribute: Only keys and values matter.
      * - Ignores order of keys or values
      */

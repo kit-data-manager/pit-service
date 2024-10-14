@@ -141,7 +141,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     @Override
     public Optional<String> getPrefix() {
         if (this.isAdminMode) {
-            return Optional.of(this.props.getCredentials()).map(HandleCredentials::getHandleIdentifierPrefix);
+            return Optional.ofNullable(this.props.getCredentials()).map(HandleCredentials::getHandleIdentifierPrefix);
         } else {
             return Optional.empty();
         }
@@ -503,7 +503,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
 
     /**
      * Checks if a given value is considered an "internal" or "handle-native" value.
-     * 
+     * <p>
      * This may be used to filter out administrative information from a PID record.
      * 
      * @param v the value to check.
@@ -567,14 +567,14 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             for (HandleValue v : toAdd) {
                 boolean valid = !recordOld.containsKey(v.getIndex()) && recordNew.containsValue(v);
                 if (!valid) {
-                    String message = String.format(exceptionMsg, "Add", v.toString());
+                    String message = String.format(exceptionMsg, "Add", v);
                     throw new PidUpdateException(message);
                 }
             }
             for (HandleValue v : toUpdate) {
                 boolean valid = recordOld.containsKey(v.getIndex()) && recordNew.containsValue(v);
                 if (!valid) {
-                    String message = String.format(exceptionMsg, "Update", v.toString());
+                    String message = String.format(exceptionMsg, "Update", v);
                     throw new PidUpdateException(message);
                 }
             }
