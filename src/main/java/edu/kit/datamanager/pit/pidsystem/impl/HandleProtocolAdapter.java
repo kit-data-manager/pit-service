@@ -252,28 +252,36 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         // Handle Protocol client available
         // functions and the way the handle system works with indices (basically value
         // identifiers), we use this approach:
-        // 1) from the old values, take all we want to keep.
+        // 1) from the old values, take all we want to keep (handle internal values, technical stuff).
         // 2) together with the user-given record, merge "valuesToKeep" to a list of
-        // values with unique indices.
+        // values with unique indices. Now we have exactly the representation we want.
+        // But: we cannot tell the handle API what we want, we have to declare how to do it.
+        // This is why we need two more steps:
         // 3) see (by index) which values have to be added, deleted, or updated.
-        // 4) then add, update, delete in this order.
+        // 4) then add, update, delete in this order. Why this order? We could also remove everything
+        // at first and then add everything we want, but this would require more actions on the server
+        // side. And, deleting everything would also delete access control information. So, the safe
+        // way to do it, is to add things which do not exist yet, update what needs to be updated,
+        // and in the end remove what needs to be removed (usually nothing!).
 
         // index value
-        Map<Integer, HandleValue> recordOld = this.queryAllHandleValues(preparedRecord.getPid())
-                .stream()
+        Collection<HandleValue> oldHandleValues = this.queryAllHandleValues(preparedRecord.getPid());
+        Map<Integer, HandleValue> recordOld = oldHandleValues.stream()
                 .collect(Collectors.toMap(HandleValue::getIndex, v -> v));
-        // Failable streams allow filtering with exceptions.
-        List<HandleValue> valuesToKeep = Streams.failableStream(this.queryAllHandleValues(preparedRecord.getPid()).stream())
+        // 1)
+        List<HandleValue> valuesToKeep = oldHandleValues.stream()
                 .filter(this::isHandleInternalValue)
                 .collect(Collectors.toList());
 
-        // Merge requested record and things we want to keep.
+        // 2) Merge requested record and things we want to keep.
         Map<Integer, HandleValue> recordNew = handleValuesFrom(preparedRecord, Optional.of(valuesToKeep))
                 .stream()
                 .collect(Collectors.toMap(HandleValue::getIndex, v -> v));
 
         try {
+            // 3)
             HandleDiff diff = new HandleDiff(recordOld, recordNew);
+            // 4)
             if (diff.added().length > 0) {
                 this.client.addHandleValues(preparedRecord.getPid(), diff.added());
             }
