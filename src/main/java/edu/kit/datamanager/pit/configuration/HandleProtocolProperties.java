@@ -43,7 +43,7 @@ public class HandleProtocolProperties {
     @Nullable
     private HandleCredentials credentials;
 
-    @Value("#{${pit.pidsystem.handle-protocol.handleRedirectAttributes}}")
+    @Value("#{${pit.pidsystem.handle-protocol.handleRedirectAttributes:{}}}")
     @NotNull
     protected List<String> handleRedirectAttributes = List.of();
 
