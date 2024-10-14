@@ -124,6 +124,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             // Check if key file is plausible, throw exceptions if something is wrong.
             byte[] privateKey = credentials.getPrivateKeyFileContent();
             byte[] passphrase = credentials.getPrivateKeyPassphraseAsBytes();
+            LOG.debug("Logging in with user {}", credentials.getUserHandle());
             this.client = HSAdapterFactory.newInstance(
                     credentials.getUserHandle(),
                     credentials.getPrivateKeyIndex(),
