@@ -1,4 +1,4 @@
-package edu.kit.datamanager.pit.recordDecoration;
+package edu.kit.datamanager.pit.recordModifiers;
 
 import edu.kit.datamanager.pit.domain.PIDRecord;
 

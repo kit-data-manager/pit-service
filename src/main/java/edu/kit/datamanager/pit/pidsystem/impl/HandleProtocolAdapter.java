@@ -15,7 +15,7 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import edu.kit.datamanager.pit.recordDecoration.RecordModifier;
+import edu.kit.datamanager.pit.recordModifiers.RecordModifier;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.constraints.NotNull;
 

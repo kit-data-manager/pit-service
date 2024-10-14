@@ -1,7 +1,7 @@
 package edu.kit.datamanager.pit.configuration;
 
-import edu.kit.datamanager.pit.recordDecoration.CopyAttribute;
-import edu.kit.datamanager.pit.recordDecoration.RecordModifier;
+import edu.kit.datamanager.pit.recordModifiers.CopyAttribute;
+import edu.kit.datamanager.pit.recordModifiers.RecordModifier;
 import jakarta.validation.constraints.NotNull;
 import net.handle.hdllib.Util;
 import org.slf4j.Logger;
