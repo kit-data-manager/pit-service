@@ -163,6 +163,10 @@ public class PIDRecord implements EtagSupport {
         }
     }
 
+    public void removeAllValuesOf(String attribute) {
+        this.entries.remove(attribute);
+    }
+
     /**
      * Returns all missing mandatory attributes from the given Profile, which are not
      * present in this record.
