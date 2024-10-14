@@ -168,7 +168,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         if (allValues.isEmpty()) {
             return null;
         }
-        Collection<HandleValue> recordProperties = Streams.stream(allValues.stream())
+        Collection<HandleValue> recordProperties = Streams.failableStream(allValues.stream())
                 .filter(value -> !this.isHandleInternalValue(value))
                 .collect(Collectors.toList());
         return this.pidRecordFrom(recordProperties).withPID(pid);
@@ -262,8 +262,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         Map<Integer, HandleValue> recordOld = this.queryAllHandleValues(preparedRecord.getPid())
                 .stream()
                 .collect(Collectors.toMap(HandleValue::getIndex, v -> v));
-        // Streams.stream makes a stream failable, i.e. allows filtering with
-        // exceptions. A new Java version **might** solve this.
+        // Failable streams allow filtering with exceptions.
         List<HandleValue> valuesToKeep = Streams.failableStream(this.queryAllHandleValues(preparedRecord.getPid()).stream())
                 .filter(this::isHandleInternalValue)
                 .collect(Collectors.toList());
