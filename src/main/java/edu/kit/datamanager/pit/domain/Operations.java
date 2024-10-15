@@ -54,15 +54,13 @@ public class Operations {
         /* try known types */
         List<String> knownDateTypes = Arrays.asList(Operations.KNOWN_DATE_CREATED);
         Optional<Date> date = knownDateTypes
-            .stream()
-            .map(pidRecord::getPropertyValues)
-            .map(Arrays::asList)
-            .flatMap(List<String>::stream)
-            .map(this::extractDate)
-            .filter(Optional<Date>::isPresent)
-            .map(Optional<Date>::get)
-            .sorted(Comparator.comparingLong(Date::getTime))
-            .findFirst();
+                .stream()
+                .map(pidRecord::getPropertyValues)
+                .flatMap(List<String>::stream)
+                .map(this::extractDate)
+                .filter(Optional<Date>::isPresent)
+                .map(Optional<Date>::get)
+                .min(Comparator.comparingLong(Date::getTime));
         if (date.isPresent()) {
             return date;
         }
@@ -87,19 +85,17 @@ public class Operations {
          * our known types, see above)
          */
         return types
-            .stream()
-            .filter(type -> 
-                type.getName().equals("dateCreated")
-                || type.getName().equals("createdAt")
-                || type.getName().equals("creationDate"))
-            .map(type -> pidRecord.getPropertyValues(type.getIdentifier()))
-            .map(Arrays::asList)
-            .flatMap(List<String>::stream)
-            .map(this::extractDate)
-            .filter(Optional<Date>::isPresent)
-            .map(Optional<Date>::get)
-            .sorted(Comparator.comparingLong(Date::getTime))
-            .findFirst();
+                .stream()
+                .filter(type ->
+                        type.getName().equals("dateCreated")
+                                || type.getName().equals("createdAt")
+                                || type.getName().equals("creationDate"))
+                .map(type -> pidRecord.getPropertyValues(type.getIdentifier()))
+                .flatMap(List<String>::stream)
+                .map(this::extractDate)
+                .filter(Optional<Date>::isPresent)
+                .map(Optional<Date>::get)
+                .min(Comparator.comparingLong(Date::getTime));
     }
 
     /**
@@ -119,15 +115,13 @@ public class Operations {
         /* try known types */
         List<String> knownDateTypes = Arrays.asList(Operations.KNOWN_DATE_MODIFIED);
         Optional<Date> date = knownDateTypes
-            .stream()
-            .map(pidRecord::getPropertyValues)
-            .map(Arrays::asList)
-            .flatMap(List<String>::stream)
-            .map(this::extractDate)
-            .filter(Optional<Date>::isPresent)
-            .map(Optional<Date>::get)
-            .sorted(Comparator.comparingLong(Date::getTime))
-            .findFirst();
+                .stream()
+                .map(pidRecord::getPropertyValues)
+                .flatMap(List<String>::stream)
+                .map(this::extractDate)
+                .filter(Optional<Date>::isPresent)
+                .map(Optional<Date>::get)
+                .min(Comparator.comparingLong(Date::getTime));
         if (date.isPresent()) {
             return date;
         }
@@ -152,19 +146,17 @@ public class Operations {
          * our known types, see above)
          */
         return types
-            .stream()
-            .filter(type -> 
-                type.getName().equals("dateModified")
-                || type.getName().equals("lastModified")
-                || type.getName().equals("modificationDate"))
-            .map(type -> pidRecord.getPropertyValues(type.getIdentifier()))
-            .map(Arrays::asList)
-            .flatMap(List<String>::stream)
-            .map(this::extractDate)
-            .filter(Optional<Date>::isPresent)
-            .map(Optional<Date>::get)
-            .sorted(Comparator.comparingLong(Date::getTime))
-            .findFirst();
+                .stream()
+                .filter(type ->
+                        type.getName().equals("dateModified")
+                                || type.getName().equals("lastModified")
+                                || type.getName().equals("modificationDate"))
+                .map(type -> pidRecord.getPropertyValues(type.getIdentifier()))
+                .flatMap(List<String>::stream)
+                .map(this::extractDate)
+                .filter(Optional<Date>::isPresent)
+                .map(Optional<Date>::get)
+                .min(Comparator.comparingLong(Date::getTime));
     }
 
     /**

@@ -102,39 +102,21 @@ public class LocalPidSystem implements IIdentifierSystem {
     
     @Override
     public String registerPidUnchecked(final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
-        if (this.db.existsById(pidRecord.getPid())) {
-            throw new PidAlreadyExistsException(pidRecord.getPid());
+        if (this.db.existsById(pidRecord.pid())) {
+            throw new PidAlreadyExistsException(pidRecord.pid());
         }
         this.db.save(new PidDatabaseObject(pidRecord));
-        LOG.debug("Registered record with PID: {}", pidRecord.getPid());
-        return pidRecord.getPid();
+        LOG.debug("Registered record with PID: {}", pidRecord.pid());
+        return pidRecord.pid();
     }
 
     @Override
     public boolean updatePID(PIDRecord rec) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
-        if (this.db.existsById(rec.getPid())) {
+        if (this.db.existsById(rec.pid())) {
             this.db.save(new PidDatabaseObject(rec));
             return true;
         }
         return false;
-    }
-
-    @Override
-    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
-        PIDRecord allProps = this.queryAllProperties(pid);
-        if (allProps == null) {return null;}
-        // only return properties listed in the type def
-        Set<String> typeProps = typeDefinition.getAllProperties();
-        PIDRecord result = new PIDRecord();
-        for (String propID : allProps.getPropertyIdentifiers()) {
-            if (typeProps.contains(propID)) {
-                String[] values = allProps.getPropertyValues(propID);
-                for (String value : values) {
-                    result.addEntry(propID, "", value);
-                }
-            }
-        }
-        return result;
     }
 
     @Override
@@ -145,7 +127,7 @@ public class LocalPidSystem implements IIdentifierSystem {
     @Override
     public Collection<String> resolveAllPidsOfPrefix() throws ExternalServiceException, InvalidConfigException {
         return this.db.findAll().parallelStream()
-                .map(dbo -> dbo.getPid())
+                .map(PidDatabaseObject::getPid)
                 .filter(pid -> pid.startsWith(PREFIX))
                 .collect(Collectors.toSet());
     }

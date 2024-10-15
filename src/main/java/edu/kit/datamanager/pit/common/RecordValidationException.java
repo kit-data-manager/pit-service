@@ -19,12 +19,12 @@ public class RecordValidationException extends ResponseStatusException {
 	private final transient PIDRecord pidRecord;
 
 	public RecordValidationException(PIDRecord pidRecord) {
-		super(HTTP_STATUS, VALIDATION_OF_RECORD + pidRecord.getPid() + " failed.");
+		super(HTTP_STATUS, VALIDATION_OF_RECORD + pidRecord.pid() + " failed.");
 		this.pidRecord = pidRecord;
 	}
 
 	public RecordValidationException(PIDRecord pidRecord, String reason) {
-		super(HTTP_STATUS, VALIDATION_OF_RECORD + pidRecord.getPid() + " failed. Reason:\n" + reason);
+		super(HTTP_STATUS, VALIDATION_OF_RECORD + pidRecord.pid() + " failed. Reason:\n" + reason);
 		this.pidRecord = pidRecord;
 	}
 

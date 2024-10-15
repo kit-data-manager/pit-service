@@ -12,7 +12,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 
 import edu.kit.datamanager.pit.domain.PIDRecord;
-import edu.kit.datamanager.pit.domain.PIDRecordEntry;
+import edu.kit.datamanager.pit.domain.PidRecordEntry;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -71,19 +71,19 @@ public class PidDatabaseObject {
     }
 
     public PidDatabaseObject(PIDRecord other) {
-        this.pid = other.getPid();
+        this.pid = other.pid();
 
         other
-            .getEntries()
+            .entries()
             .values()
             .stream()
-            .flatMap(List<PIDRecordEntry>::stream)
+            .flatMap(List<PidRecordEntry>::stream)
             .forEach(this::addEntry);
     }
 
-    private void addEntry(PIDRecordEntry entry) {
-        String key = entry.getKey();
-        String value = entry.getValue();
+    private void addEntry(PidRecordEntry entry) {
+        String key = entry.key();
+        String value = entry.value();
         ArrayList<String> values = this.entries.getOrDefault(key, new ArrayList<>());
         values.add(value);
         this.entries.put(key, values);

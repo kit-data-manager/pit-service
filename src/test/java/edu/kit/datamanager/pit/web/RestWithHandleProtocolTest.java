@@ -20,10 +20,7 @@ import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import jakarta.servlet.ServletContext;
@@ -67,7 +64,7 @@ class RestWithHandleProtocolTest {
         ServletContext servletContext = webApplicationContext.getServletContext();
         
         assertNotNull(servletContext);
-        assertTrue(servletContext instanceof MockServletContext);
+        assertInstanceOf(MockServletContext.class, servletContext);
         assertNotNull(webApplicationContext.getBean(ITypingRestResource.class));
         assertNotNull(webApplicationContext.getBean(HandleProtocolAdapter.class));
         assertThrows(NoSuchBeanDefinitionException.class, () -> {
@@ -87,6 +84,6 @@ class RestWithHandleProtocolTest {
         
         String resolvedBody = resolved.getResponse().getContentAsString();
         PIDRecord resolvedRecord = mapper.readValue(resolvedBody, PIDRecord.class);
-        assertEquals(pid, resolvedRecord.getPid());
+        assertEquals(pid, resolvedRecord.pid());
     }
 }

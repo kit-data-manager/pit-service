@@ -4,13 +4,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,7 +28,7 @@ import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.configuration.HandleCredentials;
 import edu.kit.datamanager.pit.configuration.HandleProtocolProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
-import edu.kit.datamanager.pit.domain.PIDRecordEntry;
+import edu.kit.datamanager.pit.domain.PidRecordEntry;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import net.handle.api.HSAdapter;
@@ -226,21 +220,21 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         HandleValue[] futurePairsArray = futurePairs.toArray(new HandleValue[] {});
 
         try {
-            this.client.createHandle(preparedRecord.getPid(), futurePairsArray);
+            this.client.createHandle(preparedRecord.pid(), futurePairsArray);
         } catch (HandleException e) {
             if (e.getCode() == HandleException.HANDLE_ALREADY_EXISTS) {
                 // Should not happen as this has to be checked on the REST handler level.
-                throw new PidAlreadyExistsException(preparedRecord.getPid());
+                throw new PidAlreadyExistsException(preparedRecord.pid());
             } else {
                 throw new ExternalServiceException(SERVICE_NAME_HANDLE, e);
             }
         }
-        return preparedRecord.getPid();
+        return preparedRecord.pid();
     }
 
     @Override
     public boolean updatePID(final PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
-        if (!this.isValidPID(pidRecord.getPid())) {
+        if (!this.isValidPID(pidRecord.pid())) {
             return false;
         }
         PIDRecord preparedRecord = pidRecord;
@@ -266,7 +260,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         // and in the end remove what needs to be removed (usually nothing!).
 
         // index value
-        Collection<HandleValue> oldHandleValues = this.queryAllHandleValues(preparedRecord.getPid());
+        Collection<HandleValue> oldHandleValues = this.queryAllHandleValues(preparedRecord.pid());
         Map<Integer, HandleValue> recordOld = oldHandleValues.stream()
                 .collect(Collectors.toMap(HandleValue::getIndex, v -> v));
         // 1)
@@ -284,13 +278,13 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             HandleDiff diff = new HandleDiff(recordOld, recordNew);
             // 4)
             if (diff.added().length > 0) {
-                this.client.addHandleValues(preparedRecord.getPid(), diff.added());
+                this.client.addHandleValues(preparedRecord.pid(), diff.added());
             }
             if (diff.updated().length > 0) {
-                this.client.updateHandleValues(preparedRecord.getPid(), diff.updated());
+                this.client.updateHandleValues(preparedRecord.pid(), diff.updated());
             }
             if (diff.removed().length > 0) {
-                this.client.deleteHandleValues(preparedRecord.getPid(), diff.removed());
+                this.client.deleteHandleValues(preparedRecord.pid(), diff.removed());
             }
         } catch (HandleException e) {
             if (e.getCode() == HandleException.HANDLE_DOES_NOT_EXIST) {
@@ -302,26 +296,6 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             throw new RuntimeException("Implementation error in calculating record difference. PLEASE REPORT!", e);
         }
         return true;
-    }
-
-    @Override
-    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
-        PIDRecord allProps = queryAllProperties(pid);
-        if (allProps == null) {
-            return null;
-        }
-        // only return properties listed in the type definition
-        Set<String> typeProps = typeDefinition.getAllProperties();
-        PIDRecord result = new PIDRecord();
-        for (String propID : allProps.getPropertyIdentifiers()) {
-            if (typeProps.contains(propID)) {
-                String[] values = allProps.getPropertyValues(propID);
-                for (String value : values) {
-                    result.addEntry(propID, "", value);
-                }
-            }
-        }
-        return result;
     }
 
     @Override
@@ -436,21 +410,21 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             }
         }
         HandleIndex index = new HandleIndex().skipping(skippingIndices);
-        Map<String, List<PIDRecordEntry>> entries = pidRecord.getEntries();
+        Map<String, List<PidRecordEntry>> entries = pidRecord.entries();
 
-        for (Entry<String, List<PIDRecordEntry>> entry : entries.entrySet()) {
-            for (PIDRecordEntry val : entry.getValue()) {
-                String key = val.getKey();
+        for (Entry<String, List<PidRecordEntry>> entry : entries.entrySet()) {
+            for (PidRecordEntry val : entry.getValue()) {
+                String key = val.key();
                 HandleValue hv = new HandleValue();
                 int i = index.nextIndex();
                 hv.setIndex(i);
                 hv.setType(key.getBytes(StandardCharsets.UTF_8));
-                hv.setData(val.getValue().getBytes(StandardCharsets.UTF_8));
+                hv.setData(val.value().getBytes(StandardCharsets.UTF_8));
                 result.add(hv);
                 LOG.debug("Entry: ({}) {} <-> {}", i, key, val);
             }
         }
-        assert result.size() >= pidRecord.getEntries().keySet().size();
+        assert result.size() >= pidRecord.entries().keySet().size();
         return result;
     }
 

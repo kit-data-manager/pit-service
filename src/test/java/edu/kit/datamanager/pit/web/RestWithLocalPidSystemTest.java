@@ -1,12 +1,6 @@
 package edu.kit.datamanager.pit.web;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
+import edu.kit.datamanager.pit.domain.PidRecordEntry;
 import jakarta.servlet.ServletContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,14 +41,15 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 // Might be needed for WebApp testing according to https://www.baeldung.com/integration-testing-in-spring
@@ -112,7 +107,7 @@ class RestWithLocalPidSystemTest {
         ServletContext servletContext = webApplicationContext.getServletContext();
         
         assertNotNull(servletContext);
-        assertTrue(servletContext instanceof MockServletContext);
+        assertInstanceOf(MockServletContext.class, servletContext);
         assertNotNull(webApplicationContext.getBean(ITypingRestResource.class));
         assertNotNull(webApplicationContext.getBean(LocalPidSystem.class));
         assertThrows(NoSuchBeanDefinitionException.class, () -> {
@@ -157,7 +152,7 @@ class RestWithLocalPidSystemTest {
     void testCreateValidRecord() throws Exception {
         // test create
         PIDRecord createdRecord = ApiMockUtils.registerSomeRecord(this.mockMvc);
-        String createdPid = createdRecord.getPid();
+        String createdPid = createdRecord.pid();
 
         // We store created PIDs
         assertEquals(1, this.knownPidsDao.count());
@@ -168,11 +163,11 @@ class RestWithLocalPidSystemTest {
 
         // Resolving the PID will override the available entry.
         assertEquals(1, this.knownPidsDao.count());
-        KnownPid kp = this.knownPidsDao.findByPid(resolvedRecord.getPid()).get();
+        KnownPid kp = this.knownPidsDao.findByPid(resolvedRecord.pid()).orElseThrow();
         // After resolving, the PID is not modified. So the creation and modification timestamps are still the same.
         assertEquals(kp.getCreated(), kp.getModified());
         // on update only
-        kp.getCreated().isBefore(kp.getModified());
+        assertTrue(kp.getCreated().isBefore(kp.getModified()));
     }
 
     @Test
@@ -199,8 +194,21 @@ class RestWithLocalPidSystemTest {
     @Test
     void testUpdateRecord() throws Exception {
         PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
-        PIDRecord modified = ApiMockUtils.clone(original);
-        modified.getEntries().get("21.T11148/b8457812905b83046284").get(0).setValue("https://example.com/anotherUrlAsBefore");
+        Map<String, List<PidRecordEntry>> entries = new HashMap<>(original.entries()).entrySet()
+                .stream()
+                .peek(entry -> {
+                    if (Objects.equals(entry.getKey(), "21.T11148/b8457812905b83046284")) {
+                        entry.getValue().addFirst(
+                                entry.getValue()
+                                        .getFirst()
+                                        .withValue("https://example.com/anotherUrlAsBefore")
+                        );
+                        entry.getValue().remove(1);
+                    }
+                })
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        PIDRecord modified = new PIDRecord(original.pid(), entries);
+        assertNotEquals(original, modified);
         PIDRecord updatedRecord = ApiMockUtils.updateRecord(this.mockMvc, original, modified);
         assertEquals(modified, updatedRecord);
     }
@@ -209,7 +217,7 @@ class RestWithLocalPidSystemTest {
     void testIdPidRegisteredFails() throws Exception {
         // Nothing is registered, our local storags contains no PIDs
         PIDRecord nonRegistered = mapper.readValue(RECORD, PIDRecord.class);
-        boolean isRegistered = isPidRegistered(nonRegistered.getPid());
+        boolean isRegistered = isPidRegistered(nonRegistered.pid());
         assertFalse(isRegistered);
         assertEquals(0, this.knownPidsDao.count());
     }
@@ -222,7 +230,7 @@ class RestWithLocalPidSystemTest {
         // If we clear the locally stored PIDs and then ask if it is registered, it should appear again.
         this.knownPidsDao.deleteAll();
         assertEquals(0, this.knownPidsDao.count());
-        boolean isRegistered = isPidRegistered(existing.getPid());
+        boolean isRegistered = isPidRegistered(existing.pid());
         assertTrue(isRegistered);
         assertEquals(1, this.knownPidsDao.count());
     }
@@ -253,7 +261,7 @@ class RestWithLocalPidSystemTest {
         // we know it is in the local database:
         assertEquals(1, this.knownPidsDao.count());
         // so we should be able to retrieve it via the REST api:
-        this.mockMvc.perform(get("/api/v1/pit/known-pid/" + r.getPid()))
+        this.mockMvc.perform(get("/api/v1/pit/known-pid/" + r.pid()))
             .andDo(MockMvcResultHandlers.print())
             .andExpect(MockMvcResultMatchers.status().is2xxSuccessful());
     }
@@ -276,37 +284,37 @@ class RestWithLocalPidSystemTest {
         PIDRecord r = ApiMockUtils.registerSomeRecord(this.mockMvc);
         PIDRecord r2 = ApiMockUtils.registerSomeRecord(this.mockMvc);
         assertEquals(2, this.knownPidsDao.count());
-        assertNotEquals(r.getPid(), r2.getPid());
+        assertNotEquals(r.pid(), r2.pid());
         
         List<KnownPid> pidinfos = ApiMockUtils.queryKnownPIDs(this.mockMvc, YESTERDAY, TOMORROW, null, null, Optional.empty());
         
         assertEquals(2, pidinfos.size());
-        assertEquals(r.getPid(), pidinfos.get(0).getPid());
-        assertEquals(r2.getPid(), pidinfos.get(1).getPid());
+        assertEquals(r.pid(), pidinfos.get(0).getPid());
+        assertEquals(r2.pid(), pidinfos.get(1).getPid());
         
         pidinfos = ApiMockUtils.queryKnownPIDs(this.mockMvc, null, TOMORROW, null, null, Optional.empty());
         
         assertEquals(2, pidinfos.size());
-        assertEquals(r.getPid(), pidinfos.get(0).getPid());
-        assertEquals(r2.getPid(), pidinfos.get(1).getPid());
+        assertEquals(r.pid(), pidinfos.get(0).getPid());
+        assertEquals(r2.pid(), pidinfos.get(1).getPid());
 
         pidinfos = ApiMockUtils.queryKnownPIDs(this.mockMvc, YESTERDAY, null, null, null, Optional.empty());
         
         assertEquals(2, pidinfos.size());
-        assertEquals(r.getPid(), pidinfos.get(0).getPid());
-        assertEquals(r2.getPid(), pidinfos.get(1).getPid());
+        assertEquals(r.pid(), pidinfos.get(0).getPid());
+        assertEquals(r2.pid(), pidinfos.get(1).getPid());
 
         pidinfos = ApiMockUtils.queryKnownPIDs(this.mockMvc, null, null, null, TOMORROW, Optional.empty());
         
         assertEquals(2, pidinfos.size());
-        assertEquals(r.getPid(), pidinfos.get(0).getPid());
-        assertEquals(r2.getPid(), pidinfos.get(1).getPid());
+        assertEquals(r.pid(), pidinfos.get(0).getPid());
+        assertEquals(r2.pid(), pidinfos.get(1).getPid());
 
         pidinfos = ApiMockUtils.queryKnownPIDs(this.mockMvc, null, null, YESTERDAY, null, Optional.empty());
         
         assertEquals(2, pidinfos.size());
-        assertEquals(r.getPid(), pidinfos.get(0).getPid());
-        assertEquals(r2.getPid(), pidinfos.get(1).getPid());
+        assertEquals(r.pid(), pidinfos.get(0).getPid());
+        assertEquals(r2.pid(), pidinfos.get(1).getPid());
 
         pidinfos = ApiMockUtils.queryKnownPIDs(this.mockMvc, null, NOW.minusSeconds(60), null, null, Optional.empty());
         assertEquals(0, pidinfos.size());
@@ -324,18 +332,18 @@ class RestWithLocalPidSystemTest {
         PIDRecord r = ApiMockUtils.registerSomeRecord(this.mockMvc);
         PIDRecord r2 = ApiMockUtils.registerSomeRecord(this.mockMvc);
         assertEquals(2, this.knownPidsDao.count());
-        assertNotEquals(r.getPid(), r2.getPid());
+        assertNotEquals(r.pid(), r2.pid());
         List<KnownPid> pidinfos = ApiMockUtils.queryKnownPIDs(this.mockMvc, YESTERDAY, TOMORROW, null, null, Optional.empty());
         assertEquals(2, pidinfos.size());
 
         Pageable pageable = Pageable.ofSize(1).first();
         pidinfos = ApiMockUtils.queryKnownPIDs(this.mockMvc, YESTERDAY, TOMORROW, null, null, Optional.of(pageable));
         assertEquals(1, pidinfos.size());
-        assertEquals(r.getPid(), pidinfos.get(0).getPid());
+        assertEquals(r.pid(), pidinfos.getFirst().getPid());
 
         pageable = pageable.next();
         pidinfos = ApiMockUtils.queryKnownPIDs(this.mockMvc, YESTERDAY, TOMORROW, null, null, Optional.of(pageable));
         assertEquals(1, pidinfos.size());
-        assertEquals(r2.getPid(), pidinfos.get(0).getPid());
+        assertEquals(r2.pid(), pidinfos.getFirst().getPid());
     }
 }

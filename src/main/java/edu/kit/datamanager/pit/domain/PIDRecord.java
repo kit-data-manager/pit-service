@@ -5,14 +5,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import edu.kit.datamanager.entities.EtagSupport;
 import edu.kit.datamanager.pit.pidsystem.impl.local.PidDatabaseObject;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import javax.annotation.CheckReturnValue;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.Set;
 
 /**
  * The internal representation for a PID record, offering methods to manipulate
@@ -22,16 +17,17 @@ import java.util.Set;
  * communication or representation for the outside. In contrast, this is the
  * internal representation offering methods for manipulation.
  */
-public class PIDRecord implements EtagSupport {
-
-    private String pid = "";
-
-    private Map<String, List<PIDRecordEntry>> entries = new HashMap<>();
+public record PIDRecord(
+        String pid,
+        Map<String, List<PidRecordEntry>> entries
+) implements EtagSupport {
 
     /**
      * Creates an empty record without PID.
      */
-    public PIDRecord() {}
+    public PIDRecord() {
+        this("", new HashMap<>());
+    }
 
     /**
      * Creates a record with the same content as the given representation.
@@ -39,17 +35,32 @@ public class PIDRecord implements EtagSupport {
      * @param dbo the given record representation.
      */
     public PIDRecord(PidDatabaseObject dbo) {
-        this.setPid(dbo.getPid());
-        dbo.getEntries().forEach(
-                (key, valueList) -> valueList.forEach(
-                        value -> this.addEntry(key, value)));
+        this(
+                dbo.getPid(),
+                dbo.getEntries().entrySet().stream()
+                        .map(entry -> new AbstractMap.SimpleEntry<String, ArrayList<PidRecordEntry>>(
+                                entry.getKey(),
+                                entry.getValue().stream()
+                                        .map(value -> new PidRecordEntry(entry.getKey(), "", value))
+                                        .collect(Collectors.toCollection(ArrayList::new)))
+                        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+        );
     }
 
     public PIDRecord(SimplePidRecord rec) {
-        this.entries = new HashMap<>();
-        for (SimplePair pair : rec.getPairs()) {
-            this.addEntry(pair.getKey(), "", pair.getValue());
-        }
+        this(
+                rec.pid(),
+                rec.pairs().stream()
+                        .map(simplePair -> new AbstractMap.SimpleEntry<String, PidRecordEntry>(
+                                simplePair.key(),
+                                new PidRecordEntry(simplePair.key(), "", simplePair.value())
+                        ))
+                        .collect(Collectors.toMap(
+                                AbstractMap.SimpleEntry::getKey,
+                                e -> new ArrayList<>(List.of(e.getValue())),
+                                (e1, e2) -> {e1.addAll(e2); return e1;}
+                        ))
+        );
     }
 
     /**
@@ -58,61 +69,42 @@ public class PIDRecord implements EtagSupport {
      * @param pid the pid to set in this object.
      * @return this object (builder method).
      */
+    @CheckReturnValue
     public PIDRecord withPID(String pid) {
-        this.setPid(pid);
-        return this;
-    }
-
-    public String getPid() {
-        return pid;
-    }
-
-    public void setPid(String pid) {
-        this.pid = pid;
-    }
-
-    public Map<String, List<PIDRecordEntry>> getEntries() {
-        return entries;
+        return new PIDRecord(pid, new HashMap<>(entries));
     }
 
     @JsonIgnore
     public Set<SimplePair> getSimpleEntries() {
-        return this.entries
-                .entrySet()
-                .stream()
-                .flatMap(
-                        entry -> entry.getValue().stream()
-                                .map(complexPair -> new SimplePair(complexPair.getKey(), complexPair.getValue())))
-                .collect(Collectors.toSet());
+        return new HashSet<>(new SimplePidRecord(this).pairs());
     }
 
-    public void setEntries(Map<String, List<PIDRecordEntry>> entries) {
-        this.entries = entries;
-    }
-
-    public void addEntry(String propertyIdentifier, String propertyValue) {
-        this.addEntry(propertyIdentifier, "", propertyValue);
+    @CheckReturnValue
+    public PIDRecord addEntry(String propertyIdentifier, String propertyValue) {
+        return this.addEntry(propertyIdentifier, "", propertyValue);
     }
 
     /**
-     * Adds a new key-name-value triplet.
+     * Returns a copy of this instance, but with an additional entry.
      * 
      * @param propertyIdentifier the key/type PID.
      * @param propertyName the human-readable name for the given key/type.
      * @param propertyValue the value to this key/type.
      */
-    public void addEntry(String propertyIdentifier, String propertyName, String propertyValue) {
+    @CheckReturnValue
+    public PIDRecord addEntry(String propertyIdentifier, String propertyName, String propertyValue) {
         if (propertyIdentifier.isEmpty()) {
             throw new IllegalArgumentException("The identifier of a property may not be empty!");
         }
-        PIDRecordEntry entry = new PIDRecordEntry();
-        entry.setKey(propertyIdentifier);
-        entry.setName(propertyName);
-        entry.setValue(propertyValue);
-
-        this.entries
-            .computeIfAbsent(propertyIdentifier, key -> new ArrayList<>())
+        PidRecordEntry entry = new PidRecordEntry(
+                propertyIdentifier,
+                propertyName,
+                propertyValue
+        );
+        Map<String, List<PidRecordEntry>> entries = new HashMap<>(this.entries);
+        entries.computeIfAbsent(propertyIdentifier, key -> new ArrayList<>())
             .add(entry);
+        return new PIDRecord(pid, entries);
     }
 
     /**
@@ -123,14 +115,14 @@ public class PIDRecord implements EtagSupport {
      */
     @JsonIgnore
     public void setPropertyName(String propertyIdentifier, String name) {
-        List<PIDRecordEntry> propertyEntries = this.entries.get(propertyIdentifier);
+        List<PidRecordEntry> propertyEntries = this.entries.get(propertyIdentifier);
         if (propertyEntries == null) {
             throw new IllegalArgumentException(
                 "Property identifier not listed in this record: " + propertyIdentifier);
         }
-        for (PIDRecordEntry entry : propertyEntries) {
-            entry.setName(name);
-        }
+        this.entries.put(propertyIdentifier, propertyEntries.stream()
+                .map(entry -> entry.withName(name))
+                .toList());
     }
 
     /**
@@ -149,12 +141,18 @@ public class PIDRecord implements EtagSupport {
      *
      * @param propertiesToKeep a collection of property identifiers to keep.
      */
-    public void removePropertiesNotListed(Collection<String> propertiesToKeep) {
+    @CheckReturnValue
+    public PIDRecord removePropertiesNotListed(Collection<String> propertiesToKeep) {
+        HashMap<String, List<PidRecordEntry>> entries = new HashMap<>(this.entries);
         entries.keySet().removeIf(propID -> !propertiesToKeep.contains(propID));
+        return new PIDRecord(pid, entries);
     }
 
-    public void removeAllValuesOf(String attribute) {
-        this.entries.remove(attribute);
+    @CheckReturnValue
+    public PIDRecord removeAllValuesOf(String attribute) {
+        Map<String, List<PidRecordEntry>> entries = new HashMap<>(this.entries);
+        entries.remove(attribute);
+        return new PIDRecord(pid, entries);
     }
 
     /**
@@ -182,19 +180,19 @@ public class PIDRecord implements EtagSupport {
      */
     @JsonIgnore
     public Set<String> getPropertyIdentifiers() {
-        return entries.keySet();
+        return new HashSet<>(entries.keySet());
     }
 
     /**
      * Get the value of the first element in case there are multiple elements
-     * for the provided propertyIndentifier.
+     * for the provided propertyIdentifier.
      */
     public String getPropertyValue(String propertyIdentifier) {
-        List<PIDRecordEntry> entry = entries.get(propertyIdentifier);
+        List<PidRecordEntry> entry = entries.get(propertyIdentifier);
         if (entry == null) {
             return "";
         }
-        return entry.getFirst().getValue();
+        return entry.getFirst().value();
     }
 
     /**
@@ -203,17 +201,12 @@ public class PIDRecord implements EtagSupport {
      * @param propertyIdentifier the given property identifier.
      * @return all values of the given property.
      */
-    public String[] getPropertyValues(String propertyIdentifier) {
-        List<PIDRecordEntry> entry = entries.get(propertyIdentifier);
-        if (entry == null) {
-            return new String[]{};
-        }
-
-        List<String> values = new ArrayList<>();
-        for (PIDRecordEntry e : entry) {
-            values.add(e.getValue());
-        }
-        return values.toArray(new String[] {});
+    public List<String> getPropertyValues(String propertyIdentifier) {
+        List<PidRecordEntry> entry = entries.get(propertyIdentifier);
+        if (entry == null) { return List.of(); }
+        return entry.stream()
+                .map(PidRecordEntry::value)
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     @Override
@@ -250,11 +243,6 @@ public class PIDRecord implements EtagSupport {
 
         // this ignores attributes order, names, and even duplicates
         return this.getSimpleEntries().equals(other.getSimpleEntries());
-    }
-
-    @Override
-    public String toString() {
-        return "PIDRecord [pid=" + pid + ", entries=" + entries + "]";
     }
 
     /**
