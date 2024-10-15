@@ -148,8 +148,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             // The registration at the PID service will preprend the prefix.
 
             Stream<PidSuffix> suffixStream = suffixGenerator.infiniteStream();
-            Optional<PidSuffix> maybeSuffix = Streams.stream(suffixStream)
-                    // The Streams.stream gives us a failible stream, so we can throw an exception
+            Optional<PidSuffix> maybeSuffix = Streams.failableStream(suffixStream)
+                    // With failible streams, we can throw exceptions.
                     .filter(suffix -> !this.typingService.isIdentifierRegistered(suffix))
                     .stream()  // back to normal java streams
                     .findFirst();  // as the stream is infinite, we should always find a prefix.
