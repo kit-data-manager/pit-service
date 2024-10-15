@@ -1,10 +1,6 @@
 package edu.kit.datamanager.pit.pidsystem.impl;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
@@ -13,6 +9,7 @@ import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecordEntry;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 
@@ -54,7 +51,7 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
     @Override
     public PIDRecord queryAllProperties(String pid) throws PidNotFoundException, ExternalServiceException {
         PIDRecord pidRecord = this.records.get(pid);
-        if (pidRecord == null) { return null; }
+        if (pidRecord == null) { throw new PidNotFoundException(pid); }
         return pidRecord;
     }
 
@@ -68,36 +65,18 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
     
     @Override
     public String registerPidUnchecked(final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
-        this.records.put(pidRecord.getPid(), pidRecord);
-        LOG.debug("Registered record with PID: {}", pidRecord.getPid());
-        return pidRecord.getPid();
+        this.records.put(pidRecord.pid(), pidRecord);
+        LOG.debug("Registered record with PID: {} (etag: {})", pidRecord.pid(), pidRecord.getEtag());
+        return pidRecord.pid();
     }
 
     @Override
     public boolean updatePID(PIDRecord record) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
-        if (this.records.containsKey(record.getPid())) {
-            this.records.put(record.getPid(), record);
+        if (this.records.containsKey(record.pid())) {
+            this.records.put(record.pid(), record);
             return true;
         }
         return false;
-    }
-
-    @Override
-    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
-        PIDRecord allProps = this.queryAllProperties(pid);
-        if (allProps == null) {return null;}
-        // only return properties listed in the type def
-        Set<String> typeProps = typeDefinition.getAllProperties();
-        PIDRecord result = new PIDRecord();
-        for (String propID : allProps.getPropertyIdentifiers()) {
-            if (typeProps.contains(propID)) {
-                String[] values = allProps.getPropertyValues(propID);
-                for (String value : values) {
-                    result.addEntry(propID, "", value);
-                }
-            }
-        }
-        return result;
     }
 
     @Override

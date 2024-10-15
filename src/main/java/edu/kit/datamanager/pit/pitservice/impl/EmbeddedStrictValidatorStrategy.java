@@ -8,6 +8,8 @@ import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pitservice.IValidationStrategy;
 import edu.kit.datamanager.pit.util.TypeValidationUtils;
 
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import org.slf4j.Logger;
@@ -42,8 +44,8 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
                     "Profile attribute not found. Expected key: " + profileKey);
         }
 
-        String[] profilePIDs = pidRecord.getPropertyValues(profileKey);
-        boolean hasProfile = profilePIDs.length > 0;
+        List<String> profilePIDs = pidRecord.getPropertyValues(profileKey);
+        boolean hasProfile = !profilePIDs.isEmpty();
         if (!hasProfile) {
             throw new RecordValidationException(
                     pidRecord,
@@ -121,7 +123,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
      */
     private void validateValuesForKey(PIDRecord pidRecord, String attributeKey, TypeDefinition type)
             throws RecordValidationException {
-        String[] values = pidRecord.getPropertyValues(attributeKey);
+        List<String> values = pidRecord.getPropertyValues(attributeKey);
         for (String value : values) {
             if (value == null) {
                 LOG.error("'null' record value found for key {}.", attributeKey);

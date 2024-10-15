@@ -40,9 +40,7 @@ public class IIdentifierSystemQueryTest {
         handleProtocolInstance.init();
         IIdentifierSystem handleProtocol = handleProtocolInstance;
 
-        PIDRecord rec = new PIDRecord();
-        rec.setPid("my-custom-suffix");
-        rec.addEntry(
+        PIDRecord rec = new PIDRecord().withPID("my-custom-suffix").addEntry(
             // this is actually a registered type, but not in a data type registry, but inline in the PID system.
             "10320/loc",
             "",
@@ -78,7 +76,7 @@ public class IIdentifierSystemQueryTest {
     @MethodSource("implProvider")
     public void queryAllPropertiesExample(IIdentifierSystem impl, String pid) throws IOException {
         PIDRecord result = impl.queryAllProperties(pid);
-        assertEquals(result.getPid(), pid);
+        assertEquals(result.pid(), pid);
         assertTrue(result.getPropertyIdentifiers().contains("10320/loc"));
         assertFalse(result.getPropertyIdentifiers().contains("HS_ADMIN"));
     }

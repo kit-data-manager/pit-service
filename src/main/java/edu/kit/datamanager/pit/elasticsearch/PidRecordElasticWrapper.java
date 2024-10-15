@@ -58,7 +58,7 @@ public class PidRecordElasticWrapper {
     private List<String> read = new ArrayList<>();
 
     public PidRecordElasticWrapper(PIDRecord pidRecord, Operations dateOperations) {
-        pid = pidRecord.getPid();
+        pid = pidRecord.pid();
         PidDatabaseObject simple = new PidDatabaseObject(pidRecord);
         this.attributes = simple.getEntries();
         this.read.add("anonymousUser");
@@ -67,7 +67,7 @@ public class PidRecordElasticWrapper {
             this.created = dateOperations.findDateCreated(pidRecord).orElse(null);
             this.lastUpdate = dateOperations.findDateModified(pidRecord).orElse(null);
         } catch (IOException e) {
-            LOG.error("Could not retrieve date from record (pid: " + pidRecord.getPid() + ").", e);
+            LOG.error("Could not retrieve date from record (pid: " + pidRecord.pid() + ").", e);
             e.printStackTrace();
         }
     }

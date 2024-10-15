@@ -71,7 +71,7 @@ class EtagTest {
     void givenNoEtag_onResolve_returnOk() throws Exception {
         // retrieving will result in http 200 (OK)
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-            .get(RESOLVE_URL.concat(this.existingRecord.getPid()))
+            .get(RESOLVE_URL.concat(this.existingRecord.pid()))
             .accept(MediaType.APPLICATION_JSON_VALUE);
         MvcResult result = mockMvc
             .perform(request)
@@ -93,7 +93,7 @@ class EtagTest {
     @Test
     void givenIfNoneMatchEtag_onResolve_returnNotModified() throws Exception {
         String etag = quoted(this.existingRecord.getEtag());
-        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.get(RESOLVE_URL.concat(this.existingRecord.getPid()))
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.get(RESOLVE_URL.concat(this.existingRecord.pid()))
             .accept(MediaType.APPLICATION_JSON_VALUE)
             .header(HttpHeaders.IF_NONE_MATCH, etag);
         mockMvc
@@ -110,7 +110,7 @@ class EtagTest {
      */
     @Test
     void givenInvalidIfNoneMatchEtag_onResolve_returnOk() throws Exception {
-        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.get(RESOLVE_URL.concat(this.existingRecord.getPid()))
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.get(RESOLVE_URL.concat(this.existingRecord.pid()))
             .accept(MediaType.APPLICATION_JSON_VALUE)
             .header(HttpHeaders.IF_NONE_MATCH, "somethingElse");
         mockMvc
@@ -128,7 +128,7 @@ class EtagTest {
     @Test
     void givenIfMatchEtag_onResolve_returnNotModified() throws Exception {
         String etag = quoted(this.existingRecord.getEtag());
-        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.get(RESOLVE_URL.concat(this.existingRecord.getPid()))
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.get(RESOLVE_URL.concat(this.existingRecord.pid()))
             .accept(MediaType.APPLICATION_JSON_VALUE)
             .header(HttpHeaders.IF_NONE_MATCH, etag);
         mockMvc
@@ -145,7 +145,7 @@ class EtagTest {
      */
     @Test
     void givenIfMatchEtag_onResolve_returnOk() throws Exception {
-        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.get(RESOLVE_URL.concat(this.existingRecord.getPid()))
+        MockHttpServletRequestBuilder request = MockMvcRequestBuilders.get(RESOLVE_URL.concat(this.existingRecord.pid()))
             .accept(MediaType.APPLICATION_JSON_VALUE)
             .header(HttpHeaders.IF_NONE_MATCH, "somethingElse");
         mockMvc
@@ -162,12 +162,12 @@ class EtagTest {
      */
     @Test
     void givenNoEtag_onUpdate_returnPreconditionRequired() throws Exception {
-        // lets update the existing record without etag
-        this.existingRecord.addEntry("21.T11148/d0773859091aeb451528", "", "fake/pid");
+        // let's update the existing record without etag
+        PIDRecord modified = this.existingRecord.addEntry("21.T11148/d0773859091aeb451528", "", "fake/pid");
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-            .put("/api/v1/pit/pid/".concat(this.existingRecord.getPid()))
+            .put("/api/v1/pit/pid/".concat(modified.pid()))
             .characterEncoding("utf-8")
-            .content(ApiMockUtils.serialize(existingRecord))
+            .content(ApiMockUtils.serialize(modified))
             .accept(MediaType.APPLICATION_JSON_VALUE)
             .contentType(MediaType.APPLICATION_JSON_VALUE);
         mockMvc
@@ -185,12 +185,12 @@ class EtagTest {
     @Test
     void givenIfMatchEtag_onUpdate_returnOk() throws Exception {
         String oldEtag = quoted(this.existingRecord.getEtag());
-        // lets update the existing record without etag
-        this.existingRecord.addEntry("21.T11148/397d831aa3a9d18eb52c", "", "2016-05-03T15:15:07.473Z");
+        // let's update the existing record without etag
+        PIDRecord modified = this.existingRecord.addEntry("21.T11148/397d831aa3a9d18eb52c", "", "2016-05-03T15:15:07.473Z");
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-            .put("/api/v1/pit/pid/".concat(this.existingRecord.getPid()))
+            .put("/api/v1/pit/pid/".concat(modified.pid()))
             .characterEncoding("utf-8")
-            .content(ApiMockUtils.serialize(existingRecord))
+            .content(ApiMockUtils.serialize(modified))
             .accept(MediaType.APPLICATION_JSON_VALUE)
             .contentType(MediaType.APPLICATION_JSON_VALUE)
             .header(HttpHeaders.IF_MATCH, oldEtag);
@@ -210,12 +210,12 @@ class EtagTest {
      */
     @Test
     void givenIfNoneMatchEtag_onUpdate_returnPreconditionRequired() throws Exception {
-        // lets update the existing record without etag
-        this.existingRecord.addEntry("21.T11148/397d831aa3a9d18eb52c", "", "2016-05-03T15:15:07.473Z");
+        // let's update the existing record without etag
+        PIDRecord modified = this.existingRecord.addEntry("21.T11148/397d831aa3a9d18eb52c", "", "2016-05-03T15:15:07.473Z");
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-            .put("/api/v1/pit/pid/".concat(this.existingRecord.getPid()))
+            .put("/api/v1/pit/pid/".concat(modified.pid()))
             .characterEncoding("utf-8")
-            .content(ApiMockUtils.serialize(existingRecord))
+            .content(ApiMockUtils.serialize(modified))
             .accept(MediaType.APPLICATION_JSON_VALUE)
             .contentType(MediaType.APPLICATION_JSON_VALUE)
             .header(HttpHeaders.IF_NONE_MATCH, quoted("somethingElse"));
@@ -233,12 +233,12 @@ class EtagTest {
      */
     @Test
     void givenInvalidIfMatchEtag_onUpdate_returnPreconditionFailed() throws Exception {
-        // lets update the existing record without etag
-        this.existingRecord.addEntry("21.T11148/d0773859091aeb451528", "", "fake/pid");
+        // let's update the existing record without etag
+        PIDRecord modified = this.existingRecord.addEntry("21.T11148/d0773859091aeb451528", "", "fake/pid");
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-            .put("/api/v1/pit/pid/".concat(this.existingRecord.getPid()))
+            .put("/api/v1/pit/pid/".concat(modified.pid()))
             .characterEncoding("utf-8")
-            .content(ApiMockUtils.serialize(existingRecord))
+            .content(ApiMockUtils.serialize(modified))
             .accept(MediaType.APPLICATION_JSON_VALUE)
             .contentType(MediaType.APPLICATION_JSON_VALUE)
             .header(HttpHeaders.IF_MATCH, quoted("somethingElse"));
@@ -258,12 +258,12 @@ class EtagTest {
      */
     @Test
     void givenInvalidIfNoneEtag_onUpdate_returnPreconditionFailed() throws Exception {
-        // lets update the existing record without etag
-        this.existingRecord.addEntry("21.T11148/d0773859091aeb451528", "", "fake/pid");
+        // let's update the existing record without etag
+        PIDRecord modified = this.existingRecord.addEntry("21.T11148/d0773859091aeb451528", "", "fake/pid");
         MockHttpServletRequestBuilder request = MockMvcRequestBuilders
-            .put("/api/v1/pit/pid/".concat(this.existingRecord.getPid()))
+            .put("/api/v1/pit/pid/".concat(modified.pid()))
             .characterEncoding("utf-8")
-            .content(ApiMockUtils.serialize(existingRecord))
+            .content(ApiMockUtils.serialize(modified))
             .accept(MediaType.APPLICATION_JSON_VALUE)
             .contentType(MediaType.APPLICATION_JSON_VALUE)
             .header(HttpHeaders.IF_NONE_MATCH, quoted("somethingElse"));

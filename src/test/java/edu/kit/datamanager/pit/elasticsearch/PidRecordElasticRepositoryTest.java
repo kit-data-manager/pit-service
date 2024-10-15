@@ -73,9 +73,9 @@ class PidRecordElasticRepositoryTest {
     @Test
     @Transactional
     void testStorageWithDateNull() throws JacksonException {
-        PIDRecord r = new PIDRecord();
-        r.setPid("not-a-pid");
-        r.addEntry("21.T11148/076759916209e5d62bd5", "", "21.T11148/b9b76f887845e32d29f7");
+        PIDRecord r = new PIDRecord()
+                .withPID("not-a-pid")
+                .addEntry("21.T11148/076759916209e5d62bd5", "", "21.T11148/b9b76f887845e32d29f7");
         PidRecordElasticWrapper w = new PidRecordElasticWrapper(r, typingService.getOperations());
         assertEquals(0, dao.count());
         dao.save(w);
