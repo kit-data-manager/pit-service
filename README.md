@@ -4,7 +4,7 @@
 
 The Typed PID Maker enables the creation, maintenance, and validation of PIDs. It ensures the PID contains typed, machine-actionable information using validation. This is especially helpful in the context of FAIR Digital Objects (FAIR DOs / FDOs). To make this work, our validation strategy requires a reference to a registered Kernel Information Profile within the PID record, as defined by the [recommendations of the Research Data Alliance (RDA)](https://doi.org/10.15497/rda00031). [In the RDA context, this kind of service is called a "PIT service"](https://doi.org/10.15497/FDAA09D5-5ED0-403D-B97A-2675E1EBE786). We use Handle PIDs, which can be created using a Handle Prefix (not included). For testing or other local purposes, we support sandboxed PIDs, which require no external service.
 
-**Go to: [Documentation](https://kit-data-manager.github.io/webpage/typed-pid-maker/index.html) | [Configuration details](https://github.com/kit-data-manager/pit-service/blob/master/config/application.properties) | [Features](#features) | [Build](#how-to-build) | [Run](#how-to-run) | [License](#license)**
+**Go to: [Documentation](https://kit-data-manager.github.io/webpage/typed-pid-maker/index.html) | [Configuration details](https://github.com/kit-data-manager/pit-service/blob/master/config/application-default.properties) | [Features](#features) | [Build](#how-to-build) | [Run](#how-to-run) | [License](#license)**
 
 ## Features
 
@@ -122,7 +122,7 @@ After a successful build, a jar file containing the entire service is created at
 For development purposes, the easiest way to run the service with your configuration file is:
 
 ```bash
-./gradlew run --args="--spring.config.location=config/application.properties"
+./gradlew run --args="--spring.config.location=config/application-default.properties"
 ```
 
 This command will use the default settings, set and documented in the file `config/application.properties` (see [command line options](#command-line-options)). Changes in this file will require a restart of the Typed PID Maker, in case it is already running. If you change the location of the file or want to use another configuration, you may adjust the path in the command above or use one of the [default locations for spring boot configurations](https://docs.spring.io/spring-boot/reference/features/external-config.html#:~:text=config%20data%20files%20are%20considered%20in%20the%20following%20order%3A).
@@ -145,6 +145,7 @@ Details on the version number and other build information can be found on <http:
 ### Command line options
 
 - `--spring.config.location=config/application.properties` set the configuration files location to be used. Not required if the file is in the same directory as the jar file or another [default location for spring boot configurations](https://docs.spring.io/spring-boot/reference/features/external-config.html#:~:text=config%20data%20files%20are%20considered%20in%20the%20following%20order%3A).
+- `--spring.profiles.active=$PROFILE` to make spring using your adjusted `application-$PROFILE.properties` instead of (or in addition to) `application-default.properties`. [May also take multiple profiles as a comma separated list](https://docs.spring.io/spring-boot/reference/features/profiles.html).
 - `bootstrap all-pids-from-prefix` starts the service and bootstraps all PIDs. This means:
   - store the PIDs as "known PIDs" in the local database (as configured)
   - send one message per PID to the message broker (if configured)

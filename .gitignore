@@ -9,8 +9,8 @@
 
 ###  SPRING BOOT ###
 # Ignore local settings for spring boot
-# If you want to provide default settings use 'application.properties.default' and rename it while building service.
-**/application.properties
+**/*.properties
+!config/application-default.properties
 ##############
 
 # Ignore other meta folders (e.g. by netbeans)
