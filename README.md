@@ -109,6 +109,9 @@ All other configuration properties affect only the `uniquely-generated-string`. 
 - Building (with tests): `./gradlew clean build`
 - Building (with verbose test output) `./gradlew -Dprofile=verbose clean build`
 - Building (without tests): `./gradlew clean build -x test`
+- Run docker integration tests:
+  - `./gradlew clean build` (by default, this will reuse the local build)
+  - `time bash ./docker/test_docker.sh` (runs test script)
 - Doing a release: `./gradlew clean build release`
   - Will prompt you about version number to use and next version number
   - Will make a git tag which can later be used in a GitHub release
