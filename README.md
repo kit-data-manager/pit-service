@@ -107,6 +107,7 @@ All other configuration properties affect only the `uniquely-generated-string`. 
 **Required**: Java SE Development Kit 21 (or openjdk 21) or higher
 
 - Building (with tests): `./gradlew clean build`
+- Building (with verbose test output) `./gradlew -Dprofile=verbose clean build`
 - Building (without tests): `./gradlew clean build -x test`
 - Doing a release: `./gradlew clean build release`
   - Will prompt you about version number to use and next version number

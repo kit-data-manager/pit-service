@@ -152,14 +152,22 @@ test {
     environment "spring.config.location", "classpath:/test/"
     // for junit5
     useJUnitPlatform()
-
-    testLogging {
-        // tests are never "up-to-date", always print everything
-        outputs.upToDateWhen {false}
-        // show stdio when tests are running
-        showStandardStreams = true
-        // for junit5
-        events "passed", "skipped", "failed"
+    if (System.getProperty("profile") == "verbose") {
+        println "Tests will have verbose output"
+        testLogging {
+            // tests are never "up-to-date", always print everything
+            outputs.upToDateWhen {false}
+            // show stdio when tests are running
+            showStandardStreams = true
+            // for junit5
+            events "passed", "skipped", "failed"
+        }
+    } else {
+        println "Test will have compact output"
+        testLogging {
+            // for junit5
+            events "passed", "skipped", "failed"
+        }
     }
 }
 
