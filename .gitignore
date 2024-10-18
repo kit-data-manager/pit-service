@@ -21,6 +21,7 @@
 .classpath
 /bin/
 .vscode
+.idea
 # ignore potential databases
 *.db
 
