@@ -34,7 +34,6 @@ jacoco {
     toolVersion = "0.8.11"
 }
 
-archivesBaseName = 'TypedPIDMaker'
 description = "A gateway to manage PIDs containing profiles and typed attributes."
 group = 'edu.kit.datamanager'
 
@@ -140,7 +139,7 @@ java {
     toolchain {
         // "By default, Gradle uses the same Java version for running
         // Gradle itself and building JVM projects."
-        // We can enforce a specific version here. By defult, we do not do this
+        // We can enforce a specific version here. By default, we do not do this
         // to enable the CI to test with different JDKs.
         // https://docs.gradle.org/current/userguide/toolchains.html#toolchains
         //languageVersion = JavaLanguageVersion.of(jdkVersion)
@@ -152,14 +151,22 @@ test {
     environment "spring.config.location", "classpath:/test/"
     // for junit5
     useJUnitPlatform()
-
-    testLogging {
-        // tests are never "up-to-date", always print everything
-        outputs.upToDateWhen {false}
-        // show stdio when tests are running
-        showStandardStreams = true
-        // for junit5
-        events "passed", "skipped", "failed"
+    if (System.getProperty("profile") == "verbose") {
+        println "Tests will have verbose output"
+        testLogging {
+            // tests are never "up-to-date", always print everything
+            outputs.upToDateWhen {false}
+            // show stdio when tests are running
+            showStandardStreams = true
+            // for junit5
+            events "passed", "skipped", "failed"
+        }
+    } else {
+        println "Test will have compact output"
+        testLogging {
+            // for junit5
+            events "passed", "skipped", "failed"
+        }
     }
 }
 
@@ -168,7 +175,7 @@ javadoc {
     doLast {
         copy {
             from "src/main/javadoc"
-            into "$buildDir/docs/javadoc"
+            into "$rootProject.layout.buildDirectory/docs/javadoc"
         }
     }
 }
@@ -205,7 +212,7 @@ release {
     }
 }
 
-tasks.withType(Jar).all { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
-tasks.withType(Tar).all { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
-tasks.withType(Copy).all { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
-tasks.withType(Zip).all { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
+tasks.withType(Jar).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
+tasks.withType(Tar).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
+tasks.withType(Copy).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
+tasks.withType(Zip).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
