@@ -26,7 +26,7 @@ docker run -p 8090:8090 --detach --name $container $tag
 #####################################
 ### tests ###########################
 #####################################
-hurl --retry=10 --retry-interval=10s \
+hurl --retry=10 --retry-interval=10000 \
      --test "$docker_dir"/tests/*.hurl
 failure=$?
 #####################################
