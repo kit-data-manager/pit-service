@@ -104,6 +104,8 @@ All other configuration properties affect only the `uniquely-generated-string`. 
 
 ## How to build
 
+> Note: Alternatively, you can use the docker image.
+
 **Required**: Java SE Development Kit 21 (or openjdk 21) or higher
 
 - Building (with tests): `./gradlew clean build`
@@ -122,6 +124,24 @@ On Windows, replace `./gradlew` with `gradlew.bat`.
 After a successful build, a jar file containing the entire service is created at `build/libs/TypedPIDMaker-$(version).jar`.
 
 ## How to run
+
+Currently, you can either run it via docker or via the compiled JAR file.
+
+## Running via docker
+
+**Required**: Up-to-date docker installation
+
+We provide docker images hosted on GitHub.
+
+- Pull the latest version: `docker pull ghcr.io/kit-data-manager/pit-service:latest`
+
+TODO
+- configuration (config mount)
+- backing up (database mount)
+- document available ports, etc
+- ...?
+
+## Running the compiled JAR file
 
 For development purposes, the easiest way to run the service with your configuration file is:
 
