@@ -14,10 +14,10 @@ sleep .2
 if [ "$1" ]
 then
     echo "  > compiling in container: "
-    docker build --file $docker_dir/Dockerfile-build-in-image --tag $tag $docker_dir/..
+    docker build --file $docker_dir/Dockerfile-build-in-image --tag $tag $docker_dir/.. || exit 1
 else
     echo "  > reusing local build: "
-    docker build --file $docker_dir/Dockerfile-reuse-local-build --tag $tag $docker_dir/..
+    docker build --file $docker_dir/Dockerfile-reuse-local-build --tag $tag $docker_dir/.. || exit 1
 fi
 
 echo -n "run container: "
