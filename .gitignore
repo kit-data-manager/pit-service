@@ -7,15 +7,8 @@
 # csv files may be generated using the Typed PID Maker CLI (write-file)
 *.csv
 
-###  SPRING BOOT ###
-# Ignore local settings for spring boot
-**/*.properties
-!config/application-default.properties
-##############
-
 # Ignore other meta folders (e.g. by netbeans)
 /.settings/
-/config/
 # Java language server (e.g. by vscode)
 .project
 .classpath
@@ -137,3 +130,8 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 ##################
+
+###  SPRING BOOT ###
+**/*.properties
+!/config/application-default.properties
+##############
