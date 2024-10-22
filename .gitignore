@@ -7,20 +7,14 @@
 # csv files may be generated using the Typed PID Maker CLI (write-file)
 *.csv
 
-###  SPRING BOOT ###
-# Ignore local settings for spring boot
-# If you want to provide default settings use 'application.properties.default' and rename it while building service.
-**/application.properties
-##############
-
 # Ignore other meta folders (e.g. by netbeans)
 /.settings/
-/config/
 # Java language server (e.g. by vscode)
 .project
 .classpath
 /bin/
 .vscode
+.idea
 # ignore potential databases
 *.db
 
@@ -136,3 +130,9 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 ##################
+
+###  SPRING BOOT ###
+**/*.properties
+!/config/application-default.properties
+!/config/application-docker.properties
+##############

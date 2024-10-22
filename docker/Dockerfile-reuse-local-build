@@ -1,19 +1,13 @@
-####################################################
-# GLOBAL VARIABLE DECLARATION
-####################################################
-ARG REPO_PORT_DEFAULT=8090
-ARG SERVICE_DIRECTORY=/typid
-####################################################
-
 # Create a clean, minimal image
 FROM eclipse-temurin:21 AS typed-pid-maker
 LABEL maintainer="webmaster@datamanager.kit.edu"
 LABEL stage=run
 
-ENV REPO_PORT=${REPO_PORT_DEFAULT}
+ENV REPO_PORT=8090
 
+ARG SERVICE_DIRECTORY=/typid
 RUN mkdir -p ${SERVICE_DIRECTORY}/config
 COPY /build/libs/TypedPIDMaker*.jar ${SERVICE_DIRECTORY}/TypedPIDMaker.jar
-COPY config/* ${SERVICE_DIRECTORY}/config/
+COPY /config/* ${SERVICE_DIRECTORY}/config/
 EXPOSE ${REPO_PORT}
-CMD bash ./TypedPIDMaker.jar
+CMD ["/typid/TypedPIDMaker.jar"]

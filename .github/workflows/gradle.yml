@@ -38,11 +38,14 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
     - name: Build and Test with Gradle
-      run: ./gradlew build
+      run: ./gradlew -Dprofile=verbose build
     - name: Do one Coveralls test report
       if: matrix.operating-system == 'ubuntu-latest' && matrix.jdk == 21
       run: ./gradlew jacocoTestReport coveralls
     - name: Docker build and test
       if: matrix.operating-system == 'ubuntu-latest' && matrix.jdk == 21
-      run: time bash ./docker/test_docker.sh
+      run: |
+        curl --location --remote-name https://github.com/Orange-OpenSource/hurl/releases/download/4.0.0/hurl_4.0.0_amd64.deb
+        sudo dpkg -i hurl_4.0.0_amd64.deb
+        time bash ./docker/test_docker.sh
       shell: bash
