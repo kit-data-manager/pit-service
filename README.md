@@ -129,17 +129,20 @@ Currently, you can either run it via docker or via the compiled JAR file.
 
 ## Running via docker
 
-**Required**: Up-to-date docker installation
+**Required**: Up-to-date Docker (or Docker Desktop) installation
 
 We provide docker images hosted on GitHub.
 
 - Pull the latest version: `docker pull ghcr.io/kit-data-manager/pit-service:latest`
-
-TODO
-- configuration (config mount)
-- backing up (database mount)
-- document available ports, etc
-- ...?
+- Configuration / Mount points:
+  - Containers are being considered "throwaway objects". To update the application, you simply stop the container and create a new one from the updated image. Therefore, you need to persist configuration and database information!
+  - The configuration file is located within the container at `/app/conf/application-default.properties`
+  - For configuration, either use environment variables (e.g. with `docker compose`) or mount a custom `application.properties` into `/app/conf/`.
+  - For production, you'll want to configure your own Handle prefix. The required private key is recommended to also be mounted into `/app/conf/`, so you'll likely use mount point anyway.
+  - For persisting a database file, consider mounting `/data/`. This also means to adjust the configuration accordingly!
+- Exposed ports (inner ports of the container)
+  - These are the exposed ports. To not attempt to change it in the configuration, as the container does not export other ports.
+  - `8090`: Provides the API, as well as the Swagger documentation.
 
 ## Running the compiled JAR file
 
