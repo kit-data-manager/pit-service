@@ -10,4 +10,4 @@ RUN mkdir -p ${SERVICE_DIRECTORY}/config
 COPY /build/libs/TypedPIDMaker*.jar ${SERVICE_DIRECTORY}/TypedPIDMaker.jar
 COPY /config/* ${SERVICE_DIRECTORY}/config/
 EXPOSE ${REPO_PORT}
-CMD ["/typid/TypedPIDMaker.jar"]
+ENTRYPOINT ["/typid/TypedPIDMaker.jar"]
