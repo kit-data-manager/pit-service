@@ -134,4 +134,5 @@ $RECYCLE.BIN/
 ###  SPRING BOOT ###
 **/*.properties
 !/config/application-default.properties
+!/config/application-docker.properties
 ##############
