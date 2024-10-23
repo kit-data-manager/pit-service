@@ -133,7 +133,7 @@ Currently, you can either run it via docker or via the compiled JAR file.
 
 We provide docker images hosted on GitHub.
 
-- Pull the latest version: `docker pull ghcr.io/kit-data-manager/pit-service:latest`
+- Available versions and other details are listed in the [package section](https://github.com/kit-data-manager/pit-service/pkgs/container/typed-pid-maker).
 - Configuration / Mount points:
   - Containers are being considered "throwaway objects". To update the application, you simply stop the container and create a new one from the updated image. Therefore, you need to persist configuration and database information!
   - The configuration file is located within the container at `/app/conf/application-default.properties`
