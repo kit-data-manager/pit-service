@@ -5,9 +5,9 @@ LABEL stage=run
 
 ENV REPO_PORT=8090
 
-ARG SERVICE_DIRECTORY=/typid
-RUN mkdir -p ${SERVICE_DIRECTORY}/config
-COPY /build/libs/TypedPIDMaker*.jar ${SERVICE_DIRECTORY}/TypedPIDMaker.jar
-COPY /config/* ${SERVICE_DIRECTORY}/config/
+RUN mkdir -p /app/config
+COPY /build/libs/TypedPIDMaker*.jar /app/TypedPIDMaker.jar
+COPY config/application-docker.properties /app/config/application-default.properties
 EXPOSE ${REPO_PORT}
-ENTRYPOINT ["/typid/TypedPIDMaker.jar"]
+WORKDIR /app/
+ENTRYPOINT ["./TypedPIDMaker.jar"]

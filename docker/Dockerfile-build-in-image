@@ -13,10 +13,11 @@ FROM eclipse-temurin:21 AS typed-pid-maker
 LABEL maintainer="webmaster@datamanager.kit.edu"
 LABEL stage=run
 
-ENV REPO_PORT=${8090}
+ENV REPO_PORT=8090
 
 RUN mkdir -p /app/config && mkdir -p /data/
 COPY --from=build-typid /app/TypedPIDMaker*.jar /app/TypedPIDMaker.jar
 COPY config/application-docker.properties /app/config/application-default.properties
 EXPOSE ${REPO_PORT}
-ENTRYPOINT ["/app/TypedPIDMaker.jar"]
+WORKDIR /app/
+ENTRYPOINT ["./TypedPIDMaker.jar"]
