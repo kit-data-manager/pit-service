@@ -19,7 +19,7 @@ on:
 # name for the Docker image that this workflow builds.
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: Typed-PID-Maker # repo name != app name in our case!
+  IMAGE_NAME: kit-data-manager/Typed-PID-Maker # repo name != app name in our case!
 
 # Two jobs for creating and pushing Docker image
 # - build-and-push-image -> triggered by commits on main and tagging with semantic version (e.g.: v1.2.3)
