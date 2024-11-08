@@ -2,8 +2,12 @@
 
 There are two images:
 
-- `Dockerfile-build-in-image` will build the image in the container. The result is still a clean image as it uses multi-stage-builds to only include what it really needs to run. This is good for a container release.
-- `Dockerfile-reuse-local-build` will reuse the build on your local machine. This is good for local development and reusing CI artifacts.
+1. `Dockerfile-build-in-image` will build the image in the container. The result is still a clean image as it uses multi-stage-builds to only include what it really needs to run. This is good for a container release.
+2. `Dockerfile-reuse-local-build` will reuse the build on your local machine. This is good for local development and reusing CI artifacts.
+
+The CI will use the first Dockerfile to build and provide images. 
+
+## Testing
 
 The test script `docker_tests.sh` will:
 
@@ -13,8 +17,10 @@ The test script `docker_tests.sh` will:
 - execute all tests in the `tests` subfolder
 - stop and delete the container
 
-The idea behind these tests is to have tests from a very practical perspective (integration tests, component/service tests). The goal is to test the docker container, but also the standard configuration (application.properties) and the spring setup in general. Examples:
+The idea behind these tests is to have basic tests from a very practical perspective (integration tests, component/service tests). The goal is to test the docker container, but also the standard configuration (application.properties) and the spring setup in general. Examples:
 
 - test the creation of a PID: This makes sure that the request actually reaches the handler function. Such a test should exist for all endpoint with different security configurations.
 - test if swagger page is reachable: This makes sure that the spring and openapi/swagger libraries work well together in the current version.
 - test if openAPI definition is reachable: same as above.
+
+The goal is **not** to achieve full test coverage here. For this, we have unit tests and integration tests in `src/test`.

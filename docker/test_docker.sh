@@ -14,40 +14,21 @@ sleep .2
 if [ "$1" ]
 then
     echo "  > compiling in container: "
-    docker build --file $docker_dir/Dockerfile-build-in-image --tag $tag $docker_dir/..
+    docker build --file $docker_dir/Dockerfile-build-in-image --tag $tag $docker_dir/.. || exit 1
 else
     echo "  > reusing local build: "
-    docker build --file $docker_dir/Dockerfile-reuse-local-build --tag $tag $docker_dir/..
+    docker build --file $docker_dir/Dockerfile-reuse-local-build --tag $tag $docker_dir/.. || exit 1
 fi
 
 echo -n "run container: "
 docker run -p 8090:8090 --detach --name $container $tag
-# give the application and container some time:
-sleep 30 # seconds
 
 #####################################
 ### tests ###########################
 #####################################
-failure=0
-echo "running tests"
-
-for test in "$docker_dir"/tests/*.sh
-do
-    echo ""
-    echo "=== running test $test: ==="
-    bash "$test"
-    error=$?
-    ((failure += error))
-    if (( error == 0 ))
-    then
-        echo "=== SUCCESS: $test ==="
-    else
-        echo "=== FAILED: $test ==="
-    fi
-done
-
-echo ""
-echo "finished tests"
+hurl --retry=10 --retry-interval=10000 \
+     --test "$docker_dir"/tests/*.hurl
+failure=$?
 #####################################
 
 echo -n "stopping container ... "
@@ -60,6 +41,6 @@ then
     echo "ALL TESTS SUCCESSFUL."
     exit 0
 else
-    echo "TESTS FAILED: $failure (see output for details)"
+    echo "TESTS FAILED (see output for details)"
     exit 1
 fi

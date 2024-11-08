@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import edu.kit.datamanager.pit.recordModifiers.RecordModifier;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.constraints.NotNull;
 
@@ -123,6 +124,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             // Check if key file is plausible, throw exceptions if something is wrong.
             byte[] privateKey = credentials.getPrivateKeyFileContent();
             byte[] passphrase = credentials.getPrivateKeyPassphraseAsBytes();
+            LOG.debug("Logging in with user {}", credentials.getUserHandle());
             this.client = HSAdapterFactory.newInstance(
                     credentials.getUserHandle(),
                     credentials.getPrivateKeyIndex(),
@@ -140,7 +142,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     @Override
     public Optional<String> getPrefix() {
         if (this.isAdminMode) {
-            return Optional.of(this.props.getCredentials()).map(HandleCredentials::getHandleIdentifierPrefix);
+            return Optional.ofNullable(this.props.getCredentials()).map(HandleCredentials::getHandleIdentifierPrefix);
         } else {
             return Optional.empty();
         }
@@ -167,7 +169,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         if (allValues.isEmpty()) {
             return null;
         }
-        Collection<HandleValue> recordProperties = Streams.stream(allValues.stream())
+        Collection<HandleValue> recordProperties = Streams.failableStream(allValues.stream())
                 .filter(value -> !this.isHandleInternalValue(value))
                 .collect(Collectors.toList());
         return this.pidRecordFrom(recordProperties).withPID(pid);
@@ -215,27 +217,35 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         // TODO add options to add additional adminValues e.g. for user lists?
         ArrayList<HandleValue> admin = new ArrayList<>();
         admin.add(this.adminValue);
-        ArrayList<HandleValue> futurePairs = this.handleValuesFrom(pidRecord, Optional.of(admin));
+        PIDRecord preparedRecord = pidRecord;
+        for (RecordModifier modifier : this.props.getConfiguredModifiers()) {
+            preparedRecord = modifier.apply(preparedRecord);
+        }
+        ArrayList<HandleValue> futurePairs = this.handleValuesFrom(preparedRecord, Optional.of(admin));
 
         HandleValue[] futurePairsArray = futurePairs.toArray(new HandleValue[] {});
 
         try {
-            this.client.createHandle(pidRecord.getPid(), futurePairsArray);
+            this.client.createHandle(preparedRecord.getPid(), futurePairsArray);
         } catch (HandleException e) {
             if (e.getCode() == HandleException.HANDLE_ALREADY_EXISTS) {
                 // Should not happen as this has to be checked on the REST handler level.
-                throw new PidAlreadyExistsException(pidRecord.getPid());
+                throw new PidAlreadyExistsException(preparedRecord.getPid());
             } else {
                 throw new ExternalServiceException(SERVICE_NAME_HANDLE, e);
             }
         }
-        return pidRecord.getPid();
+        return preparedRecord.getPid();
     }
 
     @Override
-    public boolean updatePID(PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
+    public boolean updatePID(final PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
         if (!this.isValidPID(pidRecord.getPid())) {
             return false;
+        }
+        PIDRecord preparedRecord = pidRecord;
+        for (RecordModifier modifier : this.props.getConfiguredModifiers()) {
+            preparedRecord = modifier.apply(preparedRecord);
         }
         // We need to override the old record as the user has no possibility to update
         // single values, and matching is hard.
@@ -243,37 +253,44 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         // Handle Protocol client available
         // functions and the way the handle system works with indices (basically value
         // identifiers), we use this approach:
-        // 1) from the old values, take all we want to keep.
+        // 1) from the old values, take all we want to keep (handle internal values, technical stuff).
         // 2) together with the user-given record, merge "valuesToKeep" to a list of
-        // values with unique indices.
+        // values with unique indices. Now we have exactly the representation we want.
+        // But: we cannot tell the handle API what we want, we have to declare how to do it.
+        // This is why we need two more steps:
         // 3) see (by index) which values have to be added, deleted, or updated.
-        // 4) then add, update, delete in this order.
+        // 4) then add, update, delete in this order. Why this order? We could also remove everything
+        // at first and then add everything we want, but this would require more actions on the server
+        // side. And, deleting everything would also delete access control information. So, the safe
+        // way to do it, is to add things which do not exist yet, update what needs to be updated,
+        // and in the end remove what needs to be removed (usually nothing!).
 
         // index value
-        Map<Integer, HandleValue> recordOld = this.queryAllHandleValues(pidRecord.getPid())
-                .stream()
-                .collect(Collectors.toMap(v -> v.getIndex(), v -> v));
-        // Streams.stream makes a stream failable, i.e. allows filtering with
-        // exceptions. A new Java version **might** solve this.
-        List<HandleValue> valuesToKeep = Streams.stream(this.queryAllHandleValues(pidRecord.getPid()).stream())
+        Collection<HandleValue> oldHandleValues = this.queryAllHandleValues(preparedRecord.getPid());
+        Map<Integer, HandleValue> recordOld = oldHandleValues.stream()
+                .collect(Collectors.toMap(HandleValue::getIndex, v -> v));
+        // 1)
+        List<HandleValue> valuesToKeep = oldHandleValues.stream()
                 .filter(this::isHandleInternalValue)
                 .collect(Collectors.toList());
 
-        // Merge requested record and things we want to keep.
-        Map<Integer, HandleValue> recordNew = handleValuesFrom(pidRecord, Optional.of(valuesToKeep))
+        // 2) Merge requested record and things we want to keep.
+        Map<Integer, HandleValue> recordNew = handleValuesFrom(preparedRecord, Optional.of(valuesToKeep))
                 .stream()
-                .collect(Collectors.toMap(v -> v.getIndex(), v -> v));
+                .collect(Collectors.toMap(HandleValue::getIndex, v -> v));
 
         try {
+            // 3)
             HandleDiff diff = new HandleDiff(recordOld, recordNew);
+            // 4)
             if (diff.added().length > 0) {
-                this.client.addHandleValues(pidRecord.getPid(), diff.added());
+                this.client.addHandleValues(preparedRecord.getPid(), diff.added());
             }
             if (diff.updated().length > 0) {
-                this.client.updateHandleValues(pidRecord.getPid(), diff.updated());
+                this.client.updateHandleValues(preparedRecord.getPid(), diff.updated());
             }
             if (diff.removed().length > 0) {
-                this.client.deleteHandleValues(pidRecord.getPid(), diff.removed());
+                this.client.deleteHandleValues(preparedRecord.getPid(), diff.removed());
             }
         } catch (HandleException e) {
             if (e.getCode() == HandleException.HANDLE_DOES_NOT_EXIST) {
@@ -487,7 +504,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
 
     /**
      * Checks if a given value is considered an "internal" or "handle-native" value.
-     * 
+     * <p>
      * This may be used to filter out administrative information from a PID record.
      * 
      * @param v the value to check.
@@ -551,14 +568,14 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             for (HandleValue v : toAdd) {
                 boolean valid = !recordOld.containsKey(v.getIndex()) && recordNew.containsValue(v);
                 if (!valid) {
-                    String message = String.format(exceptionMsg, "Add", v.toString());
+                    String message = String.format(exceptionMsg, "Add", v);
                     throw new PidUpdateException(message);
                 }
             }
             for (HandleValue v : toUpdate) {
                 boolean valid = recordOld.containsKey(v.getIndex()) && recordNew.containsValue(v);
                 if (!valid) {
-                    String message = String.format(exceptionMsg, "Update", v.toString());
+                    String message = String.format(exceptionMsg, "Update", v);
                     throw new PidUpdateException(message);
                 }
             }

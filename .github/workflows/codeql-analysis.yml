@@ -47,12 +47,12 @@ jobs:
     - name: Set up openJDK version
       uses: actions/setup-java@v4
       with:
-        java-version: 17
+        java-version: 21
         distribution: 'zulu'  # =openJDK
     - name: Setup gradle
       uses: gradle/actions/setup-gradle@v4
     - name: build without tests
-      run: ./gradlew clean build -x test
+      run: ./gradlew -Dprofile=verbose clean build -x test
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3

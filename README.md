@@ -4,7 +4,7 @@
 
 The Typed PID Maker enables the creation, maintenance, and validation of PIDs. It ensures the PID contains typed, machine-actionable information using validation. This is especially helpful in the context of FAIR Digital Objects (FAIR DOs / FDOs). To make this work, our validation strategy requires a reference to a registered Kernel Information Profile within the PID record, as defined by the [recommendations of the Research Data Alliance (RDA)](https://doi.org/10.15497/rda00031). [In the RDA context, this kind of service is called a "PIT service"](https://doi.org/10.15497/FDAA09D5-5ED0-403D-B97A-2675E1EBE786). We use Handle PIDs, which can be created using a Handle Prefix (not included). For testing or other local purposes, we support sandboxed PIDs, which require no external service.
 
-**See also: [Documentation](https://kit-data-manager.github.io/webpage/typed-pid-maker/index.html) | [Configuration details](https://github.com/kit-data-manager/pit-service/blob/master/config/application.properties) | [Features](#features) | [Build](#how-to-build) | [Run](#how-to-start) | [License](#license)**
+**Go to: [Documentation](https://kit-data-manager.github.io/webpage/typed-pid-maker/index.html) | [Configuration details](https://github.com/kit-data-manager/pit-service/blob/master/config/application-default.properties) | [Features](#features) | [Build](#how-to-build) | [Run](#how-to-run) | [License](#license)**
 
 ## Features
 
@@ -19,9 +19,10 @@ The Typed PID Maker enables the creation, maintenance, and validation of PIDs. I
   - ✅ Search for information stored within PIDs. This includes PIDs you created, updated or resolved at some point.
   - ✅ Supports the [full elastic DSL](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html) (and requires an Elasticsearch 8 instance).
 - ✅ Authentication via [JWT](https://jwt.io/introduction) or [KeyCloak](https://www.keycloak.org/)
-- ✅ Bootstrap with existing PIDs in your PID Prefix (see command line options).
-- ✅ Extract all your PIDs to CSV files (see command line options).
+- ✅ Bootstrap with existing PIDs in your PID Prefix ([see command line options](#command-line-options)).
+- ✅ Extract all your PIDs to CSV files ([see command line options](#command-line-options)).
 - ✅ Make your PIDs distinguishable with a customizable branding-prefix and other customization options.
+- ✅ Use the Handle systems redirection feature to redirect browsers directly to the data.
 
 Some of the features are described in more detail in the following sections.
 
@@ -103,69 +104,79 @@ All other configuration properties affect only the `uniquely-generated-string`. 
 
 ## How to build
 
-In order to build the Typed PID Maker, you'll need:
+> Note: Alternatively, you can use the docker image.
 
-* Java SE Development Kit 11 (or openjdk 11) or higher
+**Required**: Java SE Development Kit 21 (or openjdk 21) or higher
 
-After obtaining the sources change to the folder where the sources are located perform the following steps:
+- Building (with tests): `./gradlew clean build`
+- Building (with verbose test output) `./gradlew -Dprofile=verbose clean build`
+- Building (without tests): `./gradlew clean build -x test`
+- Run docker integration tests:
+  - `./gradlew clean build` (by default, this will reuse the local build)
+  - `time bash ./docker/test_docker.sh` (runs test script)
+- Doing a release: `./gradlew clean build release`
+  - Will prompt you about version number to use and next version number
+  - Will make a git tag which can later be used in a GitHub release
+- Build documentation: `./gradlew javadoc`
 
-```
-user@localhost:/home/user/typed-pid-maker$ ./gradlew build
-> Configure project :
-Using release profile for building notification-service
-<-------------> 42% EXECUTING [0s]
-[...]
-user@localhost:/home/user/typed-pid-maker$
-```
+On Windows, replace `./gradlew` with `gradlew.bat`.
 
-The Gradle wrapper will now take care of downloading the configured version of Gradle and finally build the Typed PID Maker microservice. As a result, a jar file containing the entire service is created at `build/libs/TypedPIDMaker-$(version).jar`.
+After a successful build, a jar file containing the entire service is created at `build/libs/TypedPIDMaker-$(version).jar`.
 
-## How to start
+## How to run
+
+Currently, you can either run it via docker or via the compiled JAR file.
+
+## Running via docker
+
+**Required**: Up-to-date Docker (or Docker Desktop) installation
+
+We provide docker images hosted on GitHub.
+
+- Available versions and other details are listed in the [package section](https://github.com/kit-data-manager/pit-service/pkgs/container/typed-pid-maker).
+- Configuration / Mount points:
+  - Containers are being considered "throwaway objects". To update the application, you simply stop the container and create a new one from the updated image. Therefore, you need to persist configuration and database information!
+  - The configuration file is located within the container at `/app/conf/application-default.properties`
+  - For configuration, either use environment variables (e.g. with `docker compose`) or mount a custom `application.properties` into `/app/conf/`.
+  - For production, you'll want to configure your own Handle prefix. The required private key is recommended to also be mounted into `/app/conf/`, so you'll likely use mount point anyway.
+  - For persisting a database file, consider mounting `/data/`. This also means to adjust the configuration accordingly!
+- Exposed ports (inner ports of the container)
+  - These are the exposed ports. To not attempt to change it in the configuration, as the container does not export other ports.
+  - `8090`: Provides the API, as well as the Swagger documentation.
+
+## Running the compiled JAR file
 
 For development purposes, the easiest way to run the service with your configuration file is:
 
 ```bash
-./gradlew run --args="--spring.config.location=config/application.properties"
+./gradlew run --args="--spring.config.location=config/application-default.properties"
 ```
 
-Before you are able to start the microservice, you have to modify the file 'application.properties' according to your local setup. 
-Therefor, copy the file `conf/application.properties` to your project folder and customize it. For the Collection API you just have to adapt the properties of 
-`spring.datasource` and you may change the `server.port` property. All other properties can be ignored for the time being.
+This command will use the default settings, set and documented in the file `config/application.properties` (see [command line options](#command-line-options)). Changes in this file will require a restart of the Typed PID Maker, in case it is already running. If you change the location of the file or want to use another configuration, you may adjust the path in the command above or use one of the [default locations for spring boot configurations](https://docs.spring.io/spring-boot/reference/features/external-config.html#:~:text=config%20data%20files%20are%20considered%20in%20the%20following%20order%3A).
 
-As soon as you finished modifying 'application.properties', you may start the service by executing the following command inside the project folder, 
-e.g. where the service has been built before:
+For production use, the service can also be started directly like this:
 
-```
-user@localhost:/home/user/typed-pid-maker$ ./build/libs/TypedPIDMaker-$(version).jar
-
-  .   ____          _            __ _ _
- /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
-( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
- \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
-  '  |____| .__|_| |_|_| |_\__, | / / / /
- =========|_|==============|___/=/_/_/_/
- :: Spring Boot ::        (v2.0.5.RELEASE)
-[...]
-1970-01-01 00:00:00.000  INFO 56918 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8070 (http) with context path ''
-
+```bash
+./build/libs/TypedPIDMaker-$(version).jar
 ```
 
-As soon as the microservice is started, you can browse to 
+The start will take a moment, and indicate its readiness with `Spring is started!` on stdout. As soon as the microservice is started, you can browse to
 
-<http://localhost:8090/swagger-ui.html>
+> OpenAPI / Swagger documentation:  
+> <http://localhost:8090/swagger-ui.html>
 
-in order to see available RESTful endpoints and their documentation. You may have to adapt the port according to your local settings.
-Furthermore, you can use this Web interface to test single API calls in order to get familiar with the service.
+in order to see available RESTful endpoints and their documentation. You may have to adapt the port according to your local settings.  Furthermore, you can use this web interface to test single API calls in order to get familiar with the service.
 
 Details on the version number and other build information can be found on <http://localhost:8090/actuator/info>.
 
 ### Command line options
 
-- `--spring.config.location=config/application.properties` set the configuration files location to be used. Not required if the file is in the same directory as the jar file.
+- `--spring.config.location=config/application.properties` set the configuration files location to be used. Not required if the file is in the same directory as the jar file or another [default location for spring boot configurations](https://docs.spring.io/spring-boot/reference/features/external-config.html#:~:text=config%20data%20files%20are%20considered%20in%20the%20following%20order%3A).
+- `--spring.profiles.active=$PROFILE` to make spring using your adjusted `application-$PROFILE.properties` instead of (or in addition to) `application-default.properties`. [May also take multiple profiles as a comma separated list](https://docs.spring.io/spring-boot/reference/features/profiles.html).
 - `bootstrap all-pids-from-prefix` starts the service and bootstraps all PIDs. This means:
   - store the PIDs as "known PIDs" in the local database (as configured)
   - send one message per PID to the message broker (if configured)
-  - (WIP, #128) store the PID records in the search index (if configured)
+  - store the PID records in the search index (if configured)
   - after the bootstrap, the application will continue to run
 - `bootstrap known-pids` same as above, but:
   - not using all PIDs from prefix, but only the ones stored in the local database ("known PIDs")
@@ -176,4 +187,4 @@ Details on the version number and other build information can be found on <http:
 
 ## License
 
-The KIT Data Manager is licensed under the Apache License, Version 2.0.
+The license for the KIT Data Manager source code is available within the LICENSE file.
