@@ -127,8 +127,7 @@ public class TypingService implements ITypingService {
             throw new PidNotFoundException(pid);
         }
         // ensure the PID is always contained
-        pidRecord.setPid(pid);
-        return pidRecord;
+        return pidRecord.withPID(pid);
     }
 
     @Override

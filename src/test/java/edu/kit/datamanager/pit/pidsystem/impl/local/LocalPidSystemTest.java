@@ -81,9 +81,9 @@ class LocalPidSystemTest {
     @Test
     @Transactional
     void testAllSystemTests() throws Exception {
-        PIDRecord rec = new PIDRecord();
-        rec.setPid("my-custom-pid");
-        rec.addEntry(
+        PIDRecord rec = new PIDRecord()
+                .withPID("my-custom-pid")
+                .addEntry(
             // this is actually a registered type, but not in a data type registry, but inline in the PID system.
             "10320/loc",
             "",
@@ -92,7 +92,7 @@ class LocalPidSystemTest {
         );
         //rec.addEntry("10320/loc", "", "value");
         String pid = localPidSystem.registerPID(rec);
-        assertEquals(rec.getPid(), pid);
+        assertEquals(rec.pid(), pid);
         PIDRecord newRec = localPidSystem.queryAllProperties(pid);
         assertEquals(rec, newRec);
         
@@ -104,14 +104,14 @@ class LocalPidSystemTest {
             int numParams = test.getParameterCount();
             if (numParams == 2) {
                 try {
-                    test.invoke(systemTests, localPidSystem, rec.getPid());
+                    test.invoke(systemTests, localPidSystem, rec.pid());
                 } catch (Exception e) {
                     System.err.println(String.format("Test: %s", test));
                     System.err.println(String.format("Exception: %s", e));
                     throw e;
                 }
             } else if (numParams == 3) {
-                test.invoke(systemTests, localPidSystem, rec.getPid(), "sandboxed/NONEXISTENT");
+                test.invoke(systemTests, localPidSystem, rec.pid(), "sandboxed/NONEXISTENT");
             } else if (numParams == 0) {
                 // This is not a test but some kind of helper or static method.
             } else {
@@ -127,14 +127,14 @@ class LocalPidSystemTest {
 
         // an empty registered record will return nothing
         this.localPidSystem.registerPID(p);
-        PIDRecord queried = this.localPidSystem.queryByType(p.getPid(), profile);
+        PIDRecord queried = this.localPidSystem.queryByType(p.pid(), profile);
         assertTrue(queried.getPropertyIdentifiers().isEmpty());
 
         // a record with matching types will return only those
-        p.addEntry(t1.getIdentifier(), "noName", "value");
-        p.addEntry("something else", "noName", "noValue");
+        p = p.addEntry(t1.getIdentifier(), "noName", "value")
+                .addEntry("something else", "noName", "noValue");
         this.localPidSystem.updatePID(p);
-        queried = this.localPidSystem.queryByType(p.getPid(), profile);
+        queried = this.localPidSystem.queryByType(p.pid(), profile);
         assertEquals(1, queried.getPropertyIdentifiers().size());
     }
 
@@ -142,7 +142,7 @@ class LocalPidSystemTest {
     void testDeletePid() throws IOException {
         PIDRecord p = new PIDRecord().withPID("test/pid");
         this.localPidSystem.registerPID(p);
-        String pid = p.getPid();
+        String pid = p.pid();
         assertThrows(
             UnsupportedOperationException.class,
             () -> this.localPidSystem.deletePID(pid)

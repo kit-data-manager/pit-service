@@ -47,14 +47,14 @@ class InMemoryIdentifierSystemTest {
 
         // an empty registered record will return nothing
         sys.registerPID(p);
-        PIDRecord queried = sys.queryByType(p.getPid(), profile);
+        PIDRecord queried = sys.queryByType(p.pid(), profile);
         assertTrue(queried.getPropertyIdentifiers().isEmpty());
 
         // a record with matching types will return only those
-        p.addEntry(t1.getIdentifier(), "noName", "value");
-        p.addEntry("something else", "noName", "noValue");
+        p = p.addEntry(t1.getIdentifier(), "noName", "value")
+                .addEntry("something else", "noName", "noValue");
         sys.updatePID(p);
-        queried = sys.queryByType(p.getPid(), profile);
+        queried = sys.queryByType(p.pid(), profile);
         assertEquals(1, queried.getPropertyIdentifiers().size());
     }
 
@@ -62,7 +62,7 @@ class InMemoryIdentifierSystemTest {
     void testDeletePid() throws IOException {
         PIDRecord p = new PIDRecord().withPID("test/pid");
         sys.registerPID(p);
-        String pid = p.getPid();
+        String pid = p.pid();
         assertThrows(
             UnsupportedOperationException.class,
             () -> sys.deletePID(pid)

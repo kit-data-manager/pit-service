@@ -22,7 +22,7 @@ class PIDRecordTest {
     @Test
     void assignPIDTest() {
         PIDRecord r = new PIDRecord().withPID(PID);
-        assertEquals(PID, r.getPid());
+        assertEquals(PID, r.pid());
     }
 
     @Test
@@ -37,16 +37,16 @@ class PIDRecordTest {
         assertTrue(rec.getPropertyIdentifiers().contains(identifier));
         String receivedValue = rec.getPropertyValue(identifier);
         assertEquals(value, receivedValue);
-        Map<String, List<PIDRecordEntry>> entries = rec.getEntries();
+        Map<String, List<PidRecordEntry>> entries = rec.entries();
         assertEquals(1, entries.size());
-        assertEquals(name, entries.get(identifier).get(0).getName());
+        assertEquals(name, entries.get(identifier).getFirst().name());
     }
 
     @Test
     void assignPID() {
 
         PIDRecord r = new PIDRecord().withPID(PID);
-        assertEquals(PID, r.getPid());
+        assertEquals(PID, r.pid());
     }
 
     @Test
@@ -73,9 +73,9 @@ class PIDRecordTest {
         assertTrue(rec.getPropertyIdentifiers().contains(identifier));
         String receivedValue = rec.getPropertyValue(identifier);
         assertEquals(value, receivedValue);
-        Map<String, List<PIDRecordEntry>> entries = rec.getEntries();
+        Map<String, List<PidRecordEntry>> entries = rec.entries();
         assertEquals(1, entries.size());
-        assertEquals(name, entries.get(identifier).get(0).getName());
+        assertEquals(name, entries.get(identifier).getFirst().name());
     }
 
     @Test
@@ -92,12 +92,11 @@ class PIDRecordTest {
 
     @Test
     void testGetPropertyValuesWithSameIdentifier() {
-        PIDRecord rec = new PIDRecord();
         String identifier = "propertyIdentifier";
         String name = "propertyName";
         String value = "propertyValue";
-        rec.addEntry(identifier, name, value);
-        assertEquals(true, rec.hasProperty("propertyIdentifier"));
+        PIDRecord rec = new PIDRecord().addEntry(identifier, name, value);
+        assertTrue(rec.hasProperty("propertyIdentifier"));
 
         assertTrue(rec.getPropertyIdentifiers().contains(identifier));
         String receivedValue = rec.getPropertyValue(identifier);
@@ -105,50 +104,49 @@ class PIDRecordTest {
 
         String other_name = "otherName";
         String other_value = "otherValue";
-        rec.addEntry(identifier, other_name, other_value);
+        rec = rec.addEntry(identifier, other_name, other_value);
 
         assertTrue(rec.getPropertyIdentifiers().contains(identifier));
         String receivedOtherValue = rec.getPropertyValue(identifier);
         assertEquals(value, receivedOtherValue);
 
         String[] expectedValues = { value, other_value };
-        String[] receivedValues = rec.getPropertyValues(identifier);
-        assertEquals(expectedValues[0], receivedValues[0]);
-        assertEquals(expectedValues[1], receivedValues[1]);
-        assertEquals(expectedValues.length, receivedValues.length);
+        List<String> receivedValues = rec.getPropertyValues(identifier);
+        assertEquals(expectedValues[0], receivedValues.get(0));
+        assertEquals(expectedValues[1], receivedValues.get(1));
+        assertEquals(expectedValues.length, receivedValues.size());
     }
 
     @Test
     void testHasProperty() {
-        PIDRecord rec = new PIDRecord();
         String identifier = "propertyIdentifier";
         String name = "propertyName";
         String value = "propertyValue";
-        rec.addEntry(identifier, name, value);
+        PIDRecord rec = new PIDRecord().addEntry(identifier, name, value);
         assertTrue(rec.hasProperty("propertyIdentifier"));
     }
 
     @Test
     void testRemovePropertiesNotListed() {
-        PIDRecord rec = new PIDRecord();
         String id1 = "propertyIdentifier";
         String id2 = "otherIdentifier";
         String name = "propertyName";
         String value1 = "propertyValue";
         String value2 = "otherValue";
-        rec.addEntry(id1, name, value1);
-        rec.addEntry(id1, name, value2);
-        rec.addEntry(id2, name, value2);
+        PIDRecord rec = new PIDRecord()
+                .addEntry(id1, name, value1)
+                .addEntry(id1, name, value2)
+                .addEntry(id2, name, value2);
         
         Set<String> propertiesToKeep = rec.getPropertyIdentifiers();
-        rec.removePropertiesNotListed(propertiesToKeep);
+        rec = rec.removePropertiesNotListed(propertiesToKeep);
         assertTrue(propertiesToKeep.contains(id1));
         assertTrue(propertiesToKeep.contains(id2));
         assertTrue(rec.hasProperty(id1));
         assertTrue(rec.hasProperty(id2));
 
         propertiesToKeep.remove(id1);
-        rec.removePropertiesNotListed(propertiesToKeep);
+        rec = rec.removePropertiesNotListed(propertiesToKeep);
         assertFalse(rec.hasProperty(id1));
     }
 
@@ -183,28 +181,21 @@ class PIDRecordTest {
 
     @Test
     void testEqualityAlthoughNamedAttribute() {
-        PIDRecord first = new PIDRecord();
-        PIDRecord second = new PIDRecord();
-        PIDRecord third = new PIDRecord();
-
-        first.addEntry("key", "name", "value");
-        second.addEntry("key", null, "value");
-        third.addEntry("key", "", "value");
-        
+        PIDRecord first = new PIDRecord().addEntry("key", "name", "value");
+        PIDRecord second = new PIDRecord().addEntry("key", null, "value");
+        PIDRecord third = new PIDRecord().addEntry("key", "", "value");
         this.equals(first, second);
         this.equals(second, third);
     }
 
     @Test
     void testEqualityAlthoughDifferentOrder() {
-        PIDRecord first = new PIDRecord();
-        PIDRecord second = new PIDRecord();
-
-        first.addEntry("key", "name", "value1");
-        first.addEntry("key", "name", "value2");
-        second.addEntry("key", "name", "value2");
-        second.addEntry("key", "name", "value1");
-        
+        PIDRecord first = new PIDRecord()
+                .addEntry("key", "name", "value1")
+                .addEntry("key", "name", "value2");
+        PIDRecord second = new PIDRecord()
+                .addEntry("key", "name", "value2")
+                .addEntry("key", "name", "value1");
         this.equals(first, second);
     }
 

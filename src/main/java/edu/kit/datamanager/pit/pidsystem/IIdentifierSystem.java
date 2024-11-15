@@ -6,11 +6,12 @@ import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecordEntry;
 import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffix;
 
-import java.util.Collection;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Main abstraction interface towards the identifier system containing
@@ -111,24 +112,24 @@ public interface IIdentifierSystem {
      * The method must process the given PID using the
      * {@link #registerPID(PIDRecord)} method.
      *
-     * @param pidRecord contains the initial PID record.
+     * @param uncheckedRecord contains the initial PID record.
      * @return the PID that was assigned to the record.
      * @throws PidAlreadyExistsException if the PID already exists
      * @throws ExternalServiceException if an error occured in communication with
      *         other services.
      * @throws RecordValidationException if record validation errors occurred.
      */
-    public default String registerPID(final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException, RecordValidationException {
-        if (pidRecord.getPid() == null) {
-            throw new RecordValidationException(pidRecord, "PID must not be null.");
+    public default String registerPID(final PIDRecord uncheckedRecord) throws PidAlreadyExistsException, ExternalServiceException, RecordValidationException {
+        if (uncheckedRecord.pid() == null) {
+            throw new RecordValidationException(uncheckedRecord, "PID must not be null.");
         }
-        if (pidRecord.getPid().isEmpty()) {
-            throw new RecordValidationException(pidRecord, "PID must not be empty.");
+        if (uncheckedRecord.pid().isEmpty()) {
+            throw new RecordValidationException(uncheckedRecord, "PID must not be empty.");
         }
-        pidRecord.setPid(
-            appendPrefixIfAbsent(pidRecord.getPid())
+        PIDRecord withPrefix = uncheckedRecord.withPID(
+            appendPrefixIfAbsent(uncheckedRecord.pid())
         );
-        return registerPidUnchecked(pidRecord);
+        return registerPidUnchecked(withPrefix);
     }
 
     /**
@@ -176,7 +177,22 @@ public interface IIdentifierSystem {
      * @throws ExternalServiceException if an error occured in communication with
      *         other services.
      */
-    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException;
+    public default PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
+        PIDRecord allProps = this.queryAllProperties(pid);
+        if (allProps == null) {return null;}
+        // only return properties listed in the type def
+        Set<String> typeProps = typeDefinition.getAllProperties();
+        Map<String, List<PidRecordEntry>> entries = allProps.getPropertyIdentifiers().stream()
+                .filter(typeProps::contains)
+                .flatMap(key -> allProps.getPropertyValues(key).stream()
+                        .map(value -> new PidRecordEntry(key, "", value)))
+                .collect(Collectors.toMap(
+                        PidRecordEntry::key,
+                        e -> new ArrayList<>(List.of(e)),
+                        (e1, e2) -> {e1.addAll(e2); return e1;}
+                ));
+        return new PIDRecord("", entries);
+    }
 
     /**
      * Remove the given PID.

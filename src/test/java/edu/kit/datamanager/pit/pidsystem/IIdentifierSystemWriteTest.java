@@ -56,11 +56,11 @@ class IIdentifierSystemWriteTest {
         assertNotNull(localPidSystem);
         
         // Register just a small record for the database to initialize maybe or so.
-        PIDRecord r = new PIDRecord();
-        r.setPid(pidGenerator.generate().get());
         String attribute = pidGenerator.generate().getWithPrefix(PID_PREFIX);
         String value = pidGenerator.generate().getWithPrefix(PID_PREFIX);
-        r.addEntry(attribute, "test", value);
+        PIDRecord r = new PIDRecord()
+                .withPID(pidGenerator.generate().get())
+                .addEntry(attribute, "test", value);
 
         localPidSystem.registerPID(r);
     }
@@ -74,7 +74,7 @@ class IIdentifierSystemWriteTest {
 
         PIDRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, PID_PREFIX, pidGenerator);
         assertEquals(numAttributes, r.getPropertyIdentifiers().size());
-        assertEquals(numValues, r.getPropertyValues(r.getPropertyIdentifiers().iterator().next()).length);
+        assertEquals(numValues, r.getPropertyValues(r.getPropertyIdentifiers().iterator().next()).size());
 
         this.localPidSystem.registerPID(r);
     }

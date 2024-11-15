@@ -57,7 +57,7 @@ class CustomPidsTest {
         assertNotNull(first);
 
         PIDRecord second = ApiMockUtils.getSomePidRecordInstance();
-        second.setPid(first.getPid());
+        second = second.withPID(first.pid());
         String body = ApiMockUtils.getJsonMapper().writeValueAsString(second);
         
         ApiMockUtils.registerRecord(
@@ -76,7 +76,7 @@ class CustomPidsTest {
     @Test
     void testCreateCustomPid() throws Exception {
         PIDRecord record = ApiMockUtils.getSomePidRecordInstance();
-        record.setPid("my-custom-pid");
+        record = record.withPID("my-custom-pid");
         String body = ApiMockUtils.getJsonMapper().writeValueAsString(record);
         
         String responseBody = ApiMockUtils.registerRecord(
@@ -86,7 +86,7 @@ class CustomPidsTest {
             MediaType.APPLICATION_JSON_VALUE,
             MockMvcResultMatchers.status().isCreated()
         );
-        assertTrue(responseBody.contains(record.getPid()));
+        assertTrue(responseBody.contains(record.pid()));
     }
 
     /**
@@ -99,7 +99,7 @@ class CustomPidsTest {
         String customPid = "my-custom-pid";
 
         PIDRecord record = ApiMockUtils.getSomePidRecordInstance();
-        record.setPid(customPid);
+        record = record.withPID(customPid);
         String body = ApiMockUtils.getJsonMapper().writeValueAsString(record);
         
         String responseBody = ApiMockUtils.registerRecord(
@@ -125,7 +125,7 @@ class CustomPidsTest {
         String customPid = "unbranded-pid";
 
         PIDRecord record = ApiMockUtils.getSomePidRecordInstance();
-        record.setPid(customPid);
+        record = record.withPID(customPid);
         String body = ApiMockUtils.getJsonMapper().writeValueAsString(record);
         
         String responseBody = ApiMockUtils.registerRecord(

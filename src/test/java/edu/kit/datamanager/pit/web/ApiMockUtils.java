@@ -169,10 +169,10 @@ public class ApiMockUtils {
         PIDRecord oldRecord,
         PIDRecord newRecord) throws Exception
     {
-        String pid = oldRecord.getPid();
+        String pid = oldRecord.pid();
         String etag = oldRecord.getEtag();
         String body = serialize(newRecord);
-        assertEquals(oldRecord.getPid(), newRecord.getPid());
+        assertEquals(oldRecord.pid(), newRecord.pid());
         return updateRecordAndReturnMvcResult(mockMvc, pid, body, etag, MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE);
     }
 
@@ -194,10 +194,10 @@ public class ApiMockUtils {
             String bodyContentType,
             String acceptContentType) throws Exception
     {
-        String pid = oldRecord.getPid();
+        String pid = oldRecord.pid();
         String etag = oldRecord.getEtag();
         String body = serialize(newRecord);
-        assertEquals(oldRecord.getPid(), newRecord.getPid());
+        assertEquals(oldRecord.pid(), newRecord.pid());
         return updateRecordAndReturnMvcResult(mockMvc, pid, body, etag, bodyContentType, acceptContentType)
             .getResponse().getContentAsString();
     }
@@ -253,8 +253,7 @@ public class ApiMockUtils {
      */
     public static PIDRecord resolveRecord(MockMvc mockMvc, String pid) throws Exception {
         String resolvedBody = ApiMockUtils.resolveRecord(mockMvc, pid, null);
-        PIDRecord resolvedRecord = getJsonMapper().readValue(resolvedBody, PIDRecord.class);
-        return resolvedRecord;
+        return getJsonMapper().readValue(resolvedBody, PIDRecord.class);
     }
 
     /**
@@ -267,15 +266,14 @@ public class ApiMockUtils {
      */
     public static SimplePidRecord resolveSimpleRecord(MockMvc mockMvc, String pid) throws Exception {
         String resolvedBody = ApiMockUtils.resolveRecord(mockMvc, pid, SimplePidRecord.CONTENT_TYPE);
-        SimplePidRecord resolvedRecord = getJsonMapper().readValue(resolvedBody, SimplePidRecord.class);
-        return resolvedRecord;
+        return getJsonMapper().readValue(resolvedBody, SimplePidRecord.class);
     }
 
     /**
      * Resolves a record using the REST API and MockMvc.
      * 
      * @param mockMvc instance that mocks the REST API.
-     * @param createdPid the PID to resolve.
+     * @param pid the PID to resolve.
      * @param contentType the content type for the request.
      * @return the resolved record of the given PID.
      * @throws Exception if any assumption breaks.
@@ -310,8 +308,7 @@ public class ApiMockUtils {
     public static PIDRecord registerSomeRecord(MockMvc mockMvc) throws Exception {
         MvcResult result = ApiMockUtils.registerRecordAndGetMvcResult(mockMvc, ApiMockUtils.JSON_RECORD, MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE);
         PIDRecord createdRecord = ApiMockUtils.deserializeRecord(result);
-        String createdPid = createdRecord.getPid();
-        assertFalse(createdPid.isEmpty());
+        assertFalse(createdRecord.pid().isEmpty());
         return createdRecord;
     }
 
