@@ -34,7 +34,7 @@ import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.TypingService;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
-import edu.kit.datamanager.pit.typeregistry.impl.TypeRegistry;
+import edu.kit.datamanager.pit.typeregistry.impl.DtrTest;
 import edu.kit.datamanager.pit.web.converter.SimplePidRecordConverter;
 import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
 
@@ -104,7 +104,7 @@ public class Application {
 
     @Bean
     public ITypeRegistry typeRegistry() {
-        return new TypeRegistry();
+        return new DtrTest();
     }
 
     @Bean

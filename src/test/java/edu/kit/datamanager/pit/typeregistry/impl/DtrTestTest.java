@@ -18,10 +18,10 @@ import org.springframework.test.context.TestPropertySource;
 // Set the in-memory implementation
 @TestPropertySource(locations = "/test/application-test.properties", properties = "pit.pidsystem.implementation = LOCAL")
 @ActiveProfiles("test")
-class TypeRegistryTest {
+class DtrTestTest {
 
     @Autowired
-    TypeRegistry typeRegistry;
+    DtrTest typeRegistry;
 
     final String profileIdentifier = "21.T11148/b9b76f887845e32d29f7";
 
