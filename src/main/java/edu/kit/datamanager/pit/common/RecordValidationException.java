@@ -28,6 +28,11 @@ public class RecordValidationException extends ResponseStatusException {
 		this.pidRecord = pidRecord;
 	}
 
+	public RecordValidationException(PIDRecord pidRecord, String reason, Exception e) {
+		super(HTTP_STATUS, VALIDATION_OF_RECORD + pidRecord.getPid() + " failed. Reason:\n" + reason, e);
+		this.pidRecord = pidRecord;
+	}
+
 	public PIDRecord getPidRecord() {
 		return pidRecord;
 	}
