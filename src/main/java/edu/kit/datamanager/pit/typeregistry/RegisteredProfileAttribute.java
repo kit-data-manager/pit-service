@@ -1,6 +1,5 @@
 package edu.kit.datamanager.pit.typeregistry;
 
-import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 
 public record RegisteredProfileAttribute(

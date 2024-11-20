@@ -84,7 +84,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
 
     // Properties specific to this adapter.
     @Autowired
-    private HandleProtocolProperties props;
+    final private HandleProtocolProperties props;
     // Handle Protocol implementation
     private HSAdapter client;
     // indicates if the adapter can modify and create PIDs or just resolve them.
@@ -99,7 +99,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
 
     /**
      * Initializes internal classes.
-     * We use this methos with the @PostConstruct annotation to run it
+     * We use this method with the @PostConstruct annotation to run it
      * after the constructor and after springs autowiring is done properly
      * to make sure that all properties are already autowired.
      * 

@@ -2,8 +2,6 @@ package edu.kit.datamanager.pit.typeregistry;
 
 import org.everit.json.schema.Schema;
 
-import java.util.List;
-
 /**
  * @param pid the pid of this attribute
  * @param name a human-readable name, defined in the DTR
