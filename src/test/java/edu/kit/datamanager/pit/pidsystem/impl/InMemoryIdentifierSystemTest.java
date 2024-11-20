@@ -5,73 +5,36 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
-import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
-import edu.kit.datamanager.pit.domain.TypeDefinition;
 
 class InMemoryIdentifierSystemTest {
 
     private InMemoryIdentifierSystem sys;
-    private TypeDefinition profile;
-    private TypeDefinition t1;
-    private TypeDefinition t2;
-    private TypeDefinition t3;
 
     @BeforeEach
     void setup() {
         this.sys = new InMemoryIdentifierSystem();
-        this.t1 = new TypeDefinition();
-        this.t1.setIdentifier("attribute1");
-        this.t2 = new TypeDefinition();
-        this.t2.setIdentifier("attribute2");
-        this.t3 = new TypeDefinition();
-        this.t3.setIdentifier("attribute3");
-    
-        this.profile = new TypeDefinition();
-        this.profile.setSubTypes(Map.of(
-            this.t1.getIdentifier(), this.t1,
-            this.t2.getIdentifier(), this.t2,
-            this.t3.getIdentifier(), this.t3
-        ));
-    }
-
-    @Test
-    void testQueryByType() throws IOException {
-
-        PIDRecord p = new PIDRecord().withPID("test/pid");
-
-        // an empty registered record will return nothing
-        sys.registerPID(p);
-        PIDRecord queried = sys.queryByType(p.getPid(), profile);
-        assertTrue(queried.getPropertyIdentifiers().isEmpty());
-
-        // a record with matching types will return only those
-        p.addEntry(t1.getIdentifier(), "noName", "value");
-        p.addEntry("something else", "noName", "noValue");
-        sys.updatePID(p);
-        queried = sys.queryByType(p.getPid(), profile);
-        assertEquals(1, queried.getPropertyIdentifiers().size());
     }
 
     @Test
     void testDeletePid() throws IOException {
         PIDRecord p = new PIDRecord().withPID("test/pid");
-        sys.registerPID(p);
+        sys.registerPid(p);
         String pid = p.getPid();
         assertThrows(
             UnsupportedOperationException.class,
-            () -> sys.deletePID(pid)
+            () -> sys.deletePid(pid)
         );
 
         // actually, this is the case for any PID:
         assertThrows(
             UnsupportedOperationException.class,
-            () -> sys.deletePID("any PID")
+            () -> sys.deletePid("any PID")
         );
     }
 
@@ -80,11 +43,11 @@ class InMemoryIdentifierSystemTest {
         assertEquals(0, sys.resolveAllPidsOfPrefix().size());
 
         PIDRecord p1 = new PIDRecord().withPID("p1");
-        sys.registerPID(p1);
+        sys.registerPid(p1);
         assertEquals(1, sys.resolveAllPidsOfPrefix().size());
 
         PIDRecord p2 = new PIDRecord().withPID("p2");
-        sys.registerPID(p2);
+        sys.registerPid(p2);
         assertEquals(2, sys.resolveAllPidsOfPrefix().size());
     }
 

@@ -1,26 +1,24 @@
 package edu.kit.datamanager.pit.pitservice.impl;
 
-import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
 
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
+import edu.kit.datamanager.pit.typeregistry.AttributeInfo;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.IValidationStrategy;
 import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.domain.Operations;
 import edu.kit.datamanager.pit.domain.PIDRecord;
-import edu.kit.datamanager.pit.domain.TypeDefinition;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,8 +35,6 @@ public class TypingService implements ITypingService {
     private static final String LOG_MSG_TYPING_SERVICE_MISCONFIGURED = "Typing service misconfigured.";
     private static final String LOG_MSG_QUERY_TYPE = "Querying for type with identifier {}.";
 
-
-    protected final AsyncLoadingCache<String, TypeDefinition> typeCache;
     protected final IIdentifierSystem identifierSystem;
     protected final ITypeRegistry typeRegistry;
 
@@ -52,12 +48,10 @@ public class TypingService implements ITypingService {
     @Autowired
     protected IValidationStrategy defaultStrategy = null;
 
-    public TypingService(IIdentifierSystem identifierSystem, ITypeRegistry typeRegistry,
-            AsyncLoadingCache<String, TypeDefinition> typeCache) {
+    public TypingService(IIdentifierSystem identifierSystem, ITypeRegistry typeRegistry) {
         super();
         this.identifierSystem = identifierSystem;
         this.typeRegistry = typeRegistry;
-        this.typeCache = typeCache;
     }
 
     @Override
@@ -77,15 +71,9 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public boolean isIdentifierRegistered(String pid) throws ExternalServiceException {
+    public boolean isPidRegistered(String pid) throws ExternalServiceException {
         LOG.trace("Performing isIdentifierRegistered({}).", pid);
-        return identifierSystem.isIdentifierRegistered(pid);
-    }
-
-    @Override
-    public String queryProperty(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
-        LOG.trace("Performing queryProperty({}, TypeDefinition#{}).", pid, typeDefinition.getIdentifier());
-        return identifierSystem.queryProperty(pid, typeDefinition);
+        return identifierSystem.isPidRegistered(pid);
     }
 
     @Override
@@ -95,47 +83,20 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
-        LOG.trace("Performing queryByType({}, TypeDefinition#{}).", pid, typeDefinition.getIdentifier());
-        return identifierSystem.queryByType(pid, typeDefinition);
-    }
-
-    @Override
-    public boolean deletePID(String pid) throws ExternalServiceException {
+    public boolean deletePid(String pid) throws ExternalServiceException {
         LOG.trace("Performing deletePID({}).", pid);
-        return identifierSystem.deletePID(pid);
+        return identifierSystem.deletePid(pid);
     }
 
     @Override
-    public CompletableFuture<TypeDefinition> describeType(String typeIdentifier) throws IOException {
-        LOG.trace("Performing describeType({}).", typeIdentifier);
-        try {
-            LOG.trace(LOG_MSG_QUERY_TYPE, typeIdentifier);
-            return typeCache.get(typeIdentifier);
-        } catch (RuntimeException ex) {
-            LOG.error("Failed to query for type with identifier " + typeIdentifier + ".", ex);
-            throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
-        }
+    public PIDRecord queryPid(String pid) throws PidNotFoundException, ExternalServiceException {
+        return queryPid(pid, false);
     }
 
-    @Override
-    public PIDRecord queryAllProperties(String pid) throws PidNotFoundException, ExternalServiceException {
-        LOG.trace("Performing queryAllProperties({}).", pid);
-        PIDRecord pidRecord = identifierSystem.queryAllProperties(pid);
-        if (pidRecord == null) {
-            throw new PidNotFoundException(pid);
-        }
-        // ensure the PID is always contained
-        pidRecord.setPid(pid);
-        return pidRecord;
-    }
-
-    @Override
-    public PIDRecord queryAllProperties(String pid, boolean includePropertyNames)
-            throws IOException {
+    public PIDRecord queryPid(String pid, boolean includePropertyNames)
+            throws PidNotFoundException, ExternalServiceException {
         LOG.trace("Performing queryAllProperties({}, {}).", pid, includePropertyNames);
-        PIDRecord pidInfo = identifierSystem.queryAllProperties(pid);
-        LOG.trace("PID record found. {}", (includePropertyNames) ? "Adding property names." : "Returning result.");
+        PIDRecord pidInfo = identifierSystem.queryPid(pid);
 
         if (includePropertyNames) {
             enrichPIDInformationRecord(pidInfo);
@@ -143,40 +104,20 @@ public class TypingService implements ITypingService {
         return pidInfo;
     }
 
-    @Override
-    public PIDRecord queryProperty(String pid, String propertyIdentifier) throws IOException {
-        LOG.trace("Performing queryProperty({}, {}).", pid, propertyIdentifier);
-        PIDRecord pidInfo = new PIDRecord();
-        // query type registry
-        TypeDefinition typeDef;
-        try {
-            LOG.trace(LOG_MSG_QUERY_TYPE, propertyIdentifier);
-            typeDef = typeCache.get(propertyIdentifier).get();
-        } catch (ExecutionException | InterruptedException ex) {
-            LOG.error(LOG_MSG_QUERY_TYPE, propertyIdentifier);
-            throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
-        }
-
-        if (typeDef != null) {
-            pidInfo.addEntry(propertyIdentifier, typeDef.getName(), identifierSystem.queryProperty(pid, typeDef));
-            return pidInfo;
-        }
-        return null;
-    }
-
     private void enrichPIDInformationRecord(PIDRecord pidInfo) {
         // enrich record by querying type registry for all property definitions
         // to get the property names
         for (String typeIdentifier : pidInfo.getPropertyIdentifiers()) {
-            TypeDefinition typeDef;
+            AttributeInfo attributeInfo;
             try {
-                typeDef = typeCache.get(typeIdentifier).get();
-            } catch (ExecutionException | InterruptedException ex) {
+                attributeInfo = this.typeRegistry.queryAttributeInfo(typeIdentifier).join();
+            } catch (CompletionException | CancellationException ex) {
+                // TODO convert exceptions like in validation service.
                 throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
             }
 
-            if (typeDef != null) {
-                pidInfo.setPropertyName(typeIdentifier, typeDef.getName());
+            if (attributeInfo != null) {
+                pidInfo.setPropertyName(typeIdentifier, attributeInfo.name());
             } else {
                 pidInfo.setPropertyName(typeIdentifier, typeIdentifier);
             }
@@ -184,37 +125,8 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public PIDRecord queryByType(String pid, String typeIdentifier, boolean includePropertyNames)
-            throws IOException {
-        TypeDefinition typeDef;
-        try {
-            typeDef = typeCache.get(typeIdentifier).get();
-        } catch (ExecutionException | InterruptedException ex) {
-            throw new InvalidConfigException(LOG_MSG_TYPING_SERVICE_MISCONFIGURED);
-        }
-
-        if (typeDef == null) {
-            return null;
-        }
-        // now query PID record and fill in information based on property keys in type definition
-        PIDRecord result = identifierSystem.queryByType(pid, typeDef);
-        if (includePropertyNames) {
-            enrichPIDInformationRecord(result);
-        }
-        return result;
-    }
-
-    public ITypeRegistry getTypeRegistry() {
-        return typeRegistry;
-    }
-
-    public IIdentifierSystem getIdentifierSystem() {
-        return identifierSystem;
-    }
-
-    @Override
-    public boolean updatePID(PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
-        return this.identifierSystem.updatePID(pidRecord);
+    public boolean updatePid(PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
+        return this.identifierSystem.updatePid(pidRecord);
     }
 
     @Override
@@ -223,7 +135,7 @@ public class TypingService implements ITypingService {
     }
 
     public Operations getOperations()  {
-        return new Operations(this);
+        return new Operations(this.typeRegistry, this.identifierSystem);
     }
 
 }

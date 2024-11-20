@@ -11,12 +11,13 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
+import edu.kit.datamanager.pit.typeregistry.AttributeInfo;
+import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import org.apache.commons.lang3.stream.Streams;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
-
-import edu.kit.datamanager.pit.pitservice.ITypingService;
 
 /**
  * Simple operations on PID records.
@@ -34,10 +35,12 @@ public class Operations {
         "21.T11148/397d831aa3a9d18eb52c"
     };
 
-    private ITypingService typingService;
+    private ITypeRegistry typeRegistry;
+    private IIdentifierSystem identifierSystem;
 
-    public Operations(ITypingService typingService) {
-        this.typingService = typingService;
+    public Operations(ITypeRegistry typeRegistry, IIdentifierSystem identifierSystem) {
+        this.typeRegistry = typeRegistry;
+        this.identifierSystem = identifierSystem;
     }
 
     /**
@@ -70,15 +73,13 @@ public class Operations {
             return date;
         }
 
-        /* TODO try to find types extending or relating otherwise to known types
-         *      (currently not supported by our TypeDefinition) */
-        Collection<TypeDefinition> types = new ArrayList<>();
-        List<CompletableFuture<?>> futures = Streams
-                .stream(pidRecord.getPropertyIdentifiers().stream())
-                .filter(attributePid -> this.typingService.isIdentifierRegistered(attributePid))
+        Collection<AttributeInfo> types = new ArrayList<>();
+        List<CompletableFuture<?>> futures = Streams.failableStream(
+                pidRecord.getPropertyIdentifiers().stream())
+                .filter(attributePid -> this.identifierSystem.isPidRegistered(attributePid))
                 .map(attributePid -> {
-                    return this.typingService
-                            .describeType(attributePid)
+                    return this.typeRegistry
+                            .queryAttributeInfo(attributePid)
                             .thenAcceptAsync(types::add);
                 })
                 .collect(Collectors.toList());
@@ -95,10 +96,10 @@ public class Operations {
         return types
             .stream()
             .filter(type -> 
-                type.getName().equals("dateCreated")
-                || type.getName().equals("createdAt")
-                || type.getName().equals("creationDate"))
-            .map(type -> pidRecord.getPropertyValues(type.getIdentifier()))
+                type.name().equalsIgnoreCase("dateCreated")
+                || type.name().equalsIgnoreCase("createdAt")
+                || type.name().equalsIgnoreCase("creationDate"))
+            .map(type -> pidRecord.getPropertyValues(type.pid()))
             .map(Arrays::asList)
             .flatMap(List<String>::stream)
             .map(this::extractDate)
@@ -138,15 +139,12 @@ public class Operations {
             return date;
         }
 
-        /* TODO try to find types extending or relating otherwise to known types
-         *      (currently not supported by our TypeDefinition) */
-        Collection<TypeDefinition> types = new ArrayList<>();
-        List<CompletableFuture<?>> futures = Streams
-                .stream(pidRecord.getPropertyIdentifiers().stream())
-                .filter(attributePid -> this.typingService.isIdentifierRegistered(attributePid))
+        Collection<AttributeInfo> types = new ArrayList<>();
+        List<CompletableFuture<?>> futures = Streams.failableStream(pidRecord.getPropertyIdentifiers().stream())
+                .filter(attributePid -> this.identifierSystem.isPidRegistered(attributePid))
                 .map(attributePid -> {
-                    return this.typingService
-                            .describeType(attributePid)
+                    return this.typeRegistry
+                            .queryAttributeInfo(attributePid)
                             .thenAcceptAsync(types::add);
                 })
                 .collect(Collectors.toList());
@@ -163,10 +161,10 @@ public class Operations {
         return types
             .stream()
             .filter(type -> 
-                type.getName().equals("dateModified")
-                || type.getName().equals("lastModified")
-                || type.getName().equals("modificationDate"))
-            .map(type -> pidRecord.getPropertyValues(type.getIdentifier()))
+                type.name().equalsIgnoreCase("dateModified")
+                || type.name().equalsIgnoreCase("lastModified")
+                || type.name().equalsIgnoreCase("modificationDate"))
+            .map(type -> pidRecord.getPropertyValues(type.pid()))
             .map(Arrays::asList)
             .flatMap(List<String>::stream)
             .map(this::extractDate)
