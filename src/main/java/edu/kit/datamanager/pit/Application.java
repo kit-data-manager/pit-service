@@ -19,9 +19,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
 import edu.kit.datamanager.pit.cli.CliTaskBootstrap;
 import edu.kit.datamanager.pit.cli.CliTaskWriteFile;
 import edu.kit.datamanager.pit.cli.ICliTask;
@@ -29,21 +27,18 @@ import edu.kit.datamanager.pit.cli.PidSource;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
-import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.TypingService;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
-import edu.kit.datamanager.pit.typeregistry.impl.DtrTest;
+import edu.kit.datamanager.pit.typeregistry.impl.TypeApi;
 import edu.kit.datamanager.pit.web.converter.SimplePidRecordConverter;
 import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.apache.http.client.HttpClient;
@@ -103,13 +98,13 @@ public class Application {
     }
 
     @Bean
-    public ITypeRegistry typeRegistry() {
-        return new DtrTest();
+    public ITypeRegistry typeRegistry(ApplicationProperties props) {
+        return new TypeApi(props);
     }
 
     @Bean
     public ITypingService typingService(IIdentifierSystem identifierSystem, ApplicationProperties props) {
-        return new TypingService(identifierSystem, typeRegistry(), typeLoader(props));
+        return new TypingService(identifierSystem, typeRegistry(props));
     }
 
     @Bean(name = "OBJECT_MAPPER_BEAN")
@@ -141,34 +136,7 @@ public class Application {
                 .build();
     }
 
-    /**
-     * This loader is a cache, which will retrieve `TypeDefinition`s, if required.
-     * 
-     * Therefore, it can be used instead of the ITypeRegistry implementations.
-     * Retrieve it using Autowire or from the application context.
-     * 
-     * @param props the applications properties set by the administration at the
-     *              start of this application.
-     * @return the cache
-     */
     @Bean
-    public AsyncLoadingCache<String, TypeDefinition> typeLoader(ApplicationProperties props) {
-        int maximumSize = props.getMaximumSize();
-        long expireAfterWrite = props.getExpireAfterWrite();
-        return Caffeine.newBuilder()
-                .maximumSize(maximumSize)
-                .executor(EXECUTOR)
-                .refreshAfterWrite(Duration.ofMinutes(expireAfterWrite / 2))
-                .expireAfterWrite(expireAfterWrite, TimeUnit.MINUTES)
-                .removalListener((key, value, cause) ->
-                        LOG.trace("Removing type definition located at {} from schema cache. Cause: {}", key, cause)
-                )
-                .buildAsync(pid -> {
-                    LOG.trace("Loading type definition for identifier {} to cache.", pid);
-                    return typeRegistry().queryTypeDefinition(pid);
-                });
-    }
-
     @ConfigurationProperties("pit")
     public ApplicationProperties applicationProperties() {
         return new ApplicationProperties();
