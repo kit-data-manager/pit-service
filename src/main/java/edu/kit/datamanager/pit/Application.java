@@ -87,7 +87,7 @@ public class Application {
     protected static final String ERROR_COMMUNICATION = "Communication error: {}";
     protected static final String ERROR_CONFIGURATION = "Configuration error: {}";
 
-    protected static final Executor EXECUTOR = Executors.newWorkStealingPool();
+    public static final Executor EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
 
     @Bean
