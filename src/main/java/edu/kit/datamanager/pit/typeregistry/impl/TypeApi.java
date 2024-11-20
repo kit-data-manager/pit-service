@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.client.RestClient;
 
 import java.io.InputStream;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Duration;
@@ -121,7 +120,7 @@ public class TypeApi implements ITypeRegistry {
                             JSONObject rawSchema = new JSONObject(new JSONTokener(inputStream));
                             schema = SchemaLoader.load(rawSchema);
                         } catch (JSONException e) {
-                            throw new ExternalServiceException(baseUrl, "Response (" + maybeSchemaPid + ") is not a valid schema.");
+                            throw new ExternalServiceException(baseUrl.toString(), "Response (" + maybeSchemaPid + ") is not a valid schema.");
                         } finally {
                             inputStream.close();
                         }
@@ -176,7 +175,7 @@ public class TypeApi implements ITypeRegistry {
                     attributeRepeatable);
 
             if (obligationNode.isNull() || repeatableNode.isNull() || attributePid.trim().isEmpty()) {
-                throw new ExternalServiceException(baseUrl, "Malformed attribute in profile (%s): " + attribute);
+                throw new ExternalServiceException(baseUrl.toString(), "Malformed attribute in profile (%s): " + attribute);
             }
             attributes.add(attribute);
 
@@ -197,6 +196,6 @@ public class TypeApi implements ITypeRegistry {
 
     @Override
     public String getRegistryIdentifier() {
-        return baseUrl;
+        return baseUrl.toString();
     }
 }
