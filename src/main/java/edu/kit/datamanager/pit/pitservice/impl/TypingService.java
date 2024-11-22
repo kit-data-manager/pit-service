@@ -33,14 +33,13 @@ public class TypingService implements ITypingService {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypingService.class);
     private static final String LOG_MSG_TYPING_SERVICE_MISCONFIGURED = "Typing service misconfigured.";
-    private static final String LOG_MSG_QUERY_TYPE = "Querying for type with identifier {}.";
 
     protected final IIdentifierSystem identifierSystem;
     protected final ITypeRegistry typeRegistry;
 
     /**
      * A validation strategy. Will never be null.
-     * 
+     * <p>
      * ApplicationProperties::defaultValidationStrategy there is always either a
      * default strategy or a noop strategy assigned. Therefore, autowiring will
      * always work. Assigning null is done to avoid warnings on constructor.

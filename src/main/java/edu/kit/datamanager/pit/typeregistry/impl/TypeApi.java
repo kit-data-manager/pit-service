@@ -82,7 +82,7 @@ public class TypeApi implements ITypeRegistry {
                 });
     }
 
-    private AttributeInfo queryAttribute(String attributePid) {
+    protected AttributeInfo queryAttribute(String attributePid) {
         return http.get()
                 .uri(uriBuilder -> uriBuilder
                         .path(attributePid)
@@ -99,7 +99,7 @@ public class TypeApi implements ITypeRegistry {
                 });
     }
 
-    private AttributeInfo extractAttributeInformation(String attributePid, JsonNode jsonNode) {
+    protected AttributeInfo extractAttributeInformation(String attributePid, JsonNode jsonNode) {
         String typeName = jsonNode.path("type").asText();
         String name = jsonNode.path("name").asText();
         Schema schema = this.querySchema(attributePid);
@@ -120,12 +120,14 @@ public class TypeApi implements ITypeRegistry {
                             JSONObject rawSchema = new JSONObject(new JSONTokener(inputStream));
                             schema = SchemaLoader.load(rawSchema);
                         } catch (JSONException e) {
+                            // TODO does this detect the buggy schemas of type-api?
                             throw new ExternalServiceException(baseUrl.toString(), "Response (" + maybeSchemaPid + ") is not a valid schema.");
                         } finally {
                             inputStream.close();
                         }
                         return schema;
                     } else {
+                        // TODO consider a fallback schema
                         throw new TypeNotFoundException(maybeSchemaPid);
                     }
                 });
