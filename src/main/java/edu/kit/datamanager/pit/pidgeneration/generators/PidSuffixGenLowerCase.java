@@ -9,7 +9,7 @@ import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
  */
 public class PidSuffixGenLowerCase implements PidSuffixGenerator {
 
-private PidSuffixGenerator generator;
+    private PidSuffixGenerator generator;
 
     public PidSuffixGenLowerCase(PidSuffixGenerator generator) {
         this.generator = generator;
