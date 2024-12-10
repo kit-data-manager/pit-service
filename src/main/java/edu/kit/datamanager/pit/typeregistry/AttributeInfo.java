@@ -1,6 +1,10 @@
 package edu.kit.datamanager.pit.typeregistry;
 
+import edu.kit.datamanager.pit.common.RecordValidationException;
 import org.everit.json.schema.Schema;
+import org.everit.json.schema.ValidationException;
+
+import java.util.Collection;
 
 /**
  * @param pid the pid of this attribute
@@ -13,5 +17,19 @@ public record AttributeInfo(
         String pid,
         String name,
         String typeName,
-        Schema jsonSchema
-) {}
+        Collection<Schema> jsonSchema
+) {
+    public boolean validate(String value) {
+        return this.jsonSchema().stream()
+                .anyMatch(schema -> validate(schema, value));
+    }
+
+    private boolean validate(Schema schema, String value) {
+        try {
+            schema.validate(value);
+        } catch (ValidationException e) {
+            return false;
+        }
+        return true;
+    }
+}

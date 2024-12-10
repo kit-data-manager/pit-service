@@ -32,6 +32,7 @@ import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.TypingService;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import edu.kit.datamanager.pit.typeregistry.impl.TypeApi;
+import edu.kit.datamanager.pit.typeregistry.schema.SchemaSetGenerator;
 import edu.kit.datamanager.pit.web.converter.SimplePidRecordConverter;
 import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
 
@@ -42,6 +43,9 @@ import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.RedirectStrategy;
+import org.apache.http.impl.client.DefaultRedirectStrategy;
+import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.impl.client.cache.CacheConfig;
 import org.apache.http.impl.client.cache.CachingHttpClientBuilder;
 import org.slf4j.Logger;
@@ -98,13 +102,18 @@ public class Application {
     }
 
     @Bean
-    public ITypeRegistry typeRegistry(ApplicationProperties props) {
-        return new TypeApi(props);
+    public SchemaSetGenerator schemaSetGenerator(ApplicationProperties props) {
+        return new SchemaSetGenerator(props);
     }
 
     @Bean
-    public ITypingService typingService(IIdentifierSystem identifierSystem, ApplicationProperties props) {
-        return new TypingService(identifierSystem, typeRegistry(props));
+    public ITypeRegistry typeRegistry(ApplicationProperties props, SchemaSetGenerator schemaSetGenerator) {
+        return new TypeApi(props, schemaSetGenerator);
+    }
+
+    @Bean
+    public ITypingService typingService(IIdentifierSystem identifierSystem, ITypeRegistry typeRegistry) {
+        return new TypingService(identifierSystem, typeRegistry);
     }
 
     @Bean(name = "OBJECT_MAPPER_BEAN")
