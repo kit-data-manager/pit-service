@@ -13,15 +13,13 @@ import edu.kit.datamanager.pit.typeregistry.AttributeInfo;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import edu.kit.datamanager.pit.typeregistry.RegisteredProfile;
 import edu.kit.datamanager.pit.typeregistry.RegisteredProfileAttribute;
-import org.everit.json.schema.Schema;
-import org.everit.json.schema.loader.SchemaLoader;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
+import edu.kit.datamanager.pit.typeregistry.schema.SchemaInfo;
+import edu.kit.datamanager.pit.typeregistry.schema.SchemaSetGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.client.RestClient;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -29,6 +27,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -41,9 +40,12 @@ public class TypeApi implements ITypeRegistry {
     protected final AsyncLoadingCache<String, RegisteredProfile> profileCache;
     protected final AsyncLoadingCache<String, AttributeInfo> attributeCache;
 
-    public TypeApi(ApplicationProperties properties) {
+    protected final SchemaSetGenerator schemaSetGenerator;
+
+    public TypeApi(ApplicationProperties properties, SchemaSetGenerator schemaSetGenerator) {
+        this.schemaSetGenerator = schemaSetGenerator;
         this.baseUrl = properties.getTypeRegistryUri();
-        String baseUri = null;
+        String baseUri;
         try {
             baseUri = baseUrl.toURI().resolve("v1/types").toString();
         } catch (URISyntaxException e) {
@@ -82,53 +84,34 @@ public class TypeApi implements ITypeRegistry {
                 });
     }
 
-    private AttributeInfo queryAttribute(String attributePid) {
+    protected AttributeInfo queryAttribute(String attributePid) {
         return http.get()
                 .uri(uriBuilder -> uriBuilder
                         .path(attributePid)
                         .build())
                 .exchange((clientRequest, clientResponse) -> {
                     if (clientResponse.getStatusCode().is2xxSuccessful()) {
-                        InputStream inputStream = clientResponse.getBody();
-                        String body = new String(inputStream.readAllBytes());
-                        inputStream.close();
-                        return extractAttributeInformation(attributePid, Application.jsonObjectMapper().readTree(body));
+                        try (InputStream inputStream = clientResponse.getBody()) {
+                            String body = new String(inputStream.readAllBytes());
+                            return extractAttributeInformation(attributePid, Application.jsonObjectMapper().readTree(body));
+                        } catch (IOException e) {
+                            throw new TypeNotFoundException(attributePid);
+                        }
                     } else {
                         throw new TypeNotFoundException(attributePid);
                     }
                 });
     }
 
-    private AttributeInfo extractAttributeInformation(String attributePid, JsonNode jsonNode) {
+    protected AttributeInfo extractAttributeInformation(String attributePid, JsonNode jsonNode) {
         String typeName = jsonNode.path("type").asText();
         String name = jsonNode.path("name").asText();
-        Schema schema = this.querySchema(attributePid);
-        return new AttributeInfo(attributePid, name, typeName, schema);
+        Set<SchemaInfo> schemas = this.querySchemas(attributePid);
+        return new AttributeInfo(attributePid, name, typeName, schemas);
     }
 
-    protected Schema querySchema(String maybeSchemaPid) throws TypeNotFoundException, ExternalServiceException {
-        return http.get()
-                .uri(uriBuilder -> uriBuilder
-                        .pathSegment("schema")
-                        .path(maybeSchemaPid)
-                        .build())
-                .exchange((clientRequest, clientResponse) -> {
-                    if (clientResponse.getStatusCode().is2xxSuccessful()) {
-                        InputStream inputStream = clientResponse.getBody();
-                        Schema schema;
-                        try {
-                            JSONObject rawSchema = new JSONObject(new JSONTokener(inputStream));
-                            schema = SchemaLoader.load(rawSchema);
-                        } catch (JSONException e) {
-                            throw new ExternalServiceException(baseUrl.toString(), "Response (" + maybeSchemaPid + ") is not a valid schema.");
-                        } finally {
-                            inputStream.close();
-                        }
-                        return schema;
-                    } else {
-                        throw new TypeNotFoundException(maybeSchemaPid);
-                    }
-                });
+    protected Set<SchemaInfo> querySchemas(String maybeSchemaPid) throws TypeNotFoundException, ExternalServiceException {
+        return schemaSetGenerator.generateFor(maybeSchemaPid).join();
     }
 
     protected RegisteredProfile queryProfile(String maybeProfilePid) throws TypeNotFoundException, ExternalServiceException {

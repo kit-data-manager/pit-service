@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
 
-import org.everit.json.schema.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,14 +32,18 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
     protected boolean additionalAttributesAllowed;
     protected Set<String> profileKeys;
 
-    public EmbeddedStrictValidatorStrategy(ITypeRegistry typeRegistry, ApplicationProperties config) {
+    public EmbeddedStrictValidatorStrategy(
+            ITypeRegistry typeRegistry,
+            ApplicationProperties config
+    ) {
         this.typeRegistry = typeRegistry;
         this.profileKeys = config.getProfileKeys();
     }
 
     @Override
-    public void validate(PIDRecord pidRecord) throws RecordValidationException, ExternalServiceException {
-
+    public void validate(PIDRecord pidRecord)
+            throws RecordValidationException, ExternalServiceException
+    {
         if (pidRecord.getPropertyIdentifiers().isEmpty()) {
             throw new RecordValidationException(pidRecord, "Record is empty!");
         }
@@ -51,19 +54,17 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
                 .map(attributePid -> this.typeRegistry.queryAttributeInfo(attributePid))
                 // validate values using schema
                 .map(attributeInfoFuture -> attributeInfoFuture.thenApply(attributeInfo -> {
-                            for (String value : pidRecord.getPropertyValues(attributeInfo.pid())) {
-                                try {
-                                    attributeInfo.jsonSchema().validate(value);
-                                } catch (ValidationException e) {
-                                    throw new RecordValidationException(
-                                            pidRecord,
-                                            "Attribute %s has a non-complying value %s".formatted(attributeInfo.pid(), value),
-                                            e
-                                    );
-                                }
-                            }
-                            return attributeInfo;
-                        }))
+                    for (String value : pidRecord.getPropertyValues(attributeInfo.pid())) {
+                        boolean isValid = attributeInfo.validate(value);
+                        if (!isValid) {
+                            throw new RecordValidationException(
+                                    pidRecord,
+                                    "Attribute %s has a non-complying value %s"
+                                            .formatted(attributeInfo.pid(), value));
+                        }
+                    }
+                    return attributeInfo;
+                }))
                 // resolve profiles and apply their validation
                 .map(attributeInfoFuture -> attributeInfoFuture.thenApply(attributeInfo -> {
                     boolean isProfile = this.profileKeys.contains(attributeInfo.pid());
@@ -84,7 +85,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
             CompletableFuture.allOf(attributeInfoFutures.toArray(new CompletableFuture<?>[0])).join();
         } catch (CompletionException e) {
             throwRecordValidationExceptionCause(e);
-            throw new ExternalServiceException(this.typeRegistry.getRegistryIdentifier().toString());
+            throw new ExternalServiceException(this.typeRegistry.getRegistryIdentifier());
         } catch (CancellationException e) {
             throwRecordValidationExceptionCause(e);
             throw new RecordValidationException(
