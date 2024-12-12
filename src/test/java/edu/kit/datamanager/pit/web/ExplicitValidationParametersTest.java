@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import jakarta.servlet.ServletContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -82,6 +83,9 @@ class ExplicitValidationParametersTest {
     ITypingService typingService;
 
     @Autowired
+    ITypeRegistry typeRegistry;
+
+    @Autowired
     private ApplicationProperties appProps;
 
     private MockMvc mockMvc;
@@ -96,7 +100,8 @@ class ExplicitValidationParametersTest {
     void setup() throws Exception {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
         this.knownPidsDao.deleteAll();
-        this.typingService.setValidationStrategy(this.appProps.defaultValidationStrategy());
+        this.typingService.setValidationStrategy(
+                this.appProps.defaultValidationStrategy(typeRegistry));
     }
 
     @Test
@@ -252,12 +257,13 @@ class ExplicitValidationParametersTest {
         assertEquals(1, knownPidsDao.count());
         String validPid = knownPidsDao.findAll().iterator().next().getPid();
 
-        PIDRecord r = inMemory.queryAllProperties(validPid);
+        PIDRecord r = inMemory.queryPid(validPid);
         r.addEntry("21.T11148/076759916209e5d62bd5", "", "21.T11148/b9b76f887845e32d29f7");
         r.addEntry("something wrong", "", "someVeryUniqueValue");
-        inMemory.updatePID(r);
+        inMemory.updatePid(r);
         // ... so we need to re-enable validation here:
-        this.typingService.setValidationStrategy(this.appProps.defaultValidationStrategy());
+        this.typingService.setValidationStrategy(
+                this.appProps.defaultValidationStrategy(typeRegistry));
 
         MvcResult result = this.mockMvc
             .perform(

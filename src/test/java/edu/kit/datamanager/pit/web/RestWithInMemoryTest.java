@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import jakarta.servlet.ServletContext;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -82,6 +83,9 @@ class RestWithInMemoryTest {
     ITypingService typingService;
 
     @Autowired
+    ITypeRegistry typeRegistry;
+
+    @Autowired
     private ApplicationProperties appProps;
 
     private MockMvc mockMvc;
@@ -100,7 +104,8 @@ class RestWithInMemoryTest {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
         this.mapper = this.webApplicationContext.getBean("OBJECT_MAPPER_BEAN", ObjectMapper.class);
         this.knownPidsDao.deleteAll();
-        this.typingService.setValidationStrategy(this.appProps.defaultValidationStrategy());
+        this.typingService.setValidationStrategy(
+                this.appProps.defaultValidationStrategy(typeRegistry));
     }
 
     @Test

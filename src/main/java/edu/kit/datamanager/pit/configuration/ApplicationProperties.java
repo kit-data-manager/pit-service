@@ -21,9 +21,14 @@ import edu.kit.datamanager.pit.pitservice.impl.EmbeddedStrictValidatorStrategy;
 import edu.kit.datamanager.pit.pitservice.impl.NoValidationStrategy;
 
 import java.net.URL;
+import java.util.List;
+import java.util.Set;
 
+import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import jakarta.validation.constraints.NotNull;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,6 +51,11 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class ApplicationProperties extends GenericApplicationProperties {
 
+  private static Set<String> KNOWN_PROFILE_KEYS = Set.of(
+          "21.T11148/076759916209e5d62bd5",
+          "21.T11969/bcc54a2a9ab5bf2a8f2c"
+  );
+
   public enum IdentifierSystemImpl {
     IN_MEMORY,
     LOCAL,
@@ -66,10 +76,10 @@ public class ApplicationProperties extends GenericApplicationProperties {
   private ValidationStrategy validationStrategy = ValidationStrategy.EMBEDDED_STRICT;
 
   @Bean
-  public IValidationStrategy defaultValidationStrategy() {
+  public IValidationStrategy defaultValidationStrategy(ITypeRegistry typeRegistry) {
     IValidationStrategy defaultStrategy = new NoValidationStrategy();
     if (this.validationStrategy == ValidationStrategy.EMBEDDED_STRICT) {
-      defaultStrategy = new EmbeddedStrictValidatorStrategy();
+      defaultStrategy = new EmbeddedStrictValidatorStrategy(typeRegistry, this);
     }
     return defaultStrategy;
   }
@@ -108,7 +118,28 @@ public class ApplicationProperties extends GenericApplicationProperties {
   private long expireAfterWrite;
 
   @Value("${pit.validation.profileKey:21.T11148/076759916209e5d62bd5}")
+  @Deprecated(forRemoval = true /*In Typed PID Maker 3.0.0*/)
   private String profileKey;
+
+  @Getter
+  @Setter
+  @Value("${pit.validation.alwaysAllowAdditionalAttributes:true}")
+  private boolean alwaysAllowAdditionalAttributes = true;
+
+  @Value("#{${pit.validation.profileKeys:{}}}")
+  @NotNull
+  protected List<String> profileKeys = List.of();
+
+  public @NotNull Set<String> getProfileKeys() {
+    Set<String> allProfileKeys = new java.util.HashSet<>(Set.copyOf(KNOWN_PROFILE_KEYS));
+    allProfileKeys.addAll(profileKeys);
+    allProfileKeys.add(this.getProfileKey());
+    return allProfileKeys;
+  }
+
+  public void setProfileKeys(@NotNull List<String> profileKeys) {
+    this.profileKeys = profileKeys;
+  }
 
   public IdentifierSystemImpl getIdentifierSystemImplementation() {
     return this.identifierSystemImplementation;
@@ -134,10 +165,12 @@ public class ApplicationProperties extends GenericApplicationProperties {
     this.typeRegistryUri = typeRegistryUri;
   }
 
+  @Deprecated(forRemoval = true)
   public String getProfileKey() {
     return this.profileKey;
   }
 
+  @Deprecated(forRemoval = true)
   public void setProfileKey(String profileKey) {
     this.profileKey = profileKey;
   }

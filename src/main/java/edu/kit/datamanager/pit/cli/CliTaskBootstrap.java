@@ -77,7 +77,7 @@ public class CliTaskBootstrap implements ICliTask {
                 // store in Elasticsearch
                 elastic.ifPresent(elastic -> {
                     try {
-                        PIDRecord rec = typingService.queryAllProperties(known.getPid());
+                        PIDRecord rec = typingService.queryPid(known.getPid());
                         LOG.info("Store PID {} in Elasticsearch.", known.getPid());
                         PidRecordElasticWrapper wrapper = new PidRecordElasticWrapper(rec, typingService.getOperations());
                         elastic.save(wrapper);

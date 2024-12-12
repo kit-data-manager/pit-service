@@ -14,11 +14,7 @@ import lombok.Data;
  */
 @Data
 public class PIDRecordEntry {
-
     private String key;
     private String name;
     private String value;
-    
-    @JsonIgnore
-    private TypeDefinition resolvedTypeDefinition;
 }
