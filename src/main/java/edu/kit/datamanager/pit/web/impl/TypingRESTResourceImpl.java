@@ -1,18 +1,29 @@
+/*
+ * Copyright (c) 2024 Karlsruhe Institute of Technology.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package edu.kit.datamanager.pit.web.impl;
 
+import edu.kit.datamanager.entities.messaging.PidRecordMessage;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
-import java.io.IOException;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
-
+import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
+import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.configuration.PidGenerationProperties;
-import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticRepository;
 import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticWrapper;
@@ -24,13 +35,10 @@ import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.web.ITypingRestResource;
 import edu.kit.datamanager.pit.web.TabulatorPaginationFormat;
 import edu.kit.datamanager.service.IMessagingService;
-import edu.kit.datamanager.entities.messaging.PidRecordMessage;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.commons.lang3.stream.Streams;
 import org.apache.http.client.cache.HeaderConstants;
 import org.slf4j.Logger;
@@ -48,19 +56,22 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Stream;
+
 @RestController
 @RequestMapping(value = "/api/v1/pit")
 @Schema(description = "PID Information Types API")
 public class TypingRESTResourceImpl implements ITypingRestResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypingRESTResourceImpl.class);
-
-    @Autowired
-    private ApplicationProperties applicationProps;
-
     @Autowired
     protected ITypingService typingService;
-
+    @Autowired
+    private ApplicationProperties applicationProps;
     @Autowired
     private IMessagingService messagingService;
 
@@ -78,6 +89,88 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
     public TypingRESTResourceImpl() {
         super();
+    }
+
+    @Override
+    public ResponseEntity<List<PIDRecord>> createPIDs(
+            List<PIDRecord> rec,
+            boolean dryrun,
+            WebRequest request,
+            HttpServletResponse response,
+            UriComponentsBuilder uriBuilder
+    ) throws IOException, RecordValidationException, ExternalServiceException {
+        LOG.info("Creating PIDs");
+        String prefix = this.typingService.getPrefix().orElseThrow(() -> new IOException("No prefix configured."));
+
+        // Generate a map between temporary (user-defined) PIDs and final PIDs (generated)
+        Map<String, String> pidMappings = new HashMap<>();
+        for (PIDRecord pidRecord : rec) {
+            String internalPID = pidRecord.getPid();
+            if (!internalPID.isBlank() && pidMappings.containsKey(internalPID)) {
+                // This internal PID was already used by some other record in the same request.
+                throw new RecordValidationException(pidRecord, "The PID " + internalPID + " was used for multiple records in the same request.");
+            }
+
+            pidRecord.setPid("");
+            if (dryrun) {
+                pidRecord.setPid("dryrun_" + pidMappings.size());
+            } else {
+                setPid(pidRecord);
+            }
+            pidMappings.put(internalPID, pidRecord.getPid());
+        }
+
+        List<PIDRecord> validatedRecords = new ArrayList<>();
+        for (PIDRecord pidRecord : rec) {
+
+            // use this map to replace all temporary PIDs in the record values with their corresponding real PIDs
+            pidRecord.getEntries().values().stream()
+                    .flatMap(List::stream)
+                    .filter(entry -> entry.getValue() != null)
+                    .filter(entry -> pidMappings.containsKey(entry.getValue()))
+                    .peek(entry -> LOG.debug("Found reference. Replacing {} with {}.", entry.getValue(), prefix + pidMappings.get(entry.getValue())))
+                    .forEach(entry -> entry.setValue(prefix + pidMappings.get(entry.getValue())));
+
+            // validate the record
+            this.typingService.validate(pidRecord);
+
+            // store the record
+            validatedRecords.add(pidRecord);
+        }
+
+        if (dryrun) {
+            return ResponseEntity.status(HttpStatus.OK).body(validatedRecords);
+        }
+
+        // register the records
+        validatedRecords.forEach(pidRecord -> {
+            // register the PID
+            String pid = this.typingService.registerPID(pidRecord);
+            pidRecord.setPid(pid);
+
+            // store pid locally in accordance with the storage strategy
+            if (applicationProps.getStorageStrategy().storesModified()) {
+                storeLocally(pid, true);
+            }
+
+            // distribute pid creation event to other services
+            PidRecordMessage message = PidRecordMessage.creation(
+                    pid,
+                    "", // TODO parameter is depricated and will be removed soon.
+                    AuthenticationHelper.getPrincipal(),
+                    ControllerUtils.getLocalHostname());
+            try {
+                this.messagingService.send(message);
+            } catch (Exception e) {
+                LOG.error("Could not notify messaging service about the following message: {}", message);
+            }
+
+            // save the record to elastic
+            this.saveToElastic(pidRecord);
+        });
+
+        // return the created records
+        return ResponseEntity.status(HttpStatus.CREATED).body(validatedRecords);
     }
 
     @Override
@@ -149,7 +242,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
             Stream<PidSuffix> suffixStream = suffixGenerator.infiniteStream();
             Optional<PidSuffix> maybeSuffix = Streams.failableStream(suffixStream)
-                    // With failible streams, we can throw exceptions.
+                    // With failable streams, we can throw exceptions.
                     .filter(suffix -> !this.typingService.isIdentifierRegistered(suffix))
                     .stream()  // back to normal java streams
                     .findFirst();  // as the stream is infinite, we should always find a prefix.
@@ -169,10 +262,10 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         String pidInternal = pidRecord.getPid();
         if (hasPid(pidRecord) && !pid.equals(pidInternal)) {
             throw new RecordValidationException(
-                pidRecord,
-                "PID in record was given, but it was not the same as the PID in the URL. Ignore request, assuming this was not intended.");
+                    pidRecord,
+                    "PID in record was given, but it was not the same as the PID in the URL. Ignore request, assuming this was not intended.");
         }
-        
+
         PIDRecord existingRecord = this.typingService.queryAllProperties(pid);
         if (existingRecord == null) {
             throw new PidNotFoundException(pid);
@@ -206,7 +299,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
     /**
      * Stores the PID in a local database.
-     * 
+     *
      * @param pid    the PID
      * @param update if true, updates the modified timestamp if it already exists.
      *               If it does not exist, it will be created with both timestamps
@@ -255,9 +348,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
     private void saveToElastic(PIDRecord rec) {
         this.elastic.ifPresent(
-            database -> database.save(
-                new PidRecordElasticWrapper(rec, typingService.getOperations())
-            )
+                database -> database.save(
+                        new PidRecordElasticWrapper(rec, typingService.getOperations())
+                )
         );
     }
 
@@ -276,11 +369,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     public Page<KnownPid> findAllPage(
-        Instant createdAfter,
-        Instant createdBefore,
-        Instant modifiedAfter,
-        Instant modifiedBefore,
-        Pageable pageable
+            Instant createdAfter,
+            Instant createdBefore,
+            Instant modifiedAfter,
+            Instant modifiedBefore,
+            Pageable pageable
     ) {
         final boolean queriesCreated = createdAfter != null || createdBefore != null;
         final boolean queriesModified = modifiedAfter != null || modifiedBefore != null;
@@ -301,11 +394,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         Page<KnownPid> resultModifiedTimestamp = Page.empty();
         if (queriesCreated) {
             resultCreatedTimestamp = this.localPidStorage
-                .findDistinctPidsByCreatedBetween(createdAfter, createdBefore, pageable);
+                    .findDistinctPidsByCreatedBetween(createdAfter, createdBefore, pageable);
         }
         if (queriesModified) {
             resultModifiedTimestamp = this.localPidStorage
-                .findDistinctPidsByModifiedBetween(modifiedAfter, modifiedBefore, pageable);
+                    .findDistinctPidsByModifiedBetween(modifiedAfter, modifiedBefore, pageable);
         }
         if (queriesCreated && queriesModified) {
             final Page<KnownPid> tmp = resultModifiedTimestamp;
@@ -328,15 +421,14 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             Pageable pageable,
             WebRequest request,
             HttpServletResponse response,
-            UriComponentsBuilder uriBuilder) throws IOException
-    {
+            UriComponentsBuilder uriBuilder) throws IOException {
         Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
         response.addHeader(
-            HeaderConstants.CONTENT_RANGE,
-            ControllerUtils.getContentRangeHeader(
-                page.getNumber(),
-                page.getSize(),
-                page.getTotalElements()));
+                HeaderConstants.CONTENT_RANGE,
+                ControllerUtils.getContentRangeHeader(
+                        page.getNumber(),
+                        page.getSize(),
+                        page.getTotalElements()));
         return ResponseEntity.ok().body(page.getContent());
     }
 
@@ -349,15 +441,14 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             Pageable pageable,
             WebRequest request,
             HttpServletResponse response,
-            UriComponentsBuilder uriBuilder) throws IOException
-    {
+            UriComponentsBuilder uriBuilder) throws IOException {
         Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
         response.addHeader(
-            HeaderConstants.CONTENT_RANGE,
-            ControllerUtils.getContentRangeHeader(
-                page.getNumber(),
-                page.getSize(),
-                page.getTotalElements()));
+                HeaderConstants.CONTENT_RANGE,
+                ControllerUtils.getContentRangeHeader(
+                        page.getNumber(),
+                        page.getSize(),
+                        page.getTotalElements()));
         TabulatorPaginationFormat<KnownPid> tabPage = new TabulatorPaginationFormat<>(page);
         return ResponseEntity.ok().body(tabPage);
     }
