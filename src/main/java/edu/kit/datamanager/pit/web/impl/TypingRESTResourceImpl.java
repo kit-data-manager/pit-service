@@ -66,8 +66,8 @@ import java.util.stream.Stream;
 @RequestMapping(value = "/api/v1/pit")
 @Schema(description = "PID Information Types API")
 public class TypingRESTResourceImpl implements ITypingRestResource {
-
     private static final Logger LOG = LoggerFactory.getLogger(TypingRESTResourceImpl.class);
+
     @Autowired
     protected ITypingService typingService;
     @Autowired
@@ -99,7 +99,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             HttpServletResponse response,
             UriComponentsBuilder uriBuilder
     ) throws IOException, RecordValidationException, ExternalServiceException {
-        LOG.info("Creating PIDs");
+        LOG.info("Creating PIDs for {} records.", rec.size());
         String prefix = this.typingService.getPrefix().orElseThrow(() -> new IOException("No prefix configured."));
 
         // Generate a map between temporary (user-defined) PIDs and final PIDs (generated)
@@ -136,9 +136,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
             // store the record
             validatedRecords.add(pidRecord);
+            LOG.debug("Record {} is valid.", pidRecord);
         }
 
         if (dryrun) {
+            LOG.info("Dryrun finished. Returning validated records for {} records.", validatedRecords.size());
             return ResponseEntity.status(HttpStatus.OK).body(validatedRecords);
         }
 
@@ -156,7 +158,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             // distribute pid creation event to other services
             PidRecordMessage message = PidRecordMessage.creation(
                     pid,
-                    "", // TODO parameter is depricated and will be removed soon.
+                    "", // TODO parameter is deprecated and will be removed soon.
                     AuthenticationHelper.getPrincipal(),
                     ControllerUtils.getLocalHostname());
             try {
@@ -170,6 +172,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         });
 
         // return the created records
+        LOG.info("Creation finished. Returning validated records for {} records.", validatedRecords.size());
         return ResponseEntity.status(HttpStatus.CREATED).body(validatedRecords);
     }
 
@@ -456,5 +459,4 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     private String quotedEtag(PIDRecord pidRecord) {
         return String.format("\"%s\"", pidRecord.getEtag());
     }
-
 }

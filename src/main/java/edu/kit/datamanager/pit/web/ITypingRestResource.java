@@ -49,6 +49,11 @@ public interface ITypingRestResource {
      * Create multiple, possibly related PID records using the record information.
      * This endpoint is a convenience method to create multiple PID records at once.
      * For connecting records, the PID fields must be specified and the value may be used in the value fields of other PIDRecordEntries.
+     * The provided PIDs will be overwritten as defined by the PID generator strategy.
+     * <p>
+     * Note: This endpoint does not support custom PIDs, as the PID field is used for "imaginary" PIDs to connect records.
+     * These "imaginary" PIDs will be overwritten with actual, resolvable PIDs as defined by the PID generator strategy.
+     * If you want to create a record with custom PIDs, use the endpoint `POST /pid`.
      *
      * @param rec    A list of PID records.
      * @param dryrun If true, only validation will be done and no PIDs will be created. No data will be changed and no services will be notified.
@@ -57,29 +62,27 @@ public interface ITypingRestResource {
      * @throws edu.kit.datamanager.pit.common.RecordValidationException if any of the records is invalid or a PID was used for multiple records in the same request.
      */
     @PostMapping(
-            path = "pids/",
-            consumes = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE},
-            produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
+            path = "pids",
+            consumes = {MediaType.APPLICATION_JSON_VALUE},
+            produces = {MediaType.APPLICATION_JSON_VALUE}
     )
     @Operation(
             summary = "Create a multiple, possibly related PID records",
-            description = "Create multiple, possibly related PID records using the record information from the request body. To connect records the PID fields must be specified and the value may be used in the value fields of other PID Record entries. The provided PIDs will be overwritten as defined by the generator strategy."
+            description = "Create multiple, possibly related PID records using the record information from the request body. To connect records, the PID fields must be specified. This 'imaginary' PID value may then be used in the value fields of other PID Record entries. During creation, these `imaginary` PIDs whose sole purpose is to connect records will be overwritten with actual, resolvable PIDs as defined by the PID generator strategy. Note: This procedure does not support custom PIDs, as the PID field is used for linking records. If you want to create a record with custom PIDs, use the endpoint `POST /pid`."
     )
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "The body containing a list of all PID record values as they should be in the new PID records.",
+            description = "The body containing a list of all PID record values as they should be in the new PID records. To connect records, the PID fields must be specified. This 'imaginary' PID value may then be used in the value fields of other PID Record entries. During creation, these `imaginary` PIDs whose sole purpose is to connect records will be overwritten with actual, resolvable PIDs as defined by the PID generator strategy.",
             required = true,
             content = {
-                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, array = @ArraySchema(schema = @Schema(implementation = PIDRecord.class))),
-                    @Content(mediaType = SimplePidRecord.CONTENT_TYPE, array = @ArraySchema(schema = @Schema(implementation = SimplePidRecord.class)))
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, array = @ArraySchema(schema = @Schema(implementation = PIDRecord.class)))
             }
     )
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "201",
-                    description = "Created",
+                    description = "Successfully created all records and resolved references (if they exist). The response contains the created records.",
                     content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, array = @ArraySchema(schema = @Schema(implementation = PIDRecord.class))),
-                            @Content(mediaType = SimplePidRecord.CONTENT_TYPE, array = @ArraySchema(schema = @Schema(implementation = SimplePidRecord.class)))
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, array = @ArraySchema(schema = @Schema(implementation = PIDRecord.class)))
                     }),
             @ApiResponse(responseCode = "400", description = "Validation failed. See body for details. Contains also the validated records.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
             @ApiResponse(responseCode = "406", description = "Provided input is invalid with regard to the supported accept header (Not acceptable)", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
@@ -119,7 +122,7 @@ public interface ITypingRestResource {
      * @throws IOException
      */
     @PostMapping(
-            path = "pid/",
+            path = "pid",
             consumes = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE},
             produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
     )
