@@ -161,9 +161,12 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     @Override
     public ResponseEntity<PIDRecord> updatePID(
             PIDRecord pidRecord,
+            boolean dryrun,
+
             final WebRequest request,
             final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder) throws IOException {
+            final UriComponentsBuilder uriBuilder
+    ) throws IOException {
         // PID validation
         String pid = getContentPathFromRequest("pid", request);
         String pidInternal = pidRecord.getPid();
@@ -183,6 +186,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         // record validation
         pidRecord.setPid(pid);
         this.typingService.validate(pidRecord);
+
+        if (dryrun) {
+            // dryrun only does validation. Stop now and return as we would later on.
+            return ResponseEntity.ok().eTag(quotedEtag(pidRecord)).body(pidRecord);
+        }
 
         // update and send message
         if (this.typingService.updatePID(pidRecord)) {

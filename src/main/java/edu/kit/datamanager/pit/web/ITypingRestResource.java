@@ -121,15 +121,16 @@ public interface ITypingRestResource {
      * Update the given PIDs record using the information provided in the request
      * body. The record is expected to contain the identifier of the matching
      * profile. Conditions for a valid record are the same as for creation.
-     * 
+     * <p>
      * Important note: Validation may take up to 30+ seconds. For details, see the
      * documentation of "POST /pid/".
      *
      * @param rec the PID record.
+     * @param dryrun if only validation shall be executed.
      *
      * @return the record (on success).
      *
-     * @throws IOException
+     * @throws IOException if the record could not be updated.
      */
     @PutMapping(
         path = "pid/**",
@@ -167,6 +168,10 @@ public interface ITypingRestResource {
     public ResponseEntity<PIDRecord> updatePID(
             @RequestBody
             final PIDRecord rec,
+
+            @Parameter(description = "If true, only validation will be done and no PID will be updated. No data will be changed and no services will be notified.", required = false)
+            @RequestParam(name = "dryrun", required = false, defaultValue = "false")
+            boolean dryrun,
 
             final WebRequest request,
             final HttpServletResponse response,
