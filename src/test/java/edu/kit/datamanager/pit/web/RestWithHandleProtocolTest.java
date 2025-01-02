@@ -29,23 +29,18 @@ import jakarta.servlet.ServletContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-// Might be needed for WebApp testing according to
-// https://www.baeldung.com/integration-testing-in-spring
-// @WebAppConfiguration
-// Default preparation foo for mockMVC
+/**
+ * Testing with the handle protocol is currently read-only.
+ * This is due to the fact that we would need credentials for testing.
+ * We can test internal processes, though, for example using the dryrun APIs.
+ */
 @AutoConfigureMockMvc
-// JUnit5 + Spring
 @SpringBootTest(properties = {
     // Set the Handle Protocol implementation
     "pit.pidsystem.implementation = HANDLE_PROTOCOL"
 })
 @TestPropertySource("/test/application-test.properties")
 @ActiveProfiles("test")
-/**
- * Testing with the handle protocol is currently read-only.
- * This is due to the fact that we would need credentials for testing.
- * We can test internal processes, though, for example using the dryrun APIs.
- */
 class RestWithHandleProtocolTest {
 
     @Autowired
@@ -68,7 +63,7 @@ class RestWithHandleProtocolTest {
         assertNotNull(this.mockMvc);
         assertNotNull(this.webApplicationContext);
         ServletContext servletContext = webApplicationContext.getServletContext();
-        
+
         assertNotNull(servletContext);
         assertInstanceOf(MockServletContext.class, servletContext);
         assertNotNull(webApplicationContext.getBean(ITypingRestResource.class));
@@ -87,7 +82,7 @@ class RestWithHandleProtocolTest {
             .andDo(MockMvcResultHandlers.print())
             .andExpect(MockMvcResultMatchers.status().isOk())
             .andReturn();
-        
+
         String resolvedBody = resolved.getResponse().getContentAsString();
         PIDRecord resolvedRecord = mapper.readValue(resolvedBody, PIDRecord.class);
         assertEquals(pid, resolvedRecord.getPid());
