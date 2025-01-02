@@ -180,12 +180,13 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         if (existingRecord == null) {
             throw new PidNotFoundException(pid);
         }
-        // throws exception (HTTP 412) if check fails.
-        ControllerUtils.checkEtag(request, existingRecord);
 
         // record validation
         pidRecord.setPid(pid);
         this.typingService.validate(pidRecord);
+
+        // throws exception (HTTP 412) if check fails.
+        ControllerUtils.checkEtag(request, existingRecord);
 
         if (dryrun) {
             // dryrun only does validation. Stop now and return as we would later on.
