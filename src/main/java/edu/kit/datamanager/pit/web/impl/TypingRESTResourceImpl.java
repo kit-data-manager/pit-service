@@ -161,28 +161,37 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     @Override
     public ResponseEntity<PIDRecord> updatePID(
             PIDRecord pidRecord,
+            boolean dryrun,
+
             final WebRequest request,
             final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder) throws IOException {
+            final UriComponentsBuilder uriBuilder
+    ) throws IOException {
         // PID validation
         String pid = getContentPathFromRequest("pid", request);
         String pidInternal = pidRecord.getPid();
         if (hasPid(pidRecord) && !pid.equals(pidInternal)) {
             throw new RecordValidationException(
                 pidRecord,
-                "PID in record was given, but it was not the same as the PID in the URL. Ignore request, assuming this was not intended.");
+                "Optional PID in record is given (%s), but it was not the same as the PID in the URL (%s). Ignore request, assuming this was not intended.".formatted(pidInternal, pid));
         }
         
         PIDRecord existingRecord = this.typingService.queryAllProperties(pid);
         if (existingRecord == null) {
             throw new PidNotFoundException(pid);
         }
-        // throws exception (HTTP 412) if check fails.
-        ControllerUtils.checkEtag(request, existingRecord);
 
         // record validation
         pidRecord.setPid(pid);
         this.typingService.validate(pidRecord);
+
+        // throws exception (HTTP 412) if check fails.
+        ControllerUtils.checkEtag(request, existingRecord);
+
+        if (dryrun) {
+            // dryrun only does validation. Stop now and return as we would later on.
+            return ResponseEntity.ok().eTag(quotedEtag(pidRecord)).body(pidRecord);
+        }
 
         // update and send message
         if (this.typingService.updatePID(pidRecord)) {
