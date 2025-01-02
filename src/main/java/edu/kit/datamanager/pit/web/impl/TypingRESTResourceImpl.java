@@ -170,7 +170,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         if (hasPid(pidRecord) && !pid.equals(pidInternal)) {
             throw new RecordValidationException(
                 pidRecord,
-                "PID in record was given, but it was not the same as the PID in the URL. Ignore request, assuming this was not intended.");
+                "Optional PID in record is given (%s), but it was not the same as the PID in the URL (%s). Ignore request, assuming this was not intended.".formatted(pidInternal, pid));
         }
         
         PIDRecord existingRecord = this.typingService.queryAllProperties(pid);
