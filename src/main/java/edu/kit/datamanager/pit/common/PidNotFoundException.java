@@ -17,4 +17,7 @@ public class PidNotFoundException extends ResponseStatusException {
 		super(HTTP_STATUS, "Identifier with value " + pid + " not found.");
 	}
 
+	public PidNotFoundException(String pid, Throwable e) {
+		super(HTTP_STATUS, "Identifier with value " + pid + " not found.", e);
+	}
 }
