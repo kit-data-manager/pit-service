@@ -28,9 +28,9 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedStrictValidatorStrategy.class);
     protected static final Executor EXECUTOR = Executors.newWorkStealingPool();
 
-    protected ITypeRegistry typeRegistry;
-    protected boolean additionalAttributesAllowed;
-    protected Set<String> profileKeys;
+    protected final ITypeRegistry typeRegistry;
+    protected final boolean alwaysAcceptAdditionalAttributes;
+    protected final Set<String> profileKeys;
 
     public EmbeddedStrictValidatorStrategy(
             ITypeRegistry typeRegistry,
@@ -38,6 +38,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
     ) {
         this.typeRegistry = typeRegistry;
         this.profileKeys = config.getProfileKeys();
+        this.alwaysAcceptAdditionalAttributes = config.isAlwaysAllowAdditionalAttributes();
     }
 
     @Override
@@ -67,12 +68,12 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
                 }))
                 // resolve profiles and apply their validation
                 .map(attributeInfoFuture -> attributeInfoFuture.thenApply(attributeInfo -> {
-                    boolean isProfile = this.profileKeys.contains(attributeInfo.pid());
-                    if (isProfile) {
+                    boolean indicatesProfileValue = this.profileKeys.contains(attributeInfo.pid());
+                    if (indicatesProfileValue) {
                         Arrays.stream(pidRecord.getPropertyValues(attributeInfo.pid()))
-                                .map(profilePid -> this.typeRegistry.queryAsProfile(profilePid))
+                                .map(this.typeRegistry::queryAsProfile)
                                 .forEach(registeredProfileFuture -> registeredProfileFuture.thenApply(registeredProfile -> {
-                                    registeredProfile.validateAttributes(pidRecord, this.additionalAttributesAllowed);
+                                    registeredProfile.validateAttributes(pidRecord, this.alwaysAcceptAdditionalAttributes);
                                     return registeredProfile;
                                 }));
                     }

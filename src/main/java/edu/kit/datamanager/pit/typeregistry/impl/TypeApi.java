@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
 
 public class TypeApi implements ITypeRegistry {
 
@@ -164,7 +165,24 @@ public class TypeApi implements ITypeRegistry {
 
         });
 
-        return new RegisteredProfile(profilePid, new ImmutableList<>(attributes));
+        boolean additionalAttributesDtrTestStyle = StreamSupport.stream(typeApiResponse
+                .path("content")
+                .path("representationsAndSemantics")
+                .spliterator(),
+                true)
+                .filter(JsonNode::isObject)
+                .filter(node -> node.path("expression").asText("").equals("Format"))
+                .map(node -> node.path("subSchemaRelation").asText("").equals("allowAdditionalProperties"))
+                .findFirst()
+                .orElse(true);
+        boolean additionalAttributesEoscStyle = typeApiResponse
+                .path("content")
+                .path("addProps")
+                .asBoolean(true);
+        // As the default is true, we assume that additional attributes are disallowed if one indicator is false:
+        boolean profileDefinitionAllowsAdditionalAttributes = additionalAttributesDtrTestStyle && additionalAttributesEoscStyle;
+
+        return new RegisteredProfile(profilePid, profileDefinitionAllowsAdditionalAttributes, new ImmutableList<>(attributes));
     }
 
     @Override

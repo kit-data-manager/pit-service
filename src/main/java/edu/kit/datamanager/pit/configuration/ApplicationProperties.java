@@ -27,6 +27,8 @@ import java.util.Set;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import jakarta.validation.constraints.NotNull;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -119,8 +121,10 @@ public class ApplicationProperties extends GenericApplicationProperties {
   @Deprecated(forRemoval = true /*In Typed PID Maker 3.0.0*/)
   private String profileKey;
 
-  @Value("${pit.validation.allowAdditionalAttributes:true}")
-  private boolean allowAdditionalAttributes = true;
+  @Getter
+  @Setter
+  @Value("${pit.validation.alwaysAllowAdditionalAttributes:true}")
+  private boolean alwaysAllowAdditionalAttributes = true;
 
   @Value("#{${pit.validation.profileKeys:{}}}")
   @NotNull
@@ -201,13 +205,5 @@ public class ApplicationProperties extends GenericApplicationProperties {
 
   public void setStorageStrategy(StorageStrategy storageStrategy) {
     this.storageStrategy = storageStrategy;
-  }
-
-  public boolean isAllowAdditionalAttributes() {
-    return allowAdditionalAttributes;
-  }
-
-  public void setAllowAdditionalAttributes(boolean allowAdditionalAttributes) {
-    this.allowAdditionalAttributes = allowAdditionalAttributes;
   }
 }
