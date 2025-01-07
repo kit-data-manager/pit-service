@@ -48,7 +48,7 @@ public class TypeApi implements ITypeRegistry {
         this.baseUrl = properties.getTypeRegistryUri();
         String baseUri;
         try {
-            baseUri = baseUrl.toURI().resolve("v1/types").toString();
+            baseUri = baseUrl.toURI().resolve("v1/types/").toString();
         } catch (URISyntaxException e) {
             throw new InvalidConfigException("Type-Api base url not valid: " + baseUrl);
         }
