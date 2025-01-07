@@ -177,12 +177,11 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     protected Collection<HandleValue> queryAllHandleValues(final String pid) throws PidNotFoundException, ExternalServiceException {
         try {
             HandleValue[] values = this.client.resolveHandle(pid, null, null);
-            return Stream
-                    .of(values)
+            return Stream.of(values)
                     .collect(Collectors.toCollection(ArrayList::new));
         } catch (HandleException e) {
             if (e.getCode() == HandleException.HANDLE_DOES_NOT_EXIST) {
-                return new ArrayList<>();
+                throw new PidNotFoundException(pid, e);
             } else {
                 throw new ExternalServiceException(SERVICE_NAME_HANDLE, e);
             }

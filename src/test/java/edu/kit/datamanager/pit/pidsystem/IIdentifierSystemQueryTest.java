@@ -85,8 +85,9 @@ public class IIdentifierSystemQueryTest {
     @ParameterizedTest
     @MethodSource("implProvider")
     public void queryPidOfNonexistent(IIdentifierSystem impl, String _pid, String pid_nonexist) throws IOException {
-        PIDRecord result = impl.queryPid(pid_nonexist);
-        assertNull(result);
+        assertThrows(PidNotFoundException.class, () -> {
+            impl.queryPid(pid_nonexist);
+        });
     }
 
     @ParameterizedTest
@@ -105,13 +106,5 @@ public class IIdentifierSystemQueryTest {
     public void queryNonexistentProperty(IIdentifierSystem impl, String pid) throws IOException {
         PIDRecord record = impl.queryPid(pid);
         assertFalse(record.getPropertyIdentifiers().contains("Nonexistent_Attribute"));
-    }
-
-    @ParameterizedTest
-    @MethodSource("implProvider")
-    public void queryPropertyOfNonexistent(IIdentifierSystem impl, String pid, String pid_nonexist) throws IOException {
-        assertThrows(PidNotFoundException.class, () -> {
-            impl.queryPid(pid_nonexist);
-        });
     }
 }
