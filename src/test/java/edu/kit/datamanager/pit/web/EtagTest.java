@@ -4,6 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.kit.datamanager.pit.SpringTestHelper;
+import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
+import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
+import edu.kit.datamanager.pit.pidsystem.impl.local.LocalPidSystem;
 import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,6 +56,11 @@ class EtagTest {
     @Test
     void setup() throws Exception {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
+
+        SpringTestHelper springTestHelper = new SpringTestHelper(this.webApplicationContext);
+        springTestHelper.assertSingleBeanInstanceOf(InMemoryIdentifierSystem.class);
+        springTestHelper.assertNoBeanInstanceOf(LocalPidSystem.class);
+        springTestHelper.assertNoBeanInstanceOf(HandleProtocolAdapter.class);
 
         MockHttpServletResponse response = ApiMockUtils.registerSomeRecordAndReturnMvcResult(this.mockMvc).getResponse();
         String etagHeader = response.getHeader(HttpHeaders.ETAG);
