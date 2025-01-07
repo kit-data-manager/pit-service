@@ -1,6 +1,7 @@
     package edu.kit.datamanager.pit.typeregistry.impl;
 
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
+import edu.kit.datamanager.pit.typeregistry.AttributeInfo;
 import edu.kit.datamanager.pit.typeregistry.schema.SchemaInfo;
 import edu.kit.datamanager.pit.typeregistry.schema.SchemaSetGenerator;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,28 @@ class TypeApiTest {
         props.setHandleBaseUri(new URI("https://hdl.handle.net").toURL());
         this.dtr = new TypeApi(props, new SchemaSetGenerator(props));
     }
+
+    @Test
+    void queryAttributeInfoOfSimpleType() {
+        String attributePid = "21.T11148/b8457812905b83046284";
+        AttributeInfo info = dtr.queryAttributeInfo(attributePid).join();
+        assertEquals(attributePid, info.pid());
+        assertFalse(info.jsonSchema().isEmpty());
+        assertEquals(2, info.jsonSchema().size());
+        assertTrue(info.name().contains("Location"));
+        assertEquals("PID-InfoType", info.typeName());
+    }
+
+    @Test
+    void queryAttributeInfoOfComplexType() {
+        AttributeInfo info = dtr.queryAttributeInfo(PID_COMPLEX_TYPE_CHECKSUM_DTRTEST).join();
+        assertEquals(PID_COMPLEX_TYPE_CHECKSUM_DTRTEST, info.pid());
+        assertFalse(info.jsonSchema().isEmpty());
+        assertTrue(info.name().contains("checksum"));
+        assertEquals("PID-InfoType", info.typeName());
+    }
+
+    /* ================== TESTING INTERNALS ================== */
 
     @Test
     void querySchemaOfComplexType() {
