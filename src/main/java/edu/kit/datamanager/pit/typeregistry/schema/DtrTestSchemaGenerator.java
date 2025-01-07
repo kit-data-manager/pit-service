@@ -22,6 +22,7 @@ import java.net.URISyntaxException;
 
 public class DtrTestSchemaGenerator implements SchemaGenerator {
 
+    protected static final String ORIGIN = "dtr-test";
     protected final URI baseUrl;
     protected final HttpClient http;
 
@@ -52,21 +53,21 @@ public class DtrTestSchemaGenerator implements SchemaGenerator {
                                 schema = SchemaLoader.load(rawSchema);
                             } catch (JSONException e) {
                                 return new SchemaInfo(
-                                        this.baseUrl.toString(),
+                                        ORIGIN,
                                         schema,
                                         new ExternalServiceException(baseUrl.toString(), "No valid schema found resolving PID " + maybeTypePid)
                                 );
                             }
-                            return new SchemaInfo(this.baseUrl.toString(), schema, null);
+                            return new SchemaInfo(ORIGIN, schema, null);
                         } else if (statusCode == 404) {
                             return new SchemaInfo(
-                                    this.baseUrl.toString(),
+                                    ORIGIN,
                                     null,
                                     new TypeNotFoundException(maybeTypePid)
                             );
                         } else {
                             return new SchemaInfo(
-                                    this.baseUrl.toString(),
+                                    ORIGIN,
                                     null,
                                     new ExternalServiceException(
                                             this.baseUrl.toString(),
@@ -77,7 +78,7 @@ public class DtrTestSchemaGenerator implements SchemaGenerator {
             );
         } catch (IOException e) {
             return new SchemaInfo(
-                    this.baseUrl.toString(),
+                    ORIGIN,
                     null,
                     new ExternalServiceException(baseUrl.toString(), "Error communicating with service.", e)
             );
