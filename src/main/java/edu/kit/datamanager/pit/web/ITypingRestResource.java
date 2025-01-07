@@ -107,8 +107,13 @@ public interface ITypingRestResource {
     public ResponseEntity<PIDRecord> createPID(
             @RequestBody
             final PIDRecord rec,
-            
-            @Parameter(description = "If true, only validation will be done and no PID will be created. No data will be changed and no services will be notified.", required = false)
+
+            @Parameter(
+                    description = "If true, only validation will be done" +
+                            " and no PID will be created. No data will be changed" +
+                            " and no services will be notified.",
+                    required = false
+            )
             @RequestParam(name = "dryrun", required = false, defaultValue = "false")
             boolean dryrun,
 
@@ -121,15 +126,16 @@ public interface ITypingRestResource {
      * Update the given PIDs record using the information provided in the request
      * body. The record is expected to contain the identifier of the matching
      * profile. Conditions for a valid record are the same as for creation.
-     * 
+     * <p>
      * Important note: Validation may take up to 30+ seconds. For details, see the
      * documentation of "POST /pid/".
      *
      * @param rec the PID record.
+     * @param dryrun if only validation shall be executed.
      *
      * @return the record (on success).
      *
-     * @throws IOException
+     * @throws IOException if the record could not be updated.
      */
     @PutMapping(
         path = "pid/**",
@@ -168,6 +174,17 @@ public interface ITypingRestResource {
             @RequestBody
             final PIDRecord rec,
 
+            @Parameter(
+                    description = "If true, no PID will be updated. Only" +
+                            " validation checks are performed, and the expected" +
+                            " response, including the new eTag, will be returned." +
+                            " No data will be changed and no services will be" +
+                            " notified.",
+                    required = false
+            )
+            @RequestParam(name = "dryrun", required = false, defaultValue = "false")
+            boolean dryrun,
+
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder
@@ -200,7 +217,12 @@ public interface ITypingRestResource {
         @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
     public ResponseEntity<PIDRecord> getRecord (
-            @Parameter(description = "If true, validation will be run on the resolved PID. On failure, an error will be returned. On success, the PID will be resolved.", required = false)
+            @Parameter(
+                    description = "If true, validation will be run on the" +
+                            " resolved PID. On failure, an error will be" +
+                            " returned. On success, the PID will be resolved.",
+                    required = false
+            )
             @RequestParam(name = "validation", required = false, defaultValue = "false")
             boolean validation,
 

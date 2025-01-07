@@ -210,7 +210,7 @@ class RestWithInMemoryTest {
         // we store PIDs only if the PID was created successfully
         assertEquals(0, this.knownPidsDao.count());
         // assume error parsed from body
-        assertTrue(0 < result.getResponse().getContentAsString().length());
+        assertFalse(result.getResponse().getContentAsString().isEmpty());
     }
 
     @Test
@@ -240,6 +240,7 @@ class RestWithInMemoryTest {
         PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
         PIDRecord modified = ApiMockUtils.clone(original);
         modified.getEntries().get("21.T11148/b8457812905b83046284").get(0).setValue("https://example.com/anotherUrlAsBefore");
+        assertNotEquals(original, modified);
         PIDRecord updatedRecord = ApiMockUtils.updateRecord(this.mockMvc, original, modified);
         assertEquals(modified, updatedRecord);
     }

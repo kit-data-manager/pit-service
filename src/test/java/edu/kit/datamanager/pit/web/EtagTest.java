@@ -31,7 +31,12 @@ import edu.kit.datamanager.pit.domain.PIDRecord;
 
 @AutoConfigureMockMvc
 // JUnit5 + Spring
-@SpringBootTest
+@SpringBootTest(
+    properties = {
+            // assume validation will succeed, as we want to only test etag here
+            "pit.validation.strategy = none-debug",
+    }
+)
 @TestPropertySource("/test/application-test.properties")
 @ActiveProfiles("test")
 class EtagTest {
