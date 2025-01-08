@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Validates a PID record using embedded profile(s).
- * 
+ * <p>
  * - checks if all mandatory attributes are present
  * - validates all available attributes
  * - fails if an attribute is not defined within the profile
@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedStrictValidatorStrategy.class);
-    protected static final Executor EXECUTOR = Executors.newWorkStealingPool();
 
     protected final ITypeRegistry typeRegistry;
     protected final boolean alwaysAcceptAdditionalAttributes;
@@ -53,7 +52,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
         // For each attribute in record, resolve schema and check the value
         List<CompletableFuture<AttributeInfo>> attributeInfoFutures = pidRecord.getPropertyIdentifiers().stream()
                 // resolve attribute info (type and schema)
-                .map(attributePid -> this.typeRegistry.queryAttributeInfo(attributePid))
+                .map(this.typeRegistry::queryAttributeInfo)
                 // validate values using schema
                 .map(attributeInfoFuture -> attributeInfoFuture.thenApply(attributeInfo -> {
                     for (String value : pidRecord.getPropertyValues(attributeInfo.pid())) {
