@@ -214,7 +214,7 @@ class ExplicitValidationParametersTest {
     }
 
     @Test
-    void testInvalidRecordWithProfile() throws Exception {
+    void testRecordWithAdditionalAttribute() throws Exception {
         PIDRecord r = new PIDRecord();
         r.addEntry("21.T11148/076759916209e5d62bd5", "for Testing", "21.T11148/301c6f04763a16f0f72a");
         this.mockMvc
@@ -227,9 +227,9 @@ class ExplicitValidationParametersTest {
                     .accept(MediaType.ALL)
             )
             .andDo(MockMvcResultHandlers.print())
-            .andExpect(MockMvcResultMatchers.status().isBadRequest());
-        
-        // we store PIDs only if the PID was created successfully
+            .andExpect(MockMvcResultMatchers.status().isOk());
+
+        // we store PIDs only if the PID was created (no dryrun)
         assertEquals(0, this.knownPidsDao.count());
     }
 

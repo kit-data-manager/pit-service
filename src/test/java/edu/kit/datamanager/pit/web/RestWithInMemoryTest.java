@@ -191,7 +191,7 @@ class RestWithInMemoryTest {
     }
 
     @Test
-    void testInvalidRecordWithProfile() throws Exception {
+    void testRecordWithAdditionalAttribute() throws Exception {
         PIDRecord r = new PIDRecord();
         r.addEntry("21.T11148/076759916209e5d62bd5", "for Testing", "21.T11148/301c6f04763a16f0f72a");
         MvcResult result = this.mockMvc
@@ -203,13 +203,12 @@ class RestWithInMemoryTest {
                     .accept(MediaType.ALL)
             )
             .andDo(MockMvcResultHandlers.print())
-            .andExpect(MockMvcResultMatchers.status().isBadRequest())
-            .andExpect(MockMvcResultMatchers.jsonPath("$.detail", Matchers.containsString("Missing mandatory types: [")))
+            .andExpect(MockMvcResultMatchers.status().isCreated())
             .andReturn();
         
-        // we store PIDs only if the PID was created successfully
-        assertEquals(0, this.knownPidsDao.count());
-        // assume error parsed from body
+        // we store PIDs, if the PID was created successfully
+        assertEquals(1, this.knownPidsDao.count());
+        // sanity check that body is not empty
         assertFalse(result.getResponse().getContentAsString().isEmpty());
     }
 
