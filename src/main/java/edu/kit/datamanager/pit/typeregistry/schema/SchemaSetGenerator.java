@@ -12,8 +12,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class SchemaSetGenerator {
-    private final Set<SchemaGenerator> GENERATORS;
-    private final AsyncLoadingCache<String, Set<SchemaInfo>> CACHE;
+    protected final Set<SchemaGenerator> GENERATORS;
+    protected final AsyncLoadingCache<String, Set<SchemaInfo>> CACHE;
 
     public SchemaSetGenerator(ApplicationProperties props) {
         GENERATORS = Set.of(

@@ -3,6 +3,7 @@ package edu.kit.datamanager.pit.typeregistry;
 import edu.kit.datamanager.pit.typeregistry.schema.SchemaInfo;
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
+import org.json.JSONObject;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -29,8 +30,12 @@ public record AttributeInfo(
     }
 
     private boolean validate(Schema schema, String value) {
+        Object toValidate = value;
+        if (value.startsWith("{")) {
+            toValidate = new JSONObject(value);
+        }
         try {
-            schema.validate(value);
+            schema.validate(toValidate);
         } catch (ValidationException e) {
             return false;
         }
