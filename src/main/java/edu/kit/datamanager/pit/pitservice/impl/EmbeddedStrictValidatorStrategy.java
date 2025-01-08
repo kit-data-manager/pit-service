@@ -2,6 +2,7 @@ package edu.kit.datamanager.pit.pitservice.impl;
 
 import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
+import edu.kit.datamanager.pit.common.TypeNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.pitservice.IValidationStrategy;
@@ -85,10 +86,10 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
         try {
             CompletableFuture.allOf(attributeInfoFutures.toArray(new CompletableFuture<?>[0])).join();
         } catch (CompletionException e) {
-            throwRecordValidationExceptionCause(e);
+            unpackAsyncExceptions(e);
             throw new ExternalServiceException(this.typeRegistry.getRegistryIdentifier());
         } catch (CancellationException e) {
-            throwRecordValidationExceptionCause(e);
+            unpackAsyncExceptions(e);
             throw new RecordValidationException(
                     pidRecord,
                     String.format("Validation task was cancelled for %s. Please report.", pidRecord.getPid()));
@@ -101,13 +102,24 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
      * Usually used to avoid exposing exceptions related to futures.
      * @param e the exception to unwrap.
      */
-    private static void throwRecordValidationExceptionCause(Throwable e) {
+    private static void unpackAsyncExceptions(Throwable e) {
+        unpackAsyncExceptions(e, 0);
+    }
+
+    private static void unpackAsyncExceptions(Throwable e, int level) {
         Throwable cause = e.getCause();
+        final int MAX_LEVEL = 10;
+        if (level > MAX_LEVEL || cause == null) {
+            return;
+        }
         if (cause instanceof RecordValidationException rve) {
             throw rve;
-        } else if (cause != null && cause.getCause() instanceof RecordValidationException rve) {
-            // in some cases we need to go deeper, because profiles are handled in a future within a future.
-            throw rve;
+        } else if (cause instanceof TypeNotFoundException tnf) {
+            throw new RecordValidationException(
+                    new PIDRecord(),
+                    "Type not found: %s".formatted(tnf.getMessage()));
+        } else {
+            unpackAsyncExceptions(cause, level + 1);
         }
     }
 }
