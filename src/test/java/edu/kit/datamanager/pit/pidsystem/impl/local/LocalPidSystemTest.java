@@ -78,7 +78,7 @@ class LocalPidSystemTest {
         Set<Method> publicMethods = new HashSet<>(Arrays.asList(IIdentifierSystemQueryTest.class.getMethods()));
         Set<Method> allDirectMethods = new HashSet<>(Arrays.asList(IIdentifierSystemQueryTest.class.getDeclaredMethods()));
         publicMethods.retainAll(allDirectMethods);
-        assertEquals(7, publicMethods.size());
+        assertEquals(6, publicMethods.size());
         for (Method test : publicMethods) {
             int numParams = test.getParameterCount();
             if (numParams == 2) {
