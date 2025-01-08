@@ -90,6 +90,8 @@ class RestWithHandleProtocolTest {
 
     @Test
     void testUpdateWithPidGiven() throws Exception {
+        // FIXME this test is currently not working as there is for some attributes no schema available in dtr-test,
+        //  and the type-api does currently not work.
         String etag = this.mockMvc.perform(
             get("/api/v1/pit/pid/21.11152/474a4b1c-de93-4d4a-b33d-1d32d63baf4b?validation=false")
         )
