@@ -1,9 +1,5 @@
 package edu.kit.datamanager.pit.web;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import jakarta.servlet.ServletContext;
 
@@ -45,6 +41,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
 import org.hamcrest.Matchers;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
@@ -111,7 +108,7 @@ class ExplicitValidationParametersTest {
         assertNotNull(this.inMemory);
         ServletContext servletContext = webApplicationContext.getServletContext();
         assertNotNull(servletContext);
-        assertTrue(servletContext instanceof MockServletContext);
+        assertInstanceOf(MockServletContext.class, servletContext);
         
         SpringTestHelper springTestHelper = new SpringTestHelper(webApplicationContext);
         springTestHelper.assertSingleBeanInstanceOf(ITypingRestResource.class);
@@ -145,7 +142,6 @@ class ExplicitValidationParametersTest {
         // as we use an in-memory data structure, lets not make it too large.
         int numAttributes = 100;
         int numValues = 100;
-        assertTrue(numAttributes * numValues > 256);
         PIDRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
         
         String rJson = ApiMockUtils.serialize(r);
@@ -173,7 +169,6 @@ class ExplicitValidationParametersTest {
         // as we use an in-memory data structure, lets not make it too large.
         int numAttributes = 100;
         int numValues = 100;
-        assertTrue(numAttributes * numValues > 256);
         PIDRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
         
         String rJson = ApiMockUtils.serialize(r);
@@ -238,7 +233,7 @@ class ExplicitValidationParametersTest {
     void testResolvingValidRecordWithValidation() throws Exception {
         this.testExtensiveRecordWithoutDryRun();
         assertEquals(1, knownPidsDao.count());
-        String validPid = knownPidsDao.findAll().iterator().next().getPid();
+        String validPid = knownPidsDao.findAll().getFirst().getPid();
         this.mockMvc
             .perform(
                 get("/api/v1/pit/pid/" + validPid)
@@ -255,7 +250,7 @@ class ExplicitValidationParametersTest {
         // note: this test disables validation...
         this.testExtensiveRecordWithoutDryRun();
         assertEquals(1, knownPidsDao.count());
-        String validPid = knownPidsDao.findAll().iterator().next().getPid();
+        String validPid = knownPidsDao.findAll().getFirst().getPid();
 
         PIDRecord r = inMemory.queryPid(validPid);
         r.addEntry("21.T11148/076759916209e5d62bd5", "", "21.T11148/b9b76f887845e32d29f7");
@@ -275,6 +270,6 @@ class ExplicitValidationParametersTest {
             .andExpect(MockMvcResultMatchers.status().isBadRequest())
             .andExpect(MockMvcResultMatchers.jsonPath("$.detail", Matchers.containsString("Missing mandatory types: [")))
             .andReturn();
-        assertTrue(0 < result.getResponse().getContentAsString().length());
+        assertFalse(result.getResponse().getContentAsString().isEmpty());
     }
 }
