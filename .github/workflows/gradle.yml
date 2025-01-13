@@ -18,6 +18,7 @@ on:
 
 env:
   COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+  JDK_DISTRO: 'temurin'
 
 jobs:
   build:
@@ -34,7 +35,7 @@ jobs:
       uses: actions/setup-java@v4
       with:
         java-version: ${{ matrix.jdk }}
-        distribution: 'zulu'  # =openJDK
+        distribution: ${{ env.JDK_DISTRO }}
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
     - name: Build and Test with Gradle
