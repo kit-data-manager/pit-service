@@ -60,10 +60,6 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-/**
- *
- * @author jejkal
- */
 @SpringBootApplication
 @EnableScheduling
 @EntityScan({ "edu.kit.datamanager" })

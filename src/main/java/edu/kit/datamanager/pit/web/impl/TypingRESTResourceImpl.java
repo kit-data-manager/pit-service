@@ -110,7 +110,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
         PidRecordMessage message = PidRecordMessage.creation(
                 pid,
-                "", // TODO parameter is depricated and will be removed soon.
+                "", // TODO parameter is deprecated and will be removed soon.
                 AuthenticationHelper.getPrincipal(),
                 ControllerUtils.getLocalHostname());
         try {
@@ -148,7 +148,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
             Stream<PidSuffix> suffixStream = suffixGenerator.infiniteStream();
             Optional<PidSuffix> maybeSuffix = Streams.failableStream(suffixStream)
-                    // With failible streams, we can throw exceptions.
+                    // With failable streams, we can throw exceptions.
                     .filter(suffix -> !this.typingService.isPidRegistered(suffix))
                     .stream()  // back to normal java streams
                     .findFirst();  // as the stream is infinite, we should always find a prefix.
