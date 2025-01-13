@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 
@@ -60,7 +61,7 @@ public class TypeApi implements ITypeRegistry {
 
         this.profileCache = Caffeine.newBuilder()
                 .maximumSize(maximumSize)
-                .executor(Application.EXECUTOR)
+                .executor(Executors.newVirtualThreadPerTaskExecutor())
                 .refreshAfterWrite(Duration.ofMinutes(expireAfterWrite / 2))
                 .expireAfterWrite(expireAfterWrite, TimeUnit.MINUTES)
                 .removalListener((key, value, cause) ->
@@ -73,7 +74,7 @@ public class TypeApi implements ITypeRegistry {
 
         this.attributeCache = Caffeine.newBuilder()
                 .maximumSize(maximumSize)
-                .executor(Application.EXECUTOR)
+                .executor(Executors.newVirtualThreadPerTaskExecutor())
                 .refreshAfterWrite(Duration.ofMinutes(expireAfterWrite / 2))
                 .expireAfterWrite(expireAfterWrite, TimeUnit.MINUTES)
                 .removalListener((key, value, cause) ->

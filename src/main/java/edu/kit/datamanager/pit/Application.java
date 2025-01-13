@@ -38,8 +38,6 @@ import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
 
 import java.io.IOException;
 import java.util.Objects;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 import org.apache.http.client.HttpClient;
@@ -87,9 +85,6 @@ public class Application {
     
     protected static final String ERROR_COMMUNICATION = "Communication error: {}";
     protected static final String ERROR_CONFIGURATION = "Configuration error: {}";
-
-    public static final Executor EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
-
 
     @Bean
     @Scope("prototype")
