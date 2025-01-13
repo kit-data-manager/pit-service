@@ -154,7 +154,7 @@ class ExplicitValidationParametersTest {
                     .content(rJson)
                     .accept(MediaType.ALL)
             )
-            .andDo(MockMvcResultHandlers.print())
+            //.andDo(MockMvcResultHandlers.print()) // output is massive due to the large record
             .andExpect(MockMvcResultMatchers.status().isOk()); // instead of created (201)
         
         // no PIDs are stored with dryrun
@@ -181,9 +181,9 @@ class ExplicitValidationParametersTest {
                     .content(rJson)
                     .accept(MediaType.ALL)
             )
-            .andDo(MockMvcResultHandlers.print())
+            //.andDo(MockMvcResultHandlers.print()) // output is massive due to the large record
             .andExpect(MockMvcResultMatchers.status().isCreated()); // instead of created (201)
-        
+
         // dryrun was false, so there should be a new PID known
         assertEquals(1, this.knownPidsDao.count());
     }
