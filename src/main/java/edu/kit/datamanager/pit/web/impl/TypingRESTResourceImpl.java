@@ -8,11 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
-import edu.kit.datamanager.pit.common.PidNotFoundException;
+import edu.kit.datamanager.pit.common.*;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.configuration.PidGenerationProperties;
-import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticRepository;
 import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticWrapper;
@@ -135,7 +133,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         if (allowsCustomPids && hasCustomPid) {
             // in this only case, we do not have to generate a PID
             // but we have to check if the PID is already registered and return an error if so
-            String prefix = this.typingService.getPrefix().orElseThrow(() -> new IOException("No prefix configured."));
+            String prefix = this.typingService.getPrefix()
+                    .orElseThrow(() -> new InvalidConfigException("No prefix configured."));
             String maybeSuffix = pidRecord.getPid();
             String pid = PidSuffix.asPrefixedChecked(maybeSuffix, prefix);
             boolean isRegisteredPid = this.typingService.isPidRegistered(pid);
@@ -153,7 +152,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                     .filter(suffix -> !this.typingService.isPidRegistered(suffix))
                     .stream()  // back to normal java streams
                     .findFirst();  // as the stream is infinite, we should always find a prefix.
-            PidSuffix suffix = maybeSuffix.orElseThrow(() -> new IOException("Could not generate PID suffix."));
+            PidSuffix suffix = maybeSuffix
+                    .orElseThrow(() -> new ExternalServiceException("Could not generate PID suffix which did not exist yet."));
             pidRecord.setPid(suffix.get());
         }
     }

@@ -78,10 +78,10 @@ public class TypeApi implements ITypeRegistry {
                 .refreshAfterWrite(Duration.ofMinutes(expireAfterWrite / 2))
                 .expireAfterWrite(expireAfterWrite, TimeUnit.MINUTES)
                 .removalListener((key, value, cause) ->
-                        LOG.trace("Removing profile {} from profile cache. Cause: {}", key, cause)
+                    LOG.trace("Removing profile {} from profile cache. Cause: {}", key, cause)
                 )
                 .buildAsync(attributePid -> {
-                    LOG.trace("Loading profile {} to cache.", attributePid);
+                    LOG.trace("Loading attribute {} to cache.", attributePid);
                     return this.queryAttribute(attributePid);
                 });
     }

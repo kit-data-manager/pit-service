@@ -83,9 +83,13 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
 
 
         try {
+            LOG.trace("Processing all attributes in the record {}.", pidRecord.getPid());
             CompletableFuture.allOf(attributeInfoFutures.toArray(new CompletableFuture<?>[0])).join();
+            LOG.trace("Finished processing all attributes in the record {}.", pidRecord.getPid());
         } catch (CompletionException e) {
+            LOG.trace("Exception occurred during validation of record {}. Unpack Exception, if required.", pidRecord.getPid(), e);
             unpackAsyncExceptions(e);
+            LOG.trace("Exception was not unpacked. Rethrowing.", e);
             throw new ExternalServiceException(this.typeRegistry.getRegistryIdentifier());
         } catch (CancellationException e) {
             unpackAsyncExceptions(e);
