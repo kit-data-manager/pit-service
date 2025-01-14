@@ -13,6 +13,6 @@ public class TypeNotFoundException extends ResponseStatusException {
 	private static final HttpStatus HTTP_STATUS = HttpStatus.NOT_FOUND;
 
 	public TypeNotFoundException(String pid) {
-		super(HTTP_STATUS, "The given PID " + pid + " is not a type in the configured registry.");
+		super(HTTP_STATUS, "The given PID \"" + pid + "\" is not a type in the configured registry.");
 	}
 }

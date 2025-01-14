@@ -88,11 +88,11 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
             LOG.trace("Finished processing all attributes in the record {}.", pidRecord.getPid());
         } catch (CompletionException e) {
             LOG.trace("Exception occurred during validation of record {}. Unpack Exception, if required.", pidRecord.getPid(), e);
-            unpackAsyncExceptions(e);
+            unpackAsyncExceptions(pidRecord, e);
             LOG.trace("Exception was not unpacked. Rethrowing.", e);
             throw new ExternalServiceException(this.typeRegistry.getRegistryIdentifier());
         } catch (CancellationException e) {
-            unpackAsyncExceptions(e);
+            unpackAsyncExceptions(pidRecord, e);
             throw new RecordValidationException(
                     pidRecord,
                     String.format("Validation task was cancelled for %s. Please report.", pidRecord.getPid()));
@@ -105,11 +105,11 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
      * Usually used to avoid exposing exceptions related to futures.
      * @param e the exception to unwrap.
      */
-    private static void unpackAsyncExceptions(Throwable e) {
-        unpackAsyncExceptions(e, 0);
+    private static void unpackAsyncExceptions(PIDRecord pidRecord, Throwable e) {
+        unpackAsyncExceptions(pidRecord, e, 0);
     }
 
-    private static void unpackAsyncExceptions(Throwable e, int level) {
+    private static void unpackAsyncExceptions(PIDRecord pidRecord, Throwable e, int level) {
         Throwable cause = e.getCause();
         final int MAX_LEVEL = 10;
         if (level > MAX_LEVEL || cause == null) {
@@ -119,10 +119,10 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
             throw rve;
         } else if (cause instanceof TypeNotFoundException tnf) {
             throw new RecordValidationException(
-                    new PIDRecord(),
+                    pidRecord,
                     "Type not found: %s".formatted(tnf.getMessage()));
         } else {
-            unpackAsyncExceptions(cause, level + 1);
+            unpackAsyncExceptions(pidRecord, cause, level + 1);
         }
     }
 }

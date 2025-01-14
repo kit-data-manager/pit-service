@@ -246,20 +246,20 @@ class ExplicitValidationParametersTest {
 
     @Test
     @DisplayName("Resolve a PID known to be invalid, with explicit validation.")
-    void testResolvingValidRecordWithValidationFail() throws Exception {
+    void testResolvingInvalidRecordWithValidationFail() throws Exception {
+        // We'll reuse the extensive record here, and validate it.
+        // To do so, we resolve the PID, set validate to true, and expect a validation error.
+        // This error must occur, as all attributes are made up. These PIDs are not registered
+        // and were generated using this.pidGenerator.
+
         // note: this test disables validation...
         this.testExtensiveRecordWithoutDryRun();
         assertEquals(1, knownPidsDao.count());
         String validPid = knownPidsDao.findAll().getFirst().getPid();
-
-        PIDRecord r = inMemory.queryPid(validPid);
-        r.addEntry("21.T11148/076759916209e5d62bd5", "", "21.T11148/b9b76f887845e32d29f7");
-        r.addEntry("something wrong", "", "someVeryUniqueValue");
-        inMemory.updatePid(r);
         // ... so we need to re-enable validation here:
         this.typingService.setValidationStrategy(
                 this.appProps.defaultValidationStrategy(typeRegistry));
-
+        // Now, we can resolve and validate:
         MvcResult result = this.mockMvc
             .perform(
                 get("/api/v1/pit/pid/" + validPid)
@@ -268,7 +268,7 @@ class ExplicitValidationParametersTest {
             )
             .andDo(MockMvcResultHandlers.print())
             .andExpect(MockMvcResultMatchers.status().isBadRequest())
-            .andExpect(MockMvcResultMatchers.jsonPath("$.detail", Matchers.containsString("Missing mandatory types: [")))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.detail", Matchers.containsString("Type not found")))
             .andReturn();
         assertFalse(result.getResponse().getContentAsString().isEmpty());
     }
