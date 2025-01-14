@@ -38,6 +38,8 @@ import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 import org.apache.http.client.HttpClient;
@@ -87,6 +89,10 @@ public class Application {
     public Logger logger(InjectionPoint injectionPoint) {
         Class<?> targetClass = injectionPoint.getMember().getDeclaringClass();
         return LoggerFactory.getLogger(targetClass.getCanonicalName());
+    }
+
+    public static ExecutorService newExecutor() {
+        return Executors.newVirtualThreadPerTaskExecutor();
     }
 
     @Bean

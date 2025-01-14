@@ -61,7 +61,7 @@ public class TypeApi implements ITypeRegistry {
 
         this.profileCache = Caffeine.newBuilder()
                 .maximumSize(maximumSize)
-                .executor(Executors.newVirtualThreadPerTaskExecutor())
+                .executor(Application.newExecutor())
                 .refreshAfterWrite(Duration.ofMinutes(expireAfterWrite / 2))
                 .expireAfterWrite(expireAfterWrite, TimeUnit.MINUTES)
                 .removalListener((key, value, cause) ->
@@ -74,7 +74,7 @@ public class TypeApi implements ITypeRegistry {
 
         this.attributeCache = Caffeine.newBuilder()
                 .maximumSize(maximumSize)
-                .executor(Executors.newVirtualThreadPerTaskExecutor())
+                .executor(Application.newExecutor())
                 .refreshAfterWrite(Duration.ofMinutes(expireAfterWrite / 2))
                 .expireAfterWrite(expireAfterWrite, TimeUnit.MINUTES)
                 .removalListener((key, value, cause) ->

@@ -24,7 +24,7 @@ public class SchemaSetGenerator {
 
         CACHE = Caffeine.newBuilder()
                 .maximumSize(props.getMaximumSize())
-                .executor(Executors.newVirtualThreadPerTaskExecutor())
+                .executor(Application.newExecutor())
                 .refreshAfterWrite(Duration.ofMinutes(props.getExpireAfterWrite() / 2))
                 .expireAfterWrite(props.getExpireAfterWrite(), TimeUnit.MINUTES)
                 .buildAsync(attributePid -> GENERATORS.stream()
