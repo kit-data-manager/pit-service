@@ -106,23 +106,18 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
      * @param e the exception to unwrap.
      */
     private static void unpackAsyncExceptions(PIDRecord pidRecord, Throwable e) {
-        unpackAsyncExceptions(pidRecord, e, 0);
-    }
-
-    private static void unpackAsyncExceptions(PIDRecord pidRecord, Throwable e, int level) {
-        Throwable cause = e.getCause();
         final int MAX_LEVEL = 10;
-        if (level > MAX_LEVEL || cause == null) {
-            return;
-        }
-        if (cause instanceof RecordValidationException rve) {
-            throw rve;
-        } else if (cause instanceof TypeNotFoundException tnf) {
-            throw new RecordValidationException(
-                    pidRecord,
-                    "Type not found: %s".formatted(tnf.getMessage()));
-        } else {
-            unpackAsyncExceptions(pidRecord, cause, level + 1);
+        Throwable cause = e;
+
+        for (int level = 0; level <= MAX_LEVEL && cause != null; level++) {
+            cause = cause.getCause();
+            if (cause instanceof RecordValidationException rve) {
+                throw rve;
+            } else if (cause instanceof TypeNotFoundException tnf) {
+                throw new RecordValidationException(
+                        pidRecord,
+                        "Type not found: %s".formatted(tnf.getMessage()));
+            }
         }
     }
 }
