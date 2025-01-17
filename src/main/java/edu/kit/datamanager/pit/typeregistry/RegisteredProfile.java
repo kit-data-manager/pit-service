@@ -15,19 +15,19 @@ public record RegisteredProfile(
 ) {
 
     public void validateAttributes(PIDRecord pidRecord, boolean alwaysAllowAdditionalAttributes) {
-        Set<String> additionalAttributes = pidRecord.getPropertyIdentifiers().stream()
+        Set<String> attributesNotDefinedInProfile = pidRecord.getPropertyIdentifiers().stream()
                 .filter(recordKey -> attributes.items().stream().anyMatch(
                         profileAttribute -> Objects.equals(profileAttribute.pid(), recordKey)))
                 .collect(Collectors.toSet());
 
 
         boolean additionalAttributesForbidden = !this.allowAdditionalAttributes && !alwaysAllowAdditionalAttributes;
-        boolean violatesAdditionalAttributes = additionalAttributesForbidden && !additionalAttributes.isEmpty();
+        boolean violatesAdditionalAttributes = additionalAttributesForbidden && !attributesNotDefinedInProfile.isEmpty();
         if (violatesAdditionalAttributes) {
             throw new RecordValidationException(
                     pidRecord,
                     String.format("Attributes %s are not allowed in profile %s",
-                            String.join(", ", additionalAttributes),
+                            String.join(", ", attributesNotDefinedInProfile),
                             this.pid)
             );
         }
