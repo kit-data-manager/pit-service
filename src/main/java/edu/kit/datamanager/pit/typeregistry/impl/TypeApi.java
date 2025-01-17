@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 
@@ -56,8 +55,8 @@ public class TypeApi implements ITypeRegistry {
         this.http = RestClient.builder().baseUrl(baseUri).build();
 
         // TODO better name caching properties (and consider extending them)
-        int maximumSize = properties.getMaximumSize();
-        long expireAfterWrite = properties.getExpireAfterWrite();
+        int maximumSize = properties.getCacheMaxEntries();
+        long expireAfterWrite = properties.getCacheExpireAfterWriteLifetime();
 
         this.profileCache = Caffeine.newBuilder()
                 .maximumSize(maximumSize)

@@ -2,16 +2,13 @@ package edu.kit.datamanager.pit.typeregistry.schema;
 
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.typeregistry.AttributeInfo;
-import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -23,8 +20,8 @@ class SchemaSetGeneratorTest {
     @BeforeAll
     static void setup() throws Exception {
         properties = new ApplicationProperties();
-        properties.setExpireAfterWrite(10);
-        properties.setMaximumSize(1000);
+        properties.setCacheExpireAfterWriteLifetime(10);
+        properties.setCacheMaxEntries(1000);
         properties.setTypeRegistryUri(new URI("https://typeapi.lab.pidconsortium.net").toURL());
         properties.setHandleBaseUri(new URI("https://hdl.handle.net").toURL());
         generator = new SchemaSetGenerator(properties);

@@ -38,7 +38,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
     ) {
         this.typeRegistry = typeRegistry;
         this.profileKeys = config.getProfileKeys();
-        this.alwaysAcceptAdditionalAttributes = config.isAlwaysAllowAdditionalAttributes();
+        this.alwaysAcceptAdditionalAttributes = config.isValidationAlwaysAllowAdditionalAttributes();
     }
 
     @Override

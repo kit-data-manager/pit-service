@@ -23,8 +23,8 @@ class TypeApiTest {
     TypeApiTest() throws MalformedURLException, URISyntaxException {
         ApplicationProperties props = new ApplicationProperties();
         // set cache properties
-        props.setExpireAfterWrite(10);
-        props.setMaximumSize(1000);
+        props.setCacheExpireAfterWriteLifetime(10);
+        props.setCacheMaxEntries(1000);
         // set type registry
         props.setTypeRegistryUri(new URI("https://typeapi.lab.pidconsortium.net").toURL());
         props.setHandleBaseUri(new URI("https://hdl.handle.net").toURL());
