@@ -51,6 +51,11 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class ApplicationProperties extends GenericApplicationProperties {
 
+  /**
+   * Internal default set of types which indicate that, when used as a key
+   * of an attribute, that the value of the attribute must be a profile.
+   * Used for profile detection in records.
+   */
   private static final Set<String> KNOWN_PROFILE_KEYS = Set.of(
           "21.T11148/076759916209e5d62bd5",
           "21.T11969/bcc54a2a9ab5bf2a8f2c"
