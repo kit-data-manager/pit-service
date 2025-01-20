@@ -99,16 +99,23 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             HttpServletResponse response,
             UriComponentsBuilder uriBuilder
     ) throws IOException, RecordValidationException, ExternalServiceException {
+        Instant startTime = Instant.now();
         LOG.info("Creating PIDs for {} records.", rec.size());
         String prefix = this.typingService.getPrefix().orElseThrow(() -> new IOException("No prefix configured."));
 
         // Generate a map between temporary (user-defined) PIDs and final PIDs (generated)
         Map<String, String> pidMappings = generatePIDMapping(rec, dryrun);
+        Instant mappingTime = Instant.now();
 
         // Apply the mappings to the records and validate them
         List<PIDRecord> validatedRecords = applyMappingsToRecordsAndValidate(rec, pidMappings, prefix);
+        Instant validationTime = Instant.now();
 
         if (dryrun) {
+            // dryrun only does validation. Stop now and return as we would later on.
+            LOG.info("Time taken for dryrun: {} ms", ChronoUnit.MILLIS.between(startTime, validationTime));
+            LOG.info("-- Time taken for mapping: {} ms", ChronoUnit.MILLIS.between(startTime, mappingTime));
+            LOG.info("-- Time taken for validation: {} ms", ChronoUnit.MILLIS.between(mappingTime, validationTime));
             LOG.info("Dryrun finished. Returning validated records for {} records.", validatedRecords.size());
             return ResponseEntity.status(HttpStatus.OK).body(validatedRecords);
         }
@@ -139,8 +146,13 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             // save the record to elastic
             this.saveToElastic(pidRecord);
         });
+        Instant endTime = Instant.now();
 
         // return the created records
+        LOG.info("Total time taken: {} ms", ChronoUnit.MILLIS.between(startTime, endTime));
+        LOG.info("-- Time taken for mapping: {} ms", ChronoUnit.MILLIS.between(startTime, mappingTime));
+        LOG.info("-- Time taken for validation: {} ms", ChronoUnit.MILLIS.between(mappingTime, validationTime));
+        LOG.info("-- Time taken for registration: {} ms", ChronoUnit.MILLIS.between(validationTime, endTime));
         LOG.info("Creation finished. Returning validated records for {} records.", validatedRecords.size());
         return ResponseEntity.status(HttpStatus.CREATED).body(validatedRecords);
     }
