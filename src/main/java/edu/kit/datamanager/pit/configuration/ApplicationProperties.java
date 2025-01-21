@@ -29,6 +29,8 @@ import jakarta.validation.constraints.NotNull;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -50,6 +52,7 @@ import org.springframework.validation.annotation.Validated;
 @Configuration
 @Validated
 public class ApplicationProperties extends GenericApplicationProperties {
+  private static final Logger LOG = LoggerFactory.getLogger(ApplicationProperties.class);
 
   /**
    * Internal default set of types which indicate that, when used as a key
@@ -189,7 +192,10 @@ public class ApplicationProperties extends GenericApplicationProperties {
   }
 
   public int getCacheMaxEntries() {
-    return cacheMaxEntries;
+    if (this.cacheMaxEntries <= 10) {
+      LOG.warn("Cache max entries is set to {} (low value)", this.cacheMaxEntries);
+    }
+    return this.cacheMaxEntries;
   }
 
   public void setCacheMaxEntries(int cacheMaxEntries) {
