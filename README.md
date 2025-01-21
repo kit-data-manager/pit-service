@@ -132,9 +132,8 @@ This implies the following properties:
 - Building (with tests): `./gradlew clean build`
 - Building (with verbose test output) `./gradlew -Dprofile=verbose clean build`
 - Building (without tests): `./gradlew clean build -x test`
-- Run docker integration tests:
-  - `./gradlew clean build` (by default, this will reuse the local build)
-  - `time bash ./docker/test_docker.sh` (runs test script)
+- Run docker integration tests: `time bash ./docker/test_docker.sh` (will reuse the local build)
+- Run dockerized validation benchmarks: `time bash ./docker/test_docker.sh benchmark` (will reuse the local build)
 - Doing a release: `./gradlew clean build release`
   - Will prompt you about version number to use and next version number
   - Will make a git tag which can later be used in a GitHub release
