@@ -39,9 +39,11 @@ docker run \
   --name $container $tag
 
 echo "> Making sure the service is ready to accept requests"
+# lets do something which will definitely not influence caches:
 hurl --retry=20 --retry-interval=5000 \
-  --test "$docker_dir"/tests/create_resolve_exists.hurl ||
+  --test "$docker_dir"/tests/resolve-nonexisting.hurl ||
   exit 1
+sleep 1
 echo "> Service is ready. Starting with actual tests."
 
 #####################################
