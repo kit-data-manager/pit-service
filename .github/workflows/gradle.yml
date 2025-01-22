@@ -27,7 +27,7 @@ jobs:
       matrix:
         operating-system: [ubuntu-latest, macOS-latest, windows-latest]
         jdk: [ 21 ]
-        distro: ['temurin', 'zulu']
+        distro: ['temurin']
 
     steps:
     - uses: actions/checkout@v4
