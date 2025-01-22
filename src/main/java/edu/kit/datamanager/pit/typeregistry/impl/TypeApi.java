@@ -54,7 +54,6 @@ public class TypeApi implements ITypeRegistry {
         }
         this.http = RestClient.builder().baseUrl(baseUri).build();
 
-        // TODO better name caching properties (and consider extending them)
         int maximumSize = properties.getCacheMaxEntries();
         long expireAfterWrite = properties.getCacheExpireAfterWriteLifetime();
 
