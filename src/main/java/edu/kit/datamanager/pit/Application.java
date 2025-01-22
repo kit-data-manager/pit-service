@@ -92,7 +92,7 @@ public class Application {
     }
 
     public static ExecutorService newExecutor() {
-        return Executors.newVirtualThreadPerTaskExecutor();
+        return Executors.newThreadPerTaskExecutor(Executors.defaultThreadFactory());
     }
 
     @Bean
