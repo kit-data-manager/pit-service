@@ -1,5 +1,6 @@
 package edu.kit.datamanager.pit.typeregistry.schema;
 
+import edu.kit.datamanager.pit.Application;
 import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.common.TypeNotFoundException;
@@ -10,7 +11,10 @@ import org.everit.json.schema.loader.SchemaLoader;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
@@ -20,6 +24,7 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 
 public class DtrTestSchemaGenerator implements SchemaGenerator {
+    private static final Logger LOG = LoggerFactory.getLogger(DtrTestSchemaGenerator.class);
 
     protected static final String ORIGIN = "dtr-test";
     protected final URI baseUrl;
@@ -37,6 +42,16 @@ public class DtrTestSchemaGenerator implements SchemaGenerator {
         this.http = RestClient.builder()
                 .baseUrl(this.baseUrl.toString())
                 .requestFactory(new JdkClientHttpRequestFactory(httpClient))
+                .requestInterceptor((request, body, execution) -> {
+                    long start = System.currentTimeMillis();
+                    ClientHttpResponse response = execution.execute(request,  body);
+                    long timeSpan = System.currentTimeMillis() - start;
+                    boolean isLongRequest = timeSpan > Application.LONG_HTTP_REQUEST_THRESHOLD;
+                    if (isLongRequest) {
+                        LOG.warn("Long http request to {} ({}ms)", request.getURI(), timeSpan);
+                    }
+                    return response;
+                })
                 .build();
     }
 

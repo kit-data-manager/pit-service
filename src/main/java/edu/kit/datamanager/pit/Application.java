@@ -84,6 +84,12 @@ public class Application {
     protected static final String ERROR_COMMUNICATION = "Communication error: {}";
     protected static final String ERROR_CONFIGURATION = "Configuration error: {}";
 
+    /**
+     * This is a threshold considered very long for a http request.
+     * Usually used in logging context
+     */
+    public static final long LONG_HTTP_REQUEST_THRESHOLD = 400;
+
     @Bean
     @Scope("prototype")
     public Logger logger(InjectionPoint injectionPoint) {

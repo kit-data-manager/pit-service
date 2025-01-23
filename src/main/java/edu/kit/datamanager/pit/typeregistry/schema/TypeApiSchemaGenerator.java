@@ -1,5 +1,6 @@
 package edu.kit.datamanager.pit.typeregistry.schema;
 
+import edu.kit.datamanager.pit.Application;
 import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.common.TypeNotFoundException;
@@ -10,7 +11,10 @@ import org.everit.json.schema.loader.SchemaLoader;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.client.RestClient;
 
 import java.io.InputStream;
@@ -18,6 +22,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 
 public class TypeApiSchemaGenerator implements SchemaGenerator {
+    private static final Logger LOG = LoggerFactory.getLogger(TypeApiSchemaGenerator.class);
 
     protected final URL baseUrl;
     protected final RestClient http;
@@ -30,7 +35,19 @@ public class TypeApiSchemaGenerator implements SchemaGenerator {
         } catch (URISyntaxException e) {
             throw new InvalidConfigException("Type-Api base url not valid: " + baseUrl, e);
         }
-        this.http = RestClient.builder().baseUrl(baseUri).build();
+        this.http = RestClient.builder()
+                .baseUrl(baseUri)
+                .requestInterceptor((request, body, execution) -> {
+                    long start = System.currentTimeMillis();
+                    ClientHttpResponse response = execution.execute(request,  body);
+                    long timeSpan = System.currentTimeMillis() - start;
+                    boolean isLongRequest = timeSpan > Application.LONG_HTTP_REQUEST_THRESHOLD;
+                    if (isLongRequest) {
+                        LOG.warn("Long http request to {} ({}ms)", request.getURI(), timeSpan);
+                    }
+                    return response;
+                })
+                .build();
     }
 
     @Override

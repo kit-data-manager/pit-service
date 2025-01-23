@@ -17,6 +17,7 @@ import edu.kit.datamanager.pit.typeregistry.schema.SchemaInfo;
 import edu.kit.datamanager.pit.typeregistry.schema.SchemaSetGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.client.RestClient;
 
 import java.io.IOException;
@@ -52,7 +53,19 @@ public class TypeApi implements ITypeRegistry {
         } catch (URISyntaxException e) {
             throw new InvalidConfigException("Type-Api base url not valid: " + baseUrl);
         }
-        this.http = RestClient.builder().baseUrl(baseUri).build();
+        this.http = RestClient.builder()
+                .baseUrl(baseUri)
+                .requestInterceptor((request, body, execution) -> {
+                    long start = System.currentTimeMillis();
+                    ClientHttpResponse response = execution.execute(request,  body);
+                    long timeSpan = System.currentTimeMillis() - start;
+                    boolean isLongRequest = timeSpan > Application.LONG_HTTP_REQUEST_THRESHOLD;
+                    if (isLongRequest) {
+                        LOG.warn("Long http request to {} ({}ms)", request.getURI(), timeSpan);
+                    }
+                    return response;
+                })
+                .build();
 
         int maximumSize = properties.getCacheMaxEntries();
         long expireAfterWrite = properties.getCacheExpireAfterWriteLifetime();
