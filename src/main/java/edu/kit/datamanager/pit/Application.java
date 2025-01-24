@@ -19,10 +19,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalNotification;
 
 import edu.kit.datamanager.pit.cli.CliTaskBootstrap;
 import edu.kit.datamanager.pit.cli.CliTaskWriteFile;
@@ -31,19 +27,19 @@ import edu.kit.datamanager.pit.cli.PidSource;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
-import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.TypingService;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
-import edu.kit.datamanager.pit.typeregistry.impl.TypeRegistry;
+import edu.kit.datamanager.pit.typeregistry.impl.TypeApi;
+import edu.kit.datamanager.pit.typeregistry.schema.SchemaSetGenerator;
 import edu.kit.datamanager.pit.web.converter.SimplePidRecordConverter;
 import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 import org.apache.http.client.HttpClient;
@@ -66,10 +62,6 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-/**
- *
- * @author jejkal
- */
 @SpringBootApplication
 @EnableScheduling
 @EntityScan({ "edu.kit.datamanager" })
@@ -92,6 +84,11 @@ public class Application {
     protected static final String ERROR_COMMUNICATION = "Communication error: {}";
     protected static final String ERROR_CONFIGURATION = "Configuration error: {}";
 
+    /**
+     * This is a threshold considered very long for a http request.
+     * Usually used in logging context
+     */
+    public static final long LONG_HTTP_REQUEST_THRESHOLD = 400;
 
     @Bean
     @Scope("prototype")
@@ -100,14 +97,23 @@ public class Application {
         return LoggerFactory.getLogger(targetClass.getCanonicalName());
     }
 
-    @Bean
-    public ITypeRegistry typeRegistry() {
-        return new TypeRegistry();
+    public static ExecutorService newExecutor() {
+        return Executors.newThreadPerTaskExecutor(Executors.defaultThreadFactory());
     }
 
     @Bean
-    public ITypingService typingService(IIdentifierSystem identifierSystem, ApplicationProperties props) {
-        return new TypingService(identifierSystem, typeRegistry(), typeLoader(props));
+    public SchemaSetGenerator schemaSetGenerator(ApplicationProperties props) {
+        return new SchemaSetGenerator(props);
+    }
+
+    @Bean
+    public ITypeRegistry typeRegistry(ApplicationProperties props, SchemaSetGenerator schemaSetGenerator) {
+        return new TypeApi(props, schemaSetGenerator);
+    }
+
+    @Bean
+    public ITypingService typingService(IIdentifierSystem identifierSystem, ITypeRegistry typeRegistry) {
+        return new TypingService(identifierSystem, typeRegistry);
     }
 
     @Bean(name = "OBJECT_MAPPER_BEAN")
@@ -139,35 +145,7 @@ public class Application {
                 .build();
     }
 
-    /**
-     * This loader is a cache, which will retrieve `TypeDefinition`s, if required.
-     * 
-     * Therefore, it can be used instead of the ITypeRegistry implementations.
-     * Retrieve it using Autowire or from the application context.
-     * 
-     * @param props the applications properties set by the administration at the
-     *              start of this application.
-     * @return the cache
-     */
     @Bean
-    public LoadingCache<String, TypeDefinition> typeLoader(ApplicationProperties props) {
-        int maximumsize = props.getMaximumSize();
-        long expireafterwrite = props.getExpireAfterWrite();
-        return CacheBuilder.newBuilder()
-                .maximumSize(maximumsize)
-                .expireAfterWrite(expireafterwrite, TimeUnit.MINUTES)
-                .removalListener((RemovalNotification<String, TypeDefinition> rn) -> LOG.trace(
-                        "Removing type definition located at {} from schema cache. Cause: {}", rn.getKey(),
-                        rn.getCause()))
-                .build(new CacheLoader<String, TypeDefinition>() {
-                    @Override
-                    public TypeDefinition load(String typeIdentifier) throws IOException, URISyntaxException {
-                        LOG.trace("Loading type definition for identifier {} to cache.", typeIdentifier);
-                        return typeRegistry().queryTypeDefinition(typeIdentifier);
-                    }
-                });
-    }
-
     @ConfigurationProperties("pit")
     public ApplicationProperties applicationProperties() {
         return new ApplicationProperties();

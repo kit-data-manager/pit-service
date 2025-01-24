@@ -8,11 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
-import edu.kit.datamanager.pit.common.PidNotFoundException;
+import edu.kit.datamanager.pit.common.*;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.configuration.PidGenerationProperties;
-import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticRepository;
 import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticWrapper;
@@ -104,7 +102,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             return ResponseEntity.status(HttpStatus.OK).eTag(quotedEtag(pidRecord)).body(pidRecord);
         }
 
-        String pid = this.typingService.registerPID(pidRecord);
+        String pid = this.typingService.registerPid(pidRecord);
         pidRecord.setPid(pid);
 
         if (applicationProps.getStorageStrategy().storesModified()) {
@@ -112,7 +110,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
         PidRecordMessage message = PidRecordMessage.creation(
                 pid,
-                "", // TODO parameter is depricated and will be removed soon.
+                "", // TODO parameter is deprecated and will be removed soon.
                 AuthenticationHelper.getPrincipal(),
                 ControllerUtils.getLocalHostname());
         try {
@@ -135,10 +133,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         if (allowsCustomPids && hasCustomPid) {
             // in this only case, we do not have to generate a PID
             // but we have to check if the PID is already registered and return an error if so
-            String prefix = this.typingService.getPrefix().orElseThrow(() -> new IOException("No prefix configured."));
+            String prefix = this.typingService.getPrefix()
+                    .orElseThrow(() -> new InvalidConfigException("No prefix configured."));
             String maybeSuffix = pidRecord.getPid();
             String pid = PidSuffix.asPrefixedChecked(maybeSuffix, prefix);
-            boolean isRegisteredPid = this.typingService.isIdentifierRegistered(pid);
+            boolean isRegisteredPid = this.typingService.isPidRegistered(pid);
             if (isRegisteredPid) {
                 throw new PidAlreadyExistsException(pidRecord.getPid());
             }
@@ -149,11 +148,12 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
             Stream<PidSuffix> suffixStream = suffixGenerator.infiniteStream();
             Optional<PidSuffix> maybeSuffix = Streams.failableStream(suffixStream)
-                    // With failible streams, we can throw exceptions.
-                    .filter(suffix -> !this.typingService.isIdentifierRegistered(suffix))
+                    // With failable streams, we can throw exceptions.
+                    .filter(suffix -> !this.typingService.isPidRegistered(suffix))
                     .stream()  // back to normal java streams
                     .findFirst();  // as the stream is infinite, we should always find a prefix.
-            PidSuffix suffix = maybeSuffix.orElseThrow(() -> new IOException("Could not generate PID suffix."));
+            PidSuffix suffix = maybeSuffix
+                    .orElseThrow(() -> new ExternalServiceException("Could not generate PID suffix which did not exist yet."));
             pidRecord.setPid(suffix.get());
         }
     }
@@ -176,7 +176,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                 "Optional PID in record is given (%s), but it was not the same as the PID in the URL (%s). Ignore request, assuming this was not intended.".formatted(pidInternal, pid));
         }
         
-        PIDRecord existingRecord = this.typingService.queryAllProperties(pid);
+        PIDRecord existingRecord = this.typingService.queryPid(pid);
         if (existingRecord == null) {
             throw new PidNotFoundException(pid);
         }
@@ -194,7 +194,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
 
         // update and send message
-        if (this.typingService.updatePID(pidRecord)) {
+        if (this.typingService.updatePid(pidRecord)) {
             // store pid locally
             if (applicationProps.getStorageStrategy().storesModified()) {
                 storeLocally(pidRecord.getPid(), true);
@@ -251,7 +251,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final UriComponentsBuilder uriBuilder
     ) throws IOException {
         String pid = getContentPathFromRequest("pid", request);
-        PIDRecord pidRecord = this.typingService.queryAllProperties(pid);
+        PIDRecord pidRecord = this.typingService.queryPid(pid);
         if (applicationProps.getStorageStrategy().storesResolved()) {
             storeLocally(pid, false);
         }

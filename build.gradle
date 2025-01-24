@@ -56,8 +56,8 @@ dependencies {
     // dependencies. It will automatically choose the fitting ones.
     implementation("edu.kit.datamanager:service-base:1.3.2")
     implementation("edu.kit.datamanager:repo-core:1.2.3")
-    // com.google.common, LoadingCache
-    implementation("com.google.guava:guava:33.4.0-jre")
+    // AsyncLoadingCache https://github.com/ben-manes/caffeine
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
 
     // spring core, e.g. @EnableJpaRepositories
     implementation "org.springframework:spring-core"

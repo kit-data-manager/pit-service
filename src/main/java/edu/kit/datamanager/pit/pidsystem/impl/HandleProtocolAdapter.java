@@ -10,7 +10,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,7 +34,6 @@ import edu.kit.datamanager.pit.configuration.HandleCredentials;
 import edu.kit.datamanager.pit.configuration.HandleProtocolProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.PIDRecordEntry;
-import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import net.handle.api.HSAdapter;
 import net.handle.api.HSAdapterFactory;
@@ -86,7 +84,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
 
     // Properties specific to this adapter.
     @Autowired
-    private HandleProtocolProperties props;
+    final private HandleProtocolProperties props;
     // Handle Protocol implementation
     private HSAdapter client;
     // indicates if the adapter can modify and create PIDs or just resolve them.
@@ -101,7 +99,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
 
     /**
      * Initializes internal classes.
-     * We use this methos with the @PostConstruct annotation to run it
+     * We use this method with the @PostConstruct annotation to run it
      * after the constructor and after springs autowiring is done properly
      * to make sure that all properties are already autowired.
      * 
@@ -149,8 +147,8 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public boolean isIdentifierRegistered(final String pid) throws ExternalServiceException {
-        HandleValue[] recordProperties = null;
+    public boolean isPidRegistered(final String pid) throws ExternalServiceException {
+        HandleValue[] recordProperties;
         try {
             recordProperties = this.client.resolveHandle(pid, null, null);
         } catch (HandleException e) {
@@ -164,7 +162,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public PIDRecord queryAllProperties(final String pid) throws PidNotFoundException, ExternalServiceException {
+    public PIDRecord queryPid(final String pid) throws PidNotFoundException, ExternalServiceException {
         Collection<HandleValue> allValues = this.queryAllHandleValues(pid);
         if (allValues.isEmpty()) {
             return null;
@@ -179,32 +177,11 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     protected Collection<HandleValue> queryAllHandleValues(final String pid) throws PidNotFoundException, ExternalServiceException {
         try {
             HandleValue[] values = this.client.resolveHandle(pid, null, null);
-            return Stream
-                    .of(values)
+            return Stream.of(values)
                     .collect(Collectors.toCollection(ArrayList::new));
         } catch (HandleException e) {
             if (e.getCode() == HandleException.HANDLE_DOES_NOT_EXIST) {
-                return new ArrayList<>();
-            } else {
-                throw new ExternalServiceException(SERVICE_NAME_HANDLE, e);
-            }
-        }
-    }
-
-    @Override
-    public String queryProperty(final String pid, final TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
-        String[] typeArray = { typeDefinition.getIdentifier() };
-        try {
-            // TODO we assume here that the property only exists once, which will not be
-            // true in every case.
-            // The interface likely should be adjusted so we can return all types and do not
-            // need to return a String.
-            return this.client.resolveHandle(pid, typeArray, null)[0].getDataAsString();
-        } catch (HandleException e) {
-            if (e.getCode() == HandleException.INVALID_VALUE) {
-                return null;
-            } else if (e.getCode() == HandleException.HANDLE_DOES_NOT_EXIST) {
-                throw new PidNotFoundException(pid);
+                throw new PidNotFoundException(pid, e);
             } else {
                 throw new ExternalServiceException(SERVICE_NAME_HANDLE, e);
             }
@@ -239,7 +216,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public boolean updatePID(final PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
+    public boolean updatePid(final PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
         if (!this.isValidPID(pidRecord.getPid())) {
             return false;
         }
@@ -305,27 +282,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
-        PIDRecord allProps = queryAllProperties(pid);
-        if (allProps == null) {
-            return null;
-        }
-        // only return properties listed in the type definition
-        Set<String> typeProps = typeDefinition.getAllProperties();
-        PIDRecord result = new PIDRecord();
-        for (String propID : allProps.getPropertyIdentifiers()) {
-            if (typeProps.contains(propID)) {
-                String[] values = allProps.getPropertyValues(propID);
-                for (String value : values) {
-                    result.addEntry(propID, "", value);
-                }
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public boolean deletePID(final String pid) throws ExternalServiceException {
+    public boolean deletePid(final String pid) throws ExternalServiceException {
         try {
             this.client.deleteHandle(pid);
         } catch (HandleException e) {
@@ -493,7 +450,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             return false;
         }
         try {
-            if (!this.isIdentifierRegistered(pid)) {
+            if (!this.isPidRegistered(pid)) {
                 return false;
             }
         } catch (ExternalServiceException e) {

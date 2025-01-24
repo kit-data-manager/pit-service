@@ -15,7 +15,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.configuration.HandleProtocolProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
-import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 import net.handle.hdllib.HandleException;
@@ -52,7 +51,7 @@ public class IIdentifierSystemQueryTest {
         );
 
         IIdentifierSystem inMemory = new InMemoryIdentifierSystem();
-        String inMemoryPid = inMemory.registerPID(rec);
+        String inMemoryPid = inMemory.registerPid(rec);
 
         // TODO initiate REST impl
 
@@ -64,20 +63,20 @@ public class IIdentifierSystemQueryTest {
 
     @ParameterizedTest
     @MethodSource("implProvider")
-    public void isIdentifierRegisteredTrue(IIdentifierSystem impl, String pid) throws IOException {
-        assertTrue(impl.isIdentifierRegistered(pid));
+    public void isPidRegisteredTrue(IIdentifierSystem impl, String pid) throws IOException {
+        assertTrue(impl.isPidRegistered(pid));
     }
 
     @ParameterizedTest
     @MethodSource("implProvider")
-    public void isIdentifierRegisteredFalse(IIdentifierSystem impl, String pid, String pid_nonexist) throws IOException {
-        assertFalse(impl.isIdentifierRegistered(pid_nonexist));
+    public void isPidRegisteredFalse(IIdentifierSystem impl, String pid, String pid_nonexist) throws IOException {
+        assertFalse(impl.isPidRegistered(pid_nonexist));
     }
 
     @ParameterizedTest
     @MethodSource("implProvider")
-    public void queryAllPropertiesExample(IIdentifierSystem impl, String pid) throws IOException {
-        PIDRecord result = impl.queryAllProperties(pid);
+    public void queryPidExample(IIdentifierSystem impl, String pid) throws IOException {
+        PIDRecord result = impl.queryPid(pid);
         assertEquals(result.getPid(), pid);
         assertTrue(result.getPropertyIdentifiers().contains("10320/loc"));
         assertFalse(result.getPropertyIdentifiers().contains("HS_ADMIN"));
@@ -85,40 +84,27 @@ public class IIdentifierSystemQueryTest {
 
     @ParameterizedTest
     @MethodSource("implProvider")
-    public void queryAllPropertiesOfNonexistent(IIdentifierSystem impl, String _pid, String pid_nonexist) throws IOException {
-        PIDRecord result = impl.queryAllProperties(pid_nonexist);
-        assertNull(result);
+    public void queryPidOfNonexistent(IIdentifierSystem impl, String _pid, String pid_nonexist) throws IOException {
+        assertThrows(PidNotFoundException.class, () -> {
+            impl.queryPid(pid_nonexist);
+        });
     }
 
     @ParameterizedTest
     @MethodSource("implProvider")
     public void querySingleProperty(IIdentifierSystem impl, String pid) throws IOException {
-        TypeDefinition type = new TypeDefinition();
-        type.setIdentifier("10320/loc");
-        type.setDescription("FakeType for testing. Actually describing the location in some handle specific format, and no registered type");
-        String property = impl.queryProperty(pid, type);
-        assertTrue(property.contains("objects/21.T11148/076759916209e5d62bd5\" weight=\"1\" view=\"json\""));
-        assertTrue(property.contains("#objects/21.T11148/076759916209e5d62bd5\" weight=\"0\" view=\"ui\""));
+        PIDRecord record = impl.queryPid(pid);
+        String attributeKey = "10320/loc";
+        assertTrue(record.getPropertyIdentifiers().contains(attributeKey));
+        String value = record.getPropertyValue(attributeKey);
+        assertTrue(value.contains("objects/21.T11148/076759916209e5d62bd5\" weight=\"1\" view=\"json\""));
+        assertTrue(value.contains("#objects/21.T11148/076759916209e5d62bd5\" weight=\"0\" view=\"ui\""));
     }
 
     @ParameterizedTest
     @MethodSource("implProvider")
     public void queryNonexistentProperty(IIdentifierSystem impl, String pid) throws IOException {
-        TypeDefinition type = new TypeDefinition();
-        type.setIdentifier("Nonexistent_Property");
-        type.setDescription("FakeType for testing. Does not exist and query should fail somehow.");
-        String property = impl.queryProperty(pid, type);
-        assertNull(property);
-    }
-
-    @ParameterizedTest
-    @MethodSource("implProvider")
-    public void queryPropertyOfNonexistent(IIdentifierSystem impl, String pid, String pid_nonexist) throws IOException {
-        TypeDefinition type = new TypeDefinition();
-        type.setIdentifier("Nonexistent_Property");
-        type.setDescription("FakeType for testing. Does not exist and query should fail somehow.");
-        assertThrows(PidNotFoundException.class, () -> {
-            impl.queryProperty(pid_nonexist, type);
-        });
+        PIDRecord record = impl.queryPid(pid);
+        assertFalse(record.getPropertyIdentifiers().contains("Nonexistent_Attribute"));
     }
 }
