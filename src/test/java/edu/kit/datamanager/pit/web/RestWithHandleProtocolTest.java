@@ -103,9 +103,11 @@ class RestWithHandleProtocolTest {
         PIDRecord record = mapper.readValue(response.getContentAsString(), PIDRecord.class);
         // fix record, it is actually invalid...
         record.removeAllValuesOf("URL");
-        String licenseUrl = "21.T11148/2f314c8fe5fb6a0063a8";
+        // fix possible issue with this type in current state of type api
+        record.removeAllValuesOf("21.T11148/2f314c8fe5fb6a0063a8");
+        String licenseUrl = "21.T11969/e0efc41346cda4ba84ca";
         record.removeAllValuesOf(licenseUrl);
-        record.addEntry(licenseUrl, "{ \"licenseURL\": \"https://cdla.dev/permissive-2-0/\" }");
+        record.addEntry(licenseUrl, "https://cdla.dev/permissive-2-0/");
         this.mockMvc.perform(
             put(url)
                 .param("dryrun", "true")
