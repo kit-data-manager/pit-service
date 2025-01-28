@@ -191,7 +191,6 @@ jacocoTestReport {
                     fileTree(dir: it, exclude: [\
             'edu/kit/datamanager/pit/configuration/**', \
             'edu/kit/datamanager/pit/web/converter/**', \
-            'edu/kit/datamanager/pit/web/ExtendedErrorAttributes**', \
             'edu/kit/datamanager/pit/web/UncontrolledExceptionHandler**', \
             'edu/kit/datamanager/pit/common/**', \
             'edu/kit/datamanager/pit/Application*'
