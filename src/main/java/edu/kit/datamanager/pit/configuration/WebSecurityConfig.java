@@ -77,6 +77,8 @@ public class WebSecurityConfig {
           .requestMatchers(HttpMethod.GET, "/swagger-ui.html").permitAll()
           .requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll()
           .requestMatchers(HttpMethod.GET, "/v3/**").permitAll()
+          // permit access to actuator endpoints
+          .requestMatchers("/actuator/**").permitAll()
           // only the actual API is protected
           .requestMatchers("/api/v1/**").authenticated()
       )
