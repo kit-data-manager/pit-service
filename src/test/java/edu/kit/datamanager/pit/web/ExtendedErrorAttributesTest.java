@@ -11,9 +11,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
-import org.springframework.boot.web.servlet.error.ErrorAttributes;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.context.WebApplicationContext;
@@ -37,7 +34,7 @@ public class ExtendedErrorAttributesTest {
     private ExtendedErrorAttributes errorAttributes;
 
     @Test
-    public void testExtendedErrorAttributes() {
+    public void testPidRecordPresence() {
         // Create a mock request to pass to the error attributes
         HttpServletRequest request = new MockHttpServletRequest();
         WebRequest webRequest = new ServletWebRequest(request);
@@ -56,7 +53,7 @@ public class ExtendedErrorAttributesTest {
     }
 
     @Test
-    public void testExtendedErrorAttributesBeanRegistration() {
+    public void testBeanRegistration() {
         // Check if the ExtendedErrorAttributes bean is registered
         ExtendedErrorAttributes extendedErrorAttributes = webApplicationContext.getBean(ExtendedErrorAttributes.class);
         assertNotNull(extendedErrorAttributes, "ExtendedErrorAttributes bean should be registered");
