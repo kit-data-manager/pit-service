@@ -30,6 +30,7 @@ import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.TypingService;
+import edu.kit.datamanager.pit.resolver.Resolver;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import edu.kit.datamanager.pit.typeregistry.impl.TypeApi;
 import edu.kit.datamanager.pit.typeregistry.schema.SchemaSetGenerator;
@@ -109,6 +110,11 @@ public class Application {
     @Bean
     public ITypeRegistry typeRegistry(ApplicationProperties props, SchemaSetGenerator schemaSetGenerator) {
         return new TypeApi(props, schemaSetGenerator);
+    }
+
+    @Bean
+    public Resolver resolver(ITypingService identifierSystem) {
+        return new Resolver(identifierSystem);
     }
 
     @Bean
