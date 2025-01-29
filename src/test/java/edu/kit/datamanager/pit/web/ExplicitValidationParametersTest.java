@@ -1,9 +1,6 @@
 package edu.kit.datamanager.pit.web;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
+import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import jakarta.servlet.ServletContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,7 +21,7 @@ import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.SimplePidRecord;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
-import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
+import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.NoValidationStrategy;
@@ -44,18 +41,19 @@ import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
 import org.hamcrest.Matchers;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 /**
  * This is a dedicated test for the validation/dryrun parameters, available for the REST interface.
- * 
+ * <p>
  * It ensures that:
  * - validation is being executed
  * - no data is stored
- * 
+ * <p>
  * It uses the in-memory implementation for simplicity.
- * 
+ * <p>
  * Explicit validation parameters are:
  * - dryrun=true for creating a PID
  * - validation=true for resolving a PID
@@ -70,8 +68,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 class ExplicitValidationParametersTest {
 
     static final String EMPTY_RECORD = "{\"pid\": null, \"entries\": {}}";
-    static final String RECORD = "{\"entries\":{\"21.T11148/076759916209e5d62bd5\":[{\"key\":\"21.T11148/076759916209e5d62bd5\",\"name\":\"kernelInformationProfile\",\"value\":\"21.T11148/301c6f04763a16f0f72a\"}],\"21.T11148/397d831aa3a9d18eb52c\":[{\"key\":\"21.T11148/397d831aa3a9d18eb52c\",\"name\":\"dateModified\",\"value\":\"2021-12-21T17:36:09.541+00:00\"}],\"21.T11148/8074aed799118ac263ad\":[{\"key\":\"21.T11148/8074aed799118ac263ad\",\"name\":\"digitalObjectPolicy\",\"value\":\"21.T11148/37d0f4689c6ea3301787\"}],\"21.T11148/92e200311a56800b3e47\":[{\"key\":\"21.T11148/92e200311a56800b3e47\",\"name\":\"etag\",\"value\":\"{ \\\"sha256sum\\\": \\\"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\\\" }\"}],\"21.T11148/aafd5fb4c7222e2d950a\":[{\"key\":\"21.T11148/aafd5fb4c7222e2d950a\",\"name\":\"dateCreated\",\"value\":\"2021-12-21T17:36:09.541+00:00\"}],\"21.T11148/b8457812905b83046284\":[{\"key\":\"21.T11148/b8457812905b83046284\",\"name\":\"digitalObjectLocation\",\"value\":\"https://test.repo/file001\"}],\"21.T11148/c692273deb2772da307f\":[{\"key\":\"21.T11148/c692273deb2772da307f\",\"name\":\"version\",\"value\":\"1.0.0\"}],\"21.T11148/c83481d4bf467110e7c9\":[{\"key\":\"21.T11148/c83481d4bf467110e7c9\",\"name\":\"digitalObjectType\",\"value\":\"21.T11148/ManuscriptPage\"}]},\"pid\":\"unregistered-18622\"}";
-    
+
     @Autowired
     private WebApplicationContext webApplicationContext;
 
@@ -80,6 +77,9 @@ class ExplicitValidationParametersTest {
 
     @Autowired
     ITypingService typingService;
+
+    @Autowired
+    ITypeRegistry typeRegistry;
 
     @Autowired
     private ApplicationProperties appProps;
@@ -93,10 +93,11 @@ class ExplicitValidationParametersTest {
     private InMemoryIdentifierSystem inMemory;
     
     @BeforeEach
-    void setup() throws Exception {
+    void setup() {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
         this.knownPidsDao.deleteAll();
-        this.typingService.setValidationStrategy(this.appProps.defaultValidationStrategy());
+        this.typingService.setValidationStrategy(
+                this.appProps.defaultValidationStrategy(typeRegistry));
     }
 
     @Test
@@ -106,7 +107,7 @@ class ExplicitValidationParametersTest {
         assertNotNull(this.inMemory);
         ServletContext servletContext = webApplicationContext.getServletContext();
         assertNotNull(servletContext);
-        assertTrue(servletContext instanceof MockServletContext);
+        assertInstanceOf(MockServletContext.class, servletContext);
         
         SpringTestHelper springTestHelper = new SpringTestHelper(webApplicationContext);
         springTestHelper.assertSingleBeanInstanceOf(ITypingRestResource.class);
@@ -140,7 +141,6 @@ class ExplicitValidationParametersTest {
         // as we use an in-memory data structure, lets not make it too large.
         int numAttributes = 100;
         int numValues = 100;
-        assertTrue(numAttributes * numValues > 256);
         PIDRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
         
         String rJson = ApiMockUtils.serialize(r);
@@ -153,7 +153,7 @@ class ExplicitValidationParametersTest {
                     .content(rJson)
                     .accept(MediaType.ALL)
             )
-            .andDo(MockMvcResultHandlers.print())
+            //.andDo(MockMvcResultHandlers.print()) // output is massive due to the large record
             .andExpect(MockMvcResultMatchers.status().isOk()); // instead of created (201)
         
         // no PIDs are stored with dryrun
@@ -168,7 +168,6 @@ class ExplicitValidationParametersTest {
         // as we use an in-memory data structure, lets not make it too large.
         int numAttributes = 100;
         int numValues = 100;
-        assertTrue(numAttributes * numValues > 256);
         PIDRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
         
         String rJson = ApiMockUtils.serialize(r);
@@ -181,9 +180,9 @@ class ExplicitValidationParametersTest {
                     .content(rJson)
                     .accept(MediaType.ALL)
             )
-            .andDo(MockMvcResultHandlers.print())
+            //.andDo(MockMvcResultHandlers.print()) // output is massive due to the large record
             .andExpect(MockMvcResultMatchers.status().isCreated()); // instead of created (201)
-        
+
         // dryrun was false, so there should be a new PID known
         assertEquals(1, this.knownPidsDao.count());
     }
@@ -209,7 +208,32 @@ class ExplicitValidationParametersTest {
     }
 
     @Test
-    void testInvalidRecordWithProfile() throws Exception {
+    void testRecordWithInvalidValue() throws Exception {
+        PIDRecord r = new PIDRecord();
+        // valid attribute key, but wrong attribute value:
+        String urlType = "21.T11969/e0efc41346cda4ba84ca";
+        r.addEntry(urlType, "", "not a url");
+        this.mockMvc
+                .perform(
+                        post("/api/v1/pit/pid/")
+                                .param("dryrun", "true")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .characterEncoding("utf-8")
+                                .content(new ObjectMapper().writeValueAsString(r))
+                                .accept(MediaType.ALL)
+                )
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(MockMvcResultMatchers.jsonPath(
+                        "$.detail",
+                        Matchers.containsString("has a non-complying value")));
+
+        // we store PIDs only if the PID was created successfully
+        assertEquals(0, this.knownPidsDao.count());
+    }
+
+    @Test
+    void testRecordWithAdditionalAttribute() throws Exception {
         PIDRecord r = new PIDRecord();
         r.addEntry("21.T11148/076759916209e5d62bd5", "for Testing", "21.T11148/301c6f04763a16f0f72a");
         this.mockMvc
@@ -222,9 +246,9 @@ class ExplicitValidationParametersTest {
                     .accept(MediaType.ALL)
             )
             .andDo(MockMvcResultHandlers.print())
-            .andExpect(MockMvcResultMatchers.status().isBadRequest());
-        
-        // we store PIDs only if the PID was created successfully
+            .andExpect(MockMvcResultMatchers.status().isOk());
+
+        // we store PIDs only if the PID was created (no dryrun)
         assertEquals(0, this.knownPidsDao.count());
     }
 
@@ -233,7 +257,7 @@ class ExplicitValidationParametersTest {
     void testResolvingValidRecordWithValidation() throws Exception {
         this.testExtensiveRecordWithoutDryRun();
         assertEquals(1, knownPidsDao.count());
-        String validPid = knownPidsDao.findAll().iterator().next().getPid();
+        String validPid = knownPidsDao.findAll().getFirst().getPid();
         this.mockMvc
             .perform(
                 get("/api/v1/pit/pid/" + validPid)
@@ -246,19 +270,20 @@ class ExplicitValidationParametersTest {
 
     @Test
     @DisplayName("Resolve a PID known to be invalid, with explicit validation.")
-    void testResolvingValidRecordWithValidationFail() throws Exception {
+    void testResolvingInvalidRecordWithValidationFail() throws Exception {
+        // We'll reuse the extensive record here, and validate it.
+        // To do so, we resolve the PID, set validate to true, and expect a validation error.
+        // This error must occur, as all attributes are made up. These PIDs are not registered
+        // and were generated using this.pidGenerator.
+
         // note: this test disables validation...
         this.testExtensiveRecordWithoutDryRun();
         assertEquals(1, knownPidsDao.count());
-        String validPid = knownPidsDao.findAll().iterator().next().getPid();
-
-        PIDRecord r = inMemory.queryAllProperties(validPid);
-        r.addEntry("21.T11148/076759916209e5d62bd5", "", "21.T11148/b9b76f887845e32d29f7");
-        r.addEntry("something wrong", "", "someVeryUniqueValue");
-        inMemory.updatePID(r);
+        String validPid = knownPidsDao.findAll().getFirst().getPid();
         // ... so we need to re-enable validation here:
-        this.typingService.setValidationStrategy(this.appProps.defaultValidationStrategy());
-
+        this.typingService.setValidationStrategy(
+                this.appProps.defaultValidationStrategy(typeRegistry));
+        // Now, we can resolve and validate:
         MvcResult result = this.mockMvc
             .perform(
                 get("/api/v1/pit/pid/" + validPid)
@@ -267,8 +292,8 @@ class ExplicitValidationParametersTest {
             )
             .andDo(MockMvcResultHandlers.print())
             .andExpect(MockMvcResultMatchers.status().isBadRequest())
-            .andExpect(MockMvcResultMatchers.jsonPath("$.detail", Matchers.containsString("Missing mandatory types: [")))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.detail", Matchers.containsString("Type not found")))
             .andReturn();
-        assertTrue(0 < result.getResponse().getContentAsString().length());
+        assertFalse(result.getResponse().getContentAsString().isEmpty());
     }
 }

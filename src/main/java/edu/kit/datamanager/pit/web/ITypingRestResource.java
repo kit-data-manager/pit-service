@@ -52,26 +52,6 @@ import org.springframework.data.web.PageableDefault;
  */
 public interface ITypingRestResource {
 
-    /**
-     * Create a new PID using the record information provided in the request body.
-     * The record is expected to contain the identifier of the matching profile.
-     * Before creating the record, the record information will be validated against
-     * the profile.
-     * 
-     * Important note: Validation caches recently used type information locally.
-     * Therefore, changes in a registry may take a few minutes to be reflected
-     * within the Typed PID Maker. This speeds up validation drastically in most
-     * situations. But it also means that, if the cache is empty, validation may
-     * take 30+ seconds. We are aware of the issue and considering improvements. But
-     * be aware that in general, validation may take up some time.
-     *
-     * @param rec The PID record.
-     *
-     * @return either 201 and a record representation, or an error (see ApiResponse
-     *         annotations and tests).
-     *
-     * @throws IOException
-     */
     @PostMapping(
         path = "pid/",
         consumes = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE},
@@ -79,7 +59,15 @@ public interface ITypingRestResource {
     )
     @Operation(
         summary = "Create a new PID record",
-        description = "Create a new PID record using the record information from the request body."
+        description = "Create a new PID record using the record information from the request body." +
+                " The record may contain the identifier(s) of the matching profile(s)." +
+                " Before creating the record, the record information will be validated against" +
+                " the profile." +
+                " Validation takes some time, depending on the context. It depends a lot on the size" +
+                " of your record and the already cached information. This information is gathered" +
+                " from external services. If there are connection issues or hickups at these sites," +
+                " validation may even take up to a few seconds. Usually you can expect the request" +
+                " to be between 100ms up to 1000ms on a fast machine with reliable connections."
     )
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
         description = "The body containing all PID record values as they should be in the new PIDs record.",
@@ -122,21 +110,6 @@ public interface ITypingRestResource {
             final UriComponentsBuilder uriBuilder
     ) throws IOException;
 
-    /**
-     * Update the given PIDs record using the information provided in the request
-     * body. The record is expected to contain the identifier of the matching
-     * profile. Conditions for a valid record are the same as for creation.
-     * <p>
-     * Important note: Validation may take up to 30+ seconds. For details, see the
-     * documentation of "POST /pid/".
-     *
-     * @param rec the PID record.
-     * @param dryrun if only validation shall be executed.
-     *
-     * @return the record (on success).
-     *
-     * @throws IOException if the record could not be updated.
-     */
     @PutMapping(
         path = "pid/**",
         consumes = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE},
@@ -144,7 +117,11 @@ public interface ITypingRestResource {
     )
     @Operation(
         summary = "Update an existing PID record",
-        description = "Update an existing PID record using the record information from the request body."
+        description = "Update an existing PID record using the record information from the request body." +
+                " The record may contain the identifier(s) of the matching profiles. Conditions for a" +
+                " valid record are the same as for creation." +
+                " Important note: Validation may take some time. For details, see the documentation of" +
+                " \"POST /pid/\"."
     )
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
         description = "The body containing all PID record values as they should be after the update.",
@@ -190,18 +167,15 @@ public interface ITypingRestResource {
             final UriComponentsBuilder uriBuilder
     ) throws IOException;
 
-    /**
-     * Get the record of the given PID (or test if it exists).
-     *
-     * @return the record.
-     *
-     * @throws IOException
-     */
     @GetMapping(
         path = "pid/**",
         produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
     )
-    @Operation(summary = "Get the record of the given PID.", description = "Get the record to the given PID, if it exists. No validation is performed by default.")
+    @Operation(
+            summary = "Get the record of the given PID.",
+            description = "Get the record to the given PID, if it exists. May also be used to test" +
+                    " if a PID exists. No validation is performed by default."
+    )
     @ApiResponses(value = {
         @ApiResponse(
             responseCode = "200",
