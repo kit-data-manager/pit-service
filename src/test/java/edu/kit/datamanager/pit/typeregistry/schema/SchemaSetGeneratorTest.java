@@ -40,4 +40,9 @@ class SchemaSetGeneratorTest {
         // This is currently not supported, but would be nice to have:
         assertFalse(attributeInfo.validate("\"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\""));
     }
+
+    @Test
+    void testFormatUriFeature() {
+
+    }
 }
