@@ -19,6 +19,7 @@ import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
+import edu.kit.datamanager.pit.resolver.Resolver;
 import edu.kit.datamanager.pit.web.ITypingRestResource;
 import edu.kit.datamanager.pit.web.TabulatorPaginationFormat;
 import edu.kit.datamanager.service.IMessagingService;
@@ -58,6 +59,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
     @Autowired
     protected ITypingService typingService;
+
+    @Autowired
+    protected Resolver resolver;
 
     @Autowired
     private IMessagingService messagingService;
@@ -176,7 +180,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                 "Optional PID in record is given (%s), but it was not the same as the PID in the URL (%s). Ignore request, assuming this was not intended.".formatted(pidInternal, pid));
         }
         
-        PIDRecord existingRecord = this.typingService.queryPid(pid);
+        PIDRecord existingRecord = this.resolver.resolve(pid);
         if (existingRecord == null) {
             throw new PidNotFoundException(pid);
         }
@@ -251,7 +255,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final UriComponentsBuilder uriBuilder
     ) throws IOException {
         String pid = getContentPathFromRequest("pid", request);
-        PIDRecord pidRecord = this.typingService.queryPid(pid);
+        PIDRecord pidRecord = this.resolver.resolve(pid);
         if (applicationProps.getStorageStrategy().storesResolved()) {
             storeLocally(pid, false);
         }

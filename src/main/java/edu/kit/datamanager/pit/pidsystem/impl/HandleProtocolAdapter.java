@@ -168,9 +168,9 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
             return null;
         }
         Collection<HandleValue> recordProperties = Streams.failableStream(allValues.stream())
-                .filter(value -> !this.isHandleInternalValue(value))
+                .filter(value -> !isHandleInternalValue(value))
                 .collect(Collectors.toList());
-        return this.pidRecordFrom(recordProperties).withPID(pid);
+        return new PIDRecord(recordProperties).withPID(pid);
     }
 
     @NotNull
@@ -248,7 +248,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
                 .collect(Collectors.toMap(HandleValue::getIndex, v -> v));
         // 1)
         List<HandleValue> valuesToKeep = oldHandleValues.stream()
-                .filter(this::isHandleInternalValue)
+                .filter(HandleProtocolAdapter::isHandleInternalValue)
                 .collect(Collectors.toList());
 
         // 2) Merge requested record and things we want to keep.
@@ -354,24 +354,6 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     /**
-     * Avoids an extra constructor in `PIDRecord`. Instead,
-     * keep such details stored in the PID service implementation.
-     * 
-     * @param values HandleValue collection (ordering recommended)
-     *               that shall be converted into a PIDRecord.
-     * @return a PID record with values copied from values.
-     */
-    protected PIDRecord pidRecordFrom(final Collection<HandleValue> values) {
-        PIDRecord result = new PIDRecord();
-        for (HandleValue v : values) {
-            // TODO In future, the type could be resolved to store the human readable name
-            // here.
-            result.addEntry(v.getTypeAsString(), "", v.getDataAsString());
-        }
-        return result;
-    }
-
-    /**
      * Convert a `PIDRecord` instance to an array of `HandleValue`s. It is the
      * inverse method to `pidRecordFrom`.
      * 
@@ -467,7 +449,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
      * @param v the value to check.
      * @return true, if the value is conidered "handle-native".
      */
-    protected boolean isHandleInternalValue(HandleValue v) {
+    public static boolean isHandleInternalValue(HandleValue v) {
         boolean isInternalValue = false;
         for (byte[][] typeList : BLACKLIST_NONTYPE_LISTS) {
             for (byte[] typeCode : typeList) {
