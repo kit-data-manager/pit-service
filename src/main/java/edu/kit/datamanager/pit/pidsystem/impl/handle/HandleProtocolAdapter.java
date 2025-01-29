@@ -400,10 +400,9 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
 
         public final int nextIndex() {
             int result = index;
-            index += 1;
-            if (index == this.getHsAdminIndex() || skipping.contains(index)) {
+            do {
                 index += 1;
-            }
+            } while (index == this.getHsAdminIndex() || skipping.contains(index));
             return result;
         }
 
