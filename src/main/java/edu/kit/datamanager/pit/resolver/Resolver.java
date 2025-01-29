@@ -3,7 +3,7 @@ package edu.kit.datamanager.pit.resolver;
 import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
-import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleProtocolAdapter;
+import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleBehavior;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import net.handle.api.HSAdapter;
 import net.handle.api.HSAdapterFactory;
@@ -66,9 +66,9 @@ public class Resolver {
         } else {
             try {
                 Collection<HandleValue> recordProperties = Arrays.stream(this.client.resolveHandle(pid, null, null))
-                        .filter(value -> !HandleProtocolAdapter.isHandleInternalValue(value))
+                        .filter(value -> !HandleBehavior.isHandleInternalValue(value))
                         .collect(Collectors.toList());
-                return new PIDRecord(recordProperties).withPID(pid);
+                return HandleBehavior.recordFrom(recordProperties).withPID(pid);
             } catch (HandleException e) {
                 int code = e.getCode();
                 boolean isExistingPid = code == HandleException.HANDLE_DOES_NOT_EXIST;

@@ -4,12 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import edu.kit.datamanager.entities.EtagSupport;
 import edu.kit.datamanager.pit.pidsystem.impl.local.PidDatabaseObject;
-import net.handle.hdllib.HandleValue;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -51,10 +49,6 @@ public class PIDRecord implements EtagSupport {
         for (SimplePair pair : rec.getPairs()) {
             this.addEntry(pair.getKey(), "", pair.getValue());
         }
-    }
-
-    public PIDRecord(final Collection<HandleValue> values) {
-        values.forEach(v -> this.addEntry(v.getTypeAsString(), "", v.getDataAsString()));
     }
 
     /**

@@ -7,10 +7,9 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleProtocolAdapter.HandleDiff;
 import net.handle.hdllib.HandleValue;
 
-class HandleProtocolAdapterTest {
+class HandleDiffTest {
     @Test
     void testDiffOldRecordEmpty() {
         Map<Integer, HandleValue> oldRecord = new HashMap<>();
@@ -70,11 +69,11 @@ class HandleProtocolAdapterTest {
         assertEquals(1, diff.added().length);
     }
 
-    private void addSomeHandleValue(Map<Integer, HandleValue> record, int index) {
+    private static void addSomeHandleValue(Map<Integer, HandleValue> record, int index) {
         record.put(index, getHandleValue(index));
     }
 
-    private HandleValue getHandleValue(int index) {
+    private static HandleValue getHandleValue(int index) {
         return new HandleValue(index, "", "");
     }
 }
