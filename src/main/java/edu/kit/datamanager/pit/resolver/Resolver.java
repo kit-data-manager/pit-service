@@ -3,7 +3,7 @@ package edu.kit.datamanager.pit.resolver;
 import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
-import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
+import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import net.handle.api.HSAdapter;
 import net.handle.api.HSAdapterFactory;

@@ -12,7 +12,6 @@ import jakarta.servlet.ServletContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,7 +29,7 @@ import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
-import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
+import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.NoValidationStrategy;

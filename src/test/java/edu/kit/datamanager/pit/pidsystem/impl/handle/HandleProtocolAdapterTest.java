@@ -1,4 +1,4 @@
-package edu.kit.datamanager.pit.pidsystem.impl;
+package edu.kit.datamanager.pit.pidsystem.impl.handle;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -7,7 +7,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter.HandleDiff;
+import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleProtocolAdapter.HandleDiff;
 import net.handle.hdllib.HandleValue;
 
 class HandleProtocolAdapterTest {

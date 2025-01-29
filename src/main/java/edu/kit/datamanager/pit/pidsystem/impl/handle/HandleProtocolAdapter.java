@@ -1,4 +1,4 @@
-package edu.kit.datamanager.pit.pidsystem.impl;
+package edu.kit.datamanager.pit.pidsystem.impl.handle;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
