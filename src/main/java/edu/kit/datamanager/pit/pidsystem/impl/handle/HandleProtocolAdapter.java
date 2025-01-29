@@ -198,7 +198,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         for (RecordModifier modifier : this.props.getConfiguredModifiers()) {
             preparedRecord = modifier.apply(preparedRecord);
         }
-        ArrayList<HandleValue> futurePairs = this.handleValuesFrom(preparedRecord, Optional.of(admin));
+        ArrayList<HandleValue> futurePairs = handleValuesFrom(preparedRecord, Optional.of(admin));
 
         HandleValue[] futurePairsArray = futurePairs.toArray(new HandleValue[] {});
 
@@ -362,7 +362,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
      * @return HandleValues containing the same key-value pairs as the given record,
      *         but e.g. without the name.
      */
-    protected ArrayList<HandleValue> handleValuesFrom(
+    protected static ArrayList<HandleValue> handleValuesFrom(
             final PIDRecord pidRecord,
             final Optional<List<HandleValue>> toMerge)
         {
@@ -389,7 +389,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
                 LOG.debug("Entry: ({}) {} <-> {}", i, key, val);
             }
         }
-        assert result.size() >= pidRecord.getEntries().keySet().size();
+        assert result.size() >= pidRecord.getEntries().size();
         return result;
     }
 
