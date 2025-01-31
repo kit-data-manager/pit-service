@@ -4,6 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import edu.kit.datamanager.pit.SpringTestHelper;
+import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleProtocolAdapter;
+import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
+import edu.kit.datamanager.pit.pidsystem.impl.local.LocalPidSystem;
 import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +31,12 @@ import edu.kit.datamanager.pit.domain.PIDRecord;
 
 @AutoConfigureMockMvc
 // JUnit5 + Spring
-@SpringBootTest
+@SpringBootTest(
+    properties = {
+            // assume validation will succeed, as we want to only test etag here
+            "pit.validation.strategy = none-debug",
+    }
+)
 @TestPropertySource("/test/application-test.properties")
 @ActiveProfiles("test")
 class EtagTest {
@@ -52,6 +61,11 @@ class EtagTest {
     @Test
     void setup() throws Exception {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
+
+        SpringTestHelper springTestHelper = new SpringTestHelper(this.webApplicationContext);
+        springTestHelper.assertSingleBeanInstanceOf(InMemoryIdentifierSystem.class);
+        springTestHelper.assertNoBeanInstanceOf(LocalPidSystem.class);
+        springTestHelper.assertNoBeanInstanceOf(HandleProtocolAdapter.class);
 
         MockHttpServletResponse response = ApiMockUtils.registerSomeRecordAndReturnMvcResult(this.mockMvc).getResponse();
         String etagHeader = response.getHeader(HttpHeaders.ETAG);

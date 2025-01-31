@@ -8,7 +8,6 @@ import edu.kit.datamanager.pit.pidsystem.impl.local.PidDatabaseObject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -155,24 +154,6 @@ public class PIDRecord implements EtagSupport {
 
     public void removeAllValuesOf(String attribute) {
         this.entries.remove(attribute);
-    }
-
-    /**
-     * Returns all missing mandatory attributes from the given Profile, which are not
-     * present in this record.
-     * 
-     * @param profile the given Profile definition.
-     * @return all missing mandatory attributes.
-     */
-    public Collection<String> getMissingMandatoryTypesOf(TypeDefinition profile) {
-        Collection<String> missing = new ArrayList<>();
-        for (TypeDefinition td : profile.getSubTypes().values()) {
-            String typePid = td.getIdentifier();
-            if (!td.isOptional() && !this.entries.containsKey(typePid)) {
-                missing.add(typePid);
-            }
-        }
-        return missing;
     }
 
     /**

@@ -6,7 +6,6 @@ import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
-import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffix;
 
 import java.util.Collection;
@@ -57,7 +56,7 @@ public interface IIdentifierSystem {
      * @throws ExternalServiceException on commonication errors or errors on other
      *         services.
      */
-    public boolean isIdentifierRegistered(String pid) throws ExternalServiceException;
+    public boolean isPidRegistered(String pid) throws ExternalServiceException;
 
     /**
      * Checks whether the given PID is already registered.
@@ -73,9 +72,9 @@ public interface IIdentifierSystem {
      * @throws InvalidConfigException if there is no prefix configured to append to
      *         the suffix.
      */
-    public default boolean isIdentifierRegistered(PidSuffix suffix) throws ExternalServiceException, InvalidConfigException {
+    public default boolean isPidRegistered(PidSuffix suffix) throws ExternalServiceException, InvalidConfigException {
         String prefix = getPrefix().orElseThrow(() -> new InvalidConfigException("This system cannot create PIDs."));
-        return isIdentifierRegistered(suffix.getWithPrefix(prefix));
+        return isPidRegistered(suffix.getWithPrefix(prefix));
     }
 
     /**
@@ -89,27 +88,14 @@ public interface IIdentifierSystem {
      * @throws ExternalServiceException on commonication errors or errors on other
      *         services.
      */
-    public PIDRecord queryAllProperties(String pid) throws PidNotFoundException, ExternalServiceException;
-
-    /**
-     * Queries a single property from the given PID.
-     *
-     * @param pid the PID to query from.
-     * @param typeDefinition the type to query.
-     * @return the property value or null if there is no property of given name
-     * defined in this PID record.
-     * @throws PidNotFoundException if PID is not registered.
-     * @throws ExternalServiceException if an error occured in communication with
-     *         other services.
-     */
-    public String queryProperty(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException;
+    public PIDRecord queryPid(String pid) throws PidNotFoundException, ExternalServiceException;
 
     /**
      * Registers a new PID with given property values. The method takes the PID from
      * the record and treats it as a suffix.
      * 
      * The method must process the given PID using the
-     * {@link #registerPID(PIDRecord)} method.
+     * {@link #registerPid(PIDRecord)} method.
      *
      * @param pidRecord contains the initial PID record.
      * @return the PID that was assigned to the record.
@@ -118,7 +104,7 @@ public interface IIdentifierSystem {
      *         other services.
      * @throws RecordValidationException if record validation errors occurred.
      */
-    public default String registerPID(final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException, RecordValidationException {
+    public default String registerPid(final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException, RecordValidationException {
         if (pidRecord.getPid() == null) {
             throw new RecordValidationException(pidRecord, "PID must not be null.");
         }
@@ -133,7 +119,7 @@ public interface IIdentifierSystem {
 
     /**
      * Registers the given record with its given PID, without applying any checks.
-     * Recommended to use {@link #registerPID(PIDRecord)} instead.
+     * Recommended to use {@link #registerPid(PIDRecord)} instead.
      * 
      * As an implementor, you can assume the PID to be not null, valid,
      * non-registered, and prefixed.
@@ -157,26 +143,7 @@ public interface IIdentifierSystem {
      *         other services.
      * @throws RecordValidationException if record validation errors occurred.
      */
-    public boolean updatePID(PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException;
-
-    /**
-     * Queries all properties of a given type available from the given PID. If
-     * optional properties are present, they will be returned as well. If there are
-     * mandatory properties missing (i.e. the record of the given PID does not fully
-     * conform to the type), the method will NOT fail but simply return only those
-     * properties that are present.
-     *
-     * @param pid the PID to query the type from.
-     * @param typeDefinition the type to query.
-     * @return a PID information record with property identifiers mapping to values.
-     *         The property names will not be available (empty Strings). Contains
-     *         all property values present in the record of the given PID that are
-     *         also specified by the type (mandatory or optional).
-     * @throws PidNotFoundException if the pid is not registered.
-     * @throws ExternalServiceException if an error occured in communication with
-     *         other services.
-     */
-    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException;
+    public boolean updatePid(PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException;
 
     /**
      * Remove the given PID.
@@ -187,7 +154,7 @@ public interface IIdentifierSystem {
      * @param pid the PID to delete.
      * @return true if the identifier was deleted, false if it did not exist.
      */
-    public boolean deletePID(String pid) throws ExternalServiceException;
+    public boolean deletePid(String pid) throws ExternalServiceException;
 
     /**
      * Returns all PIDs which are registered for the configured prefix.

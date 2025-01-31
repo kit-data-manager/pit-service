@@ -11,4 +11,8 @@ public class InvalidConfigException extends ResponseStatusException {
   public InvalidConfigException(String message) {
     super(HTTP_STATUS, message);
   }
+
+  public InvalidConfigException(String message, Throwable error) {
+    super(HTTP_STATUS, message, error);
+  }
 }

@@ -1,16 +1,16 @@
 plugins {
     // Spring boot & dependency management:
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
-    id 'org.springframework.boot' version '3.3.5'
+    id 'org.springframework.boot' version '3.4.2'
     // https://docs.spring.io/dependency-management-plugin/docs/current-SNAPSHOT/reference/html/
-    id "io.spring.dependency-management" version "1.1.6"
+    id "io.spring.dependency-management" version "1.1.7"
     // Lombok generates getter and setter and more. https://projectlombok.org/
     // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
-    id "io.freefair.lombok" version "8.11"
+    id "io.freefair.lombok" version "8.12"
     // Release tagging with `./gradlew release`
     // Check for new versions here: https://plugins.gradle.org/plugin/net.researchgate.release
     // Usage: https://github.com/researchgate/gradle-release
-    id 'net.researchgate.release' version '3.0.2'
+    id 'net.researchgate.release' version '3.1.0'
 
     id 'java'
     // for comfortable run command with arguments
@@ -19,7 +19,7 @@ plugins {
     id 'jacoco'
     // Adds coveralls task for CI to send results to the coveralls service.
     id "com.github.kt3k.coveralls" version "2.12.2"
-    id "org.owasp.dependencycheck" version "11.1.1"
+    id "org.owasp.dependencycheck" version "12.0.1"
     // include build and git information via Spring Actuator
     id "com.gorylenko.gradle-git-properties" version "2.4.2"
 }
@@ -48,16 +48,16 @@ repositories {
 }
 
 ext {
-    springDocVersion  = '2.6.0'
+    springDocVersion  = '2.8.4'
 }
 
 dependencies {
     // Due to the spring boot gradle plugin, we can omit versions in org.springframework.*
     // dependencies. It will automatically choose the fitting ones.
-    implementation("edu.kit.datamanager:service-base:1.3.2")
-    implementation("edu.kit.datamanager:repo-core:1.2.3")
-    // com.google.common, LoadingCache
-    implementation("com.google.guava:guava:33.3.1-jre")
+    implementation("edu.kit.datamanager:service-base:1.3.3")
+    implementation("edu.kit.datamanager:repo-core:1.2.5")
+    // AsyncLoadingCache https://github.com/ben-manes/caffeine
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
 
     // spring core, e.g. @EnableJpaRepositories
     implementation "org.springframework:spring-core"
@@ -89,7 +89,7 @@ dependencies {
 
     implementation("net.handle:handle-client:9.3.1")
 
-    testImplementation(platform('org.junit:junit-bom:5.11.3'))
+    testImplementation(platform('org.junit:junit-bom:5.11.4'))
 	testImplementation('org.junit.jupiter:junit-jupiter')
     testImplementation('org.junit.jupiter:junit-jupiter-params')
 

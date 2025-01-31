@@ -127,8 +127,16 @@ public interface ITypingRestResource {
             produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
     )
     @Operation(
-            summary = "Create a new PID record",
-            description = "Create a new PID record using the record information from the request body."
+        summary = "Create a new PID record",
+        description = "Create a new PID record using the record information from the request body." +
+                " The record may contain the identifier(s) of the matching profile(s)." +
+                " Before creating the record, the record information will be validated against" +
+                " the profile." +
+                " Validation takes some time, depending on the context. It depends a lot on the size" +
+                " of your record and the already cached information. This information is gathered" +
+                " from external services. If there are connection issues or hickups at these sites," +
+                " validation may even take up to a few seconds. Usually you can expect the request" +
+                " to be between 100ms up to 1000ms on a fast machine with reliable connections."
     )
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "The body containing all PID record values as they should be in the new PIDs record.",
@@ -153,10 +161,16 @@ public interface ITypingRestResource {
             @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
             @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
-    ResponseEntity<PIDRecord> createPID(
-            @RequestBody final PIDRecord rec,
+    public ResponseEntity<PIDRecord> createPID(
+            @RequestBody
+            final PIDRecord rec,
 
-            @Parameter(description = "If true, only validation will be done and no PID will be created. No data will be changed and no services will be notified.", required = false)
+            @Parameter(
+                    description = "If true, only validation will be done" +
+                            " and no PID will be created. No data will be changed" +
+                            " and no services will be notified.",
+                    required = false
+            )
             @RequestParam(name = "dryrun", required = false, defaultValue = "false")
             boolean dryrun,
 
@@ -183,8 +197,12 @@ public interface ITypingRestResource {
             produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
     )
     @Operation(
-            summary = "Update an existing PID record",
-            description = "Update an existing PID record using the record information from the request body."
+        summary = "Update an existing PID record",
+        description = "Update an existing PID record using the record information from the request body." +
+                " The record may contain the identifier(s) of the matching profiles. Conditions for a" +
+                " valid record are the same as for creation." +
+                " Important note: Validation may take some time. For details, see the documentation of" +
+                " \"POST /pid/\"."
     )
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "The body containing all PID record values as they should be after the update.",
@@ -213,22 +231,31 @@ public interface ITypingRestResource {
     ResponseEntity<PIDRecord> updatePID(
             @RequestBody final PIDRecord rec,
 
+            @Parameter(
+                    description = "If true, no PID will be updated. Only" +
+                            " validation checks are performed, and the expected" +
+                            " response, including the new eTag, will be returned." +
+                            " No data will be changed and no services will be" +
+                            " notified.",
+                    required = false
+            )
+            @RequestParam(name = "dryrun", required = false, defaultValue = "false")
+            boolean dryrun,
+
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder
     ) throws IOException;
 
-    /**
-     * Get the record of the given PID (or test if it exists).
-     *
-     * @return the record.
-     * @throws IOException
-     */
     @GetMapping(
             path = "pid/**",
             produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
     )
-    @Operation(summary = "Get the record of the given PID.", description = "Get the record to the given PID, if it exists. No validation is performed by default.")
+    @Operation(
+            summary = "Get the record of the given PID.",
+            description = "Get the record to the given PID, if it exists. May also be used to test" +
+                    " if a PID exists. No validation is performed by default."
+    )
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "200",
@@ -243,8 +270,14 @@ public interface ITypingRestResource {
             @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
             @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
-    ResponseEntity<PIDRecord> getRecord(
-            @Parameter(description = "If true, validation will be run on the resolved PID. On failure, an error will be returned. On success, the PID will be resolved.", required = false)
+
+    public ResponseEntity<PIDRecord> getRecord (
+            @Parameter(
+                    description = "If true, validation will be run on the" +
+                            " resolved PID. On failure, an error will be" +
+                            " returned. On success, the PID will be resolved.",
+                    required = false
+            )
             @RequestParam(name = "validation", required = false, defaultValue = "false")
             boolean validation,
 

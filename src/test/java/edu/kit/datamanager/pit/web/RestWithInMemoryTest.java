@@ -6,12 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import jakarta.servlet.ServletContext;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,7 @@ import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
-import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
+import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.NoValidationStrategy;
@@ -82,6 +82,9 @@ class RestWithInMemoryTest {
     ITypingService typingService;
 
     @Autowired
+    ITypeRegistry typeRegistry;
+
+    @Autowired
     private ApplicationProperties appProps;
 
     private MockMvc mockMvc;
@@ -100,7 +103,8 @@ class RestWithInMemoryTest {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
         this.mapper = this.webApplicationContext.getBean("OBJECT_MAPPER_BEAN", ObjectMapper.class);
         this.knownPidsDao.deleteAll();
-        this.typingService.setValidationStrategy(this.appProps.defaultValidationStrategy());
+        this.typingService.setValidationStrategy(
+                this.appProps.defaultValidationStrategy(typeRegistry));
     }
 
     @Test
@@ -186,7 +190,7 @@ class RestWithInMemoryTest {
     }
 
     @Test
-    void testInvalidRecordWithProfile() throws Exception {
+    void testRecordWithAdditionalAttribute() throws Exception {
         PIDRecord r = new PIDRecord();
         r.addEntry("21.T11148/076759916209e5d62bd5", "for Testing", "21.T11148/301c6f04763a16f0f72a");
         MvcResult result = this.mockMvc
@@ -198,14 +202,13 @@ class RestWithInMemoryTest {
                     .accept(MediaType.ALL)
             )
             .andDo(MockMvcResultHandlers.print())
-            .andExpect(MockMvcResultMatchers.status().isBadRequest())
-            .andExpect(MockMvcResultMatchers.jsonPath("$.detail", Matchers.containsString("Missing mandatory types: [")))
+            .andExpect(MockMvcResultMatchers.status().isCreated())
             .andReturn();
         
-        // we store PIDs only if the PID was created successfully
-        assertEquals(0, this.knownPidsDao.count());
-        // assume error parsed from body
-        assertTrue(0 < result.getResponse().getContentAsString().length());
+        // we store PIDs, if the PID was created successfully
+        assertEquals(1, this.knownPidsDao.count());
+        // sanity check that body is not empty
+        assertFalse(result.getResponse().getContentAsString().isEmpty());
     }
 
     @Test
@@ -235,6 +238,7 @@ class RestWithInMemoryTest {
         PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
         PIDRecord modified = ApiMockUtils.clone(original);
         modified.getEntries().get("21.T11148/b8457812905b83046284").get(0).setValue("https://example.com/anotherUrlAsBefore");
+        assertNotEquals(original, modified);
         PIDRecord updatedRecord = ApiMockUtils.updateRecord(this.mockMvc, original, modified);
         assertEquals(modified, updatedRecord);
     }
