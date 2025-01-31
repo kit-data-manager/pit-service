@@ -81,6 +81,134 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     public TypingRESTResourceImpl() {
         super();
     }
+  
+  @Override
+    public ResponseEntity<List<PIDRecord>> createPIDs(
+            List<PIDRecord> rec,
+            boolean dryrun,
+            WebRequest request,
+            HttpServletResponse response,
+            UriComponentsBuilder uriBuilder
+    ) throws IOException, RecordValidationException, ExternalServiceException {
+        Instant startTime = Instant.now();
+        LOG.info("Creating PIDs for {} records.", rec.size());
+        String prefix = this.typingService.getPrefix().orElseThrow(() -> new IOException("No prefix configured."));
+
+        // Generate a map between temporary (user-defined) PIDs and final PIDs (generated)
+        Map<String, String> pidMappings = generatePIDMapping(rec, dryrun);
+        Instant mappingTime = Instant.now();
+
+        // Apply the mappings to the records and validate them
+        List<PIDRecord> validatedRecords = applyMappingsToRecordsAndValidate(rec, pidMappings, prefix);
+        Instant validationTime = Instant.now();
+
+        if (dryrun) {
+            // dryrun only does validation. Stop now and return as we would later on.
+            LOG.info("Time taken for dryrun: {} ms", ChronoUnit.MILLIS.between(startTime, validationTime));
+            LOG.info("-- Time taken for mapping: {} ms", ChronoUnit.MILLIS.between(startTime, mappingTime));
+            LOG.info("-- Time taken for validation: {} ms", ChronoUnit.MILLIS.between(mappingTime, validationTime));
+            LOG.info("Dryrun finished. Returning validated records for {} records.", validatedRecords.size());
+            return ResponseEntity.status(HttpStatus.OK).body(validatedRecords);
+        }
+
+        // register the records
+        validatedRecords.forEach(pidRecord -> {
+            // register the PID
+            String pid = this.typingService.registerPID(pidRecord);
+            pidRecord.setPid(pid);
+
+            // store pid locally in accordance with the storage strategy
+            if (applicationProps.getStorageStrategy().storesModified()) {
+                storeLocally(pid, true);
+            }
+
+            // distribute pid creation event to other services
+            PidRecordMessage message = PidRecordMessage.creation(
+                    pid,
+                    "", // TODO parameter is deprecated and will be removed soon.
+                    AuthenticationHelper.getPrincipal(),
+                    ControllerUtils.getLocalHostname());
+            try {
+                this.messagingService.send(message);
+            } catch (Exception e) {
+                LOG.error("Could not notify messaging service about the following message: {}", message);
+            }
+
+            // save the record to elastic
+            this.saveToElastic(pidRecord);
+        });
+        Instant endTime = Instant.now();
+
+        // return the created records
+        LOG.info("Total time taken: {} ms", ChronoUnit.MILLIS.between(startTime, endTime));
+        LOG.info("-- Time taken for mapping: {} ms", ChronoUnit.MILLIS.between(startTime, mappingTime));
+        LOG.info("-- Time taken for validation: {} ms", ChronoUnit.MILLIS.between(mappingTime, validationTime));
+        LOG.info("-- Time taken for registration: {} ms", ChronoUnit.MILLIS.between(validationTime, endTime));
+        LOG.info("Creation finished. Returning validated records for {} records.", validatedRecords.size());
+        return ResponseEntity.status(HttpStatus.CREATED).body(validatedRecords);
+    }
+
+    /**
+     * This method generates a mapping between user-provided "fantasy" PIDs and real PIDs.
+     *
+     * @param rec    the list of records produced by the user
+     * @param dryrun whether the operation is a dryrun or not
+     * @return a map between the user-provided PIDs (key) and the real PIDs (values)
+     * @throws IOException               if the prefix is not configured
+     * @throws RecordValidationException if the same internal PID is used for multiple records
+     * @throws ExternalServiceException  if the PID generation fails
+     */
+    private Map<String, String> generatePIDMapping(List<PIDRecord> rec, boolean dryrun) throws IOException, RecordValidationException, ExternalServiceException {
+        Map<String, String> pidMappings = new HashMap<>();
+        for (PIDRecord pidRecord : rec) {
+            String internalPID = pidRecord.getPid(); // the internal PID is the one given by the user
+            if (!internalPID.isBlank() && pidMappings.containsKey(internalPID)) { // check if the internal PID was already used
+                // This internal PID was already used by some other record in the same request.
+                throw new RecordValidationException(pidRecord, "The PID " + internalPID + " was used for multiple records in the same request.");
+            }
+
+            pidRecord.setPid(""); // clear the PID field in the record
+            if (dryrun) { // if it is a dryrun, we set the PID to a temporary value
+                pidRecord.setPid("dryrun_" + pidMappings.size());
+            } else {
+                setPid(pidRecord); // otherwise, we generate a real PID
+            }
+            pidMappings.put(internalPID, pidRecord.getPid()); // store the mapping between the internal and real PID
+        }
+        return pidMappings;
+    }
+
+    /**
+     * This method applies the mappings between temporary PIDs and real PIDs to the records and validates them.
+     *
+     * @param rec         the list of records produced by the user
+     * @param pidMappings the map between the user-provided PIDs (key) and the real PIDs (values)
+     * @param prefix      the prefix to be used for the real PIDs
+     * @return the list of validated records
+     * @throws RecordValidationException as a possible validation outcome
+     * @throws ExternalServiceException  as a possible validation outcome
+     */
+    private List<PIDRecord> applyMappingsToRecordsAndValidate(List<PIDRecord> rec, Map<String, String> pidMappings, String prefix) throws RecordValidationException, ExternalServiceException {
+        List<PIDRecord> validatedRecords = new ArrayList<>();
+        for (PIDRecord pidRecord : rec) {
+
+            // use this map to replace all temporary PIDs in the record values with their corresponding real PIDs
+            pidRecord.getEntries().values().stream() // get all values of the record
+                    .flatMap(List::stream) // flatten the list of values
+                    .filter(entry -> entry.getValue() != null) // Filter out null values
+                    .filter(entry -> pidMappings.containsKey(entry.getValue())) // replace only if the value (aka. "fantasy PID") is a key in the map
+                    .peek(entry -> LOG.debug("Found reference. Replacing {} with {}.", entry.getValue(), prefix + pidMappings.get(entry.getValue()))) // log the replacement
+                    .forEach(entry -> entry.setValue(prefix + pidMappings.get(entry.getValue()))); // replace the value with the real PID according to the map
+
+            // validate the record
+            this.typingService.validate(pidRecord);
+
+            // store the record
+            validatedRecords.add(pidRecord);
+            LOG.debug("Record {} is valid.", pidRecord);
+        }
+        return validatedRecords;
+    }
 
     @Override
     public ResponseEntity<PIDRecord> createPID(
