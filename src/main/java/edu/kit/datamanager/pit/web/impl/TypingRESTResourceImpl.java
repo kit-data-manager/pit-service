@@ -1,13 +1,23 @@
+/*
+ * Copyright (c) 2025 Karlsruhe Institute of Technology.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package edu.kit.datamanager.pit.web.impl;
 
+import edu.kit.datamanager.entities.messaging.PidRecordMessage;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
-import java.io.IOException;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
-
 import edu.kit.datamanager.pit.common.*;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.configuration.PidGenerationProperties;
@@ -23,13 +33,10 @@ import edu.kit.datamanager.pit.resolver.Resolver;
 import edu.kit.datamanager.pit.web.ITypingRestResource;
 import edu.kit.datamanager.pit.web.TabulatorPaginationFormat;
 import edu.kit.datamanager.service.IMessagingService;
-import edu.kit.datamanager.entities.messaging.PidRecordMessage;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.commons.lang3.stream.Streams;
 import org.apache.http.client.cache.HeaderConstants;
 import org.slf4j.Logger;
@@ -47,22 +54,24 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Stream;
+
 @RestController
 @RequestMapping(value = "/api/v1/pit")
 @Schema(description = "PID Information Types API")
 public class TypingRESTResourceImpl implements ITypingRestResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypingRESTResourceImpl.class);
-
-    @Autowired
-    private ApplicationProperties applicationProps;
-
     @Autowired
     protected ITypingService typingService;
-
     @Autowired
     protected Resolver resolver;
-
+    @Autowired
+    private ApplicationProperties applicationProps;
     @Autowired
     private IMessagingService messagingService;
 
@@ -81,8 +90,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     public TypingRESTResourceImpl() {
         super();
     }
-  
-  @Override
+
+    @Override
     public ResponseEntity<List<PIDRecord>> createPIDs(
             List<PIDRecord> rec,
             boolean dryrun,
@@ -114,7 +123,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         // register the records
         validatedRecords.forEach(pidRecord -> {
             // register the PID
-            String pid = this.typingService.registerPID(pidRecord);
+            String pid = this.typingService.registerPid(pidRecord);
             pidRecord.setPid(pid);
 
             // store pid locally in accordance with the storage strategy
@@ -137,6 +146,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             // save the record to elastic
             this.saveToElastic(pidRecord);
         });
+
         Instant endTime = Instant.now();
 
         // return the created records
@@ -304,10 +314,10 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         String pidInternal = pidRecord.getPid();
         if (hasPid(pidRecord) && !pid.equals(pidInternal)) {
             throw new RecordValidationException(
-                pidRecord,
-                "Optional PID in record is given (%s), but it was not the same as the PID in the URL (%s). Ignore request, assuming this was not intended.".formatted(pidInternal, pid));
+                    pidRecord,
+                    "Optional PID in record is given (%s), but it was not the same as the PID in the URL (%s). Ignore request, assuming this was not intended.".formatted(pidInternal, pid));
         }
-        
+
         PIDRecord existingRecord = this.resolver.resolve(pid);
         if (existingRecord == null) {
             throw new PidNotFoundException(pid);
@@ -347,7 +357,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
     /**
      * Stores the PID in a local database.
-     * 
+     *
      * @param pid    the PID
      * @param update if true, updates the modified timestamp if it already exists.
      *               If it does not exist, it will be created with both timestamps
@@ -396,9 +406,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
     private void saveToElastic(PIDRecord rec) {
         this.elastic.ifPresent(
-            database -> database.save(
-                new PidRecordElasticWrapper(rec, typingService.getOperations())
-            )
+                database -> database.save(
+                        new PidRecordElasticWrapper(rec, typingService.getOperations())
+                )
         );
     }
 
@@ -417,11 +427,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     public Page<KnownPid> findAllPage(
-        Instant createdAfter,
-        Instant createdBefore,
-        Instant modifiedAfter,
-        Instant modifiedBefore,
-        Pageable pageable
+            Instant createdAfter,
+            Instant createdBefore,
+            Instant modifiedAfter,
+            Instant modifiedBefore,
+            Pageable pageable
     ) {
         final boolean queriesCreated = createdAfter != null || createdBefore != null;
         final boolean queriesModified = modifiedAfter != null || modifiedBefore != null;
@@ -442,11 +452,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         Page<KnownPid> resultModifiedTimestamp = Page.empty();
         if (queriesCreated) {
             resultCreatedTimestamp = this.localPidStorage
-                .findDistinctPidsByCreatedBetween(createdAfter, createdBefore, pageable);
+                    .findDistinctPidsByCreatedBetween(createdAfter, createdBefore, pageable);
         }
         if (queriesModified) {
             resultModifiedTimestamp = this.localPidStorage
-                .findDistinctPidsByModifiedBetween(modifiedAfter, modifiedBefore, pageable);
+                    .findDistinctPidsByModifiedBetween(modifiedAfter, modifiedBefore, pageable);
         }
         if (queriesCreated && queriesModified) {
             final Page<KnownPid> tmp = resultModifiedTimestamp;
@@ -469,15 +479,14 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             Pageable pageable,
             WebRequest request,
             HttpServletResponse response,
-            UriComponentsBuilder uriBuilder) throws IOException
-    {
+            UriComponentsBuilder uriBuilder) throws IOException {
         Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
         response.addHeader(
-            HeaderConstants.CONTENT_RANGE,
-            ControllerUtils.getContentRangeHeader(
-                page.getNumber(),
-                page.getSize(),
-                page.getTotalElements()));
+                HeaderConstants.CONTENT_RANGE,
+                ControllerUtils.getContentRangeHeader(
+                        page.getNumber(),
+                        page.getSize(),
+                        page.getTotalElements()));
         return ResponseEntity.ok().body(page.getContent());
     }
 
@@ -490,15 +499,14 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             Pageable pageable,
             WebRequest request,
             HttpServletResponse response,
-            UriComponentsBuilder uriBuilder) throws IOException
-    {
+            UriComponentsBuilder uriBuilder) throws IOException {
         Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
         response.addHeader(
-            HeaderConstants.CONTENT_RANGE,
-            ControllerUtils.getContentRangeHeader(
-                page.getNumber(),
-                page.getSize(),
-                page.getTotalElements()));
+                HeaderConstants.CONTENT_RANGE,
+                ControllerUtils.getContentRangeHeader(
+                        page.getNumber(),
+                        page.getSize(),
+                        page.getTotalElements()));
         TabulatorPaginationFormat<KnownPid> tabPage = new TabulatorPaginationFormat<>(page);
         return ResponseEntity.ok().body(tabPage);
     }
