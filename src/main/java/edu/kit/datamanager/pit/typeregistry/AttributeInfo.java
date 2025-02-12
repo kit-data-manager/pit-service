@@ -35,7 +35,7 @@ public record AttributeInfo(
         try {
             JsonNode toValidate = Application.jsonObjectMapper().readTree(value);
             Set<ValidationMessage> errors = schema.validate(toValidate, executionContext -> {
-                // By default since Draft 2019-09 the format keyword only generates annotations and not assertions
+                // By default, since Draft 2019-09, the format keyword only generates annotations and not assertions
                 executionContext.getExecutionConfig().setFormatAssertionsEnabled(true);
             });
             return errors.isEmpty();

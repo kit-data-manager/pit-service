@@ -3,14 +3,11 @@ package edu.kit.datamanager.pit.typeregistry.schema;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.typeregistry.AttributeInfo;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.URI;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -43,7 +40,7 @@ class SchemaSetGeneratorTest {
                         "21.T11148/92e200311a56800b3e47",
                         "\"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\"",
                         "\"not a checksum\""),
-                // URI with schema making use of "format" to specify a uri
+                // URI with schema making use of "format" to specify an uri
                 Arguments.of("21.T11969/cb371c93c5aa0e62198e", "\"https://example.com\"", "This is not a URI")
         );
     }
