@@ -1,12 +1,14 @@
 package edu.kit.datamanager.pit.typeregistry;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.ValidationMessage;
+import edu.kit.datamanager.pit.Application;
 import edu.kit.datamanager.pit.typeregistry.schema.SchemaInfo;
-import org.everit.json.schema.Schema;
-import org.everit.json.schema.ValidationException;
-import org.json.JSONObject;
 
 import java.util.Collection;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * @param pid the pid of this attribute
@@ -29,16 +31,17 @@ public record AttributeInfo(
                 .anyMatch(schema -> validate(schema, value));
     }
 
-    private boolean validate(Schema schema, String value) {
-        Object toValidate = value;
-        if (value.startsWith("{")) {
-            toValidate = new JSONObject(value);
-        }
+    private boolean validate(JsonSchema schema, String value) {
         try {
-            schema.validate(toValidate);
-        } catch (ValidationException e) {
+            JsonNode toValidate = Application.jsonObjectMapper().readTree(value);
+            Set<ValidationMessage> errors = schema.validate(toValidate, executionContext -> {
+                // By default since Draft 2019-09 the format keyword only generates annotations and not assertions
+                executionContext.getExecutionConfig().setFormatAssertionsEnabled(true);
+            });
+            return errors.isEmpty();
+            // TODO we could catch the validation errors here in order to return them to the user
+        } catch (Exception e) {
             return false;
         }
-        return true;
     }
 }

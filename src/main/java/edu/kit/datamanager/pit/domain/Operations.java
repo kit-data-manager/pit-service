@@ -1,6 +1,7 @@
 package edu.kit.datamanager.pit.domain;
 
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -15,9 +16,7 @@ import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import edu.kit.datamanager.pit.typeregistry.AttributeInfo;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import org.apache.commons.lang3.stream.Streams;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
+import java.time.ZonedDateTime;
 
 /**
  * Simple operations on PID records.
@@ -181,10 +180,10 @@ public class Operations {
      * @return the extracted Date object.
      */
     protected Optional<Date> extractDate(String dateString) {
-        DateTimeFormatter dateFormatter = ISODateTimeFormat.dateTime();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ISO_DATE_TIME;
         try {
-            DateTime dateTime = dateFormatter.parseDateTime(dateString);
-            return Optional.of(dateTime.toDate());
+            ZonedDateTime dateTime = ZonedDateTime.parse(dateString, dateFormatter);
+            return Optional.of(Date.from(dateTime.toInstant()));
         } catch (Exception e) {
             return Optional.empty();
         }
