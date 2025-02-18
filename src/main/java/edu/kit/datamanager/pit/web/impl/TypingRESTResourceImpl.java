@@ -120,31 +120,38 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             return ResponseEntity.status(HttpStatus.OK).body(validatedRecords);
         }
 
+        List<PIDRecord> failedRecords = new ArrayList<>();
         // register the records
         validatedRecords.forEach(pidRecord -> {
-            // register the PID
-            String pid = this.typingService.registerPid(pidRecord);
-            pidRecord.setPid(pid);
-
-            // store pid locally in accordance with the storage strategy
-            if (applicationProps.getStorageStrategy().storesModified()) {
-                storeLocally(pid, true);
-            }
-
-            // distribute pid creation event to other services
-            PidRecordMessage message = PidRecordMessage.creation(
-                    pid,
-                    "", // TODO parameter is deprecated and will be removed soon.
-                    AuthenticationHelper.getPrincipal(),
-                    ControllerUtils.getLocalHostname());
             try {
-                this.messagingService.send(message);
-            } catch (Exception e) {
-                LOG.error("Could not notify messaging service about the following message: {}", message);
-            }
+                // register the PID
+                String pid = this.typingService.registerPid(pidRecord);
+                pidRecord.setPid(pid);
 
-            // save the record to elastic
-            this.saveToElastic(pidRecord);
+                // store pid locally in accordance with the storage strategy
+                if (applicationProps.getStorageStrategy().storesModified()) {
+                    storeLocally(pid, true);
+                }
+
+                // distribute pid creation event to other services
+                PidRecordMessage message = PidRecordMessage.creation(
+                        pid,
+                        "", // TODO parameter is deprecated and will be removed soon.
+                        AuthenticationHelper.getPrincipal(),
+                        ControllerUtils.getLocalHostname());
+                try {
+                    this.messagingService.send(message);
+                } catch (Exception e) {
+                    LOG.error("Could not notify messaging service about the following message: {}", message);
+                }
+
+                // save the record to elastic
+                this.saveToElastic(pidRecord);
+            } catch (Exception e) {
+                LOG.error("Could not register PID for record {}. Error: {}", pidRecord, e.getMessage());
+                failedRecords.add(pidRecord);
+                validatedRecords.remove(pidRecord);
+            }
         });
 
         Instant endTime = Instant.now();
@@ -154,8 +161,23 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         LOG.info("-- Time taken for mapping: {} ms", ChronoUnit.MILLIS.between(startTime, mappingTime));
         LOG.info("-- Time taken for validation: {} ms", ChronoUnit.MILLIS.between(mappingTime, validationTime));
         LOG.info("-- Time taken for registration: {} ms", ChronoUnit.MILLIS.between(validationTime, endTime));
-        LOG.info("Creation finished. Returning validated records for {} records.", validatedRecords.size());
-        return ResponseEntity.status(HttpStatus.CREATED).body(validatedRecords);
+
+        if (!failedRecords.isEmpty()) {
+            for (PIDRecord successfulRecord : validatedRecords) { // rollback the successful records
+                try {
+                    LOG.debug("Rolling back PID creation for record with PID {}.", successfulRecord.getPid());
+                    this.typingService.deletePid(successfulRecord.getPid());
+                } catch (Exception e) {
+                    LOG.error("Could not rollback PID creation for record with PID {}. Error: {}", successfulRecord.getPid(), e.getMessage());
+                }
+            }
+
+            LOG.info("Creation finished. Returning validated records for {} records. {} records failed to be created.", validatedRecords.size(), failedRecords.size());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(failedRecords);
+        } else {
+            LOG.info("Creation finished. Returning validated records for {} records.", validatedRecords.size());
+            return ResponseEntity.status(HttpStatus.CREATED).body(validatedRecords);
+        }
     }
 
     /**
