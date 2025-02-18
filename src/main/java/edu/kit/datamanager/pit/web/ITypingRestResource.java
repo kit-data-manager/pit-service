@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Karlsruhe Institute of Technology.
+ * Copyright (c) 2024-2025 Karlsruhe Institute of Technology.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,21 +122,21 @@ public interface ITypingRestResource {
      * @throws IOException
      */
     @PostMapping(
-            path = "pid",
+            path = "pid/",
             consumes = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE},
             produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
     )
     @Operation(
-        summary = "Create a new PID record",
-        description = "Create a new PID record using the record information from the request body." +
-                " The record may contain the identifier(s) of the matching profile(s)." +
-                " Before creating the record, the record information will be validated against" +
-                " the profile." +
-                " Validation takes some time, depending on the context. It depends a lot on the size" +
-                " of your record and the already cached information. This information is gathered" +
-                " from external services. If there are connection issues or hickups at these sites," +
-                " validation may even take up to a few seconds. Usually you can expect the request" +
-                " to be between 100ms up to 1000ms on a fast machine with reliable connections."
+            summary = "Create a new PID record",
+            description = "Create a new PID record using the record information from the request body." +
+                    " The record may contain the identifier(s) of the matching profile(s)." +
+                    " Before creating the record, the record information will be validated against" +
+                    " the profile." +
+                    " Validation takes some time, depending on the context. It depends a lot on the size" +
+                    " of your record and the already cached information. This information is gathered" +
+                    " from external services. If there are connection issues or hickups at these sites," +
+                    " validation may even take up to a few seconds. Usually you can expect the request" +
+                    " to be between 100ms up to 1000ms on a fast machine with reliable connections."
     )
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "The body containing all PID record values as they should be in the new PIDs record.",
@@ -161,9 +161,8 @@ public interface ITypingRestResource {
             @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
             @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
-    public ResponseEntity<PIDRecord> createPID(
-            @RequestBody
-            final PIDRecord rec,
+    ResponseEntity<PIDRecord> createPID(
+            @RequestBody final PIDRecord rec,
 
             @Parameter(
                     description = "If true, only validation will be done" +
@@ -197,12 +196,12 @@ public interface ITypingRestResource {
             produces = {MediaType.APPLICATION_JSON_VALUE, SimplePidRecord.CONTENT_TYPE}
     )
     @Operation(
-        summary = "Update an existing PID record",
-        description = "Update an existing PID record using the record information from the request body." +
-                " The record may contain the identifier(s) of the matching profiles. Conditions for a" +
-                " valid record are the same as for creation." +
-                " Important note: Validation may take some time. For details, see the documentation of" +
-                " \"POST /pid/\"."
+            summary = "Update an existing PID record",
+            description = "Update an existing PID record using the record information from the request body." +
+                    " The record may contain the identifier(s) of the matching profiles. Conditions for a" +
+                    " valid record are the same as for creation." +
+                    " Important note: Validation may take some time. For details, see the documentation of" +
+                    " \"POST /pid/\"."
     )
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "The body containing all PID record values as they should be after the update.",
@@ -270,8 +269,7 @@ public interface ITypingRestResource {
             @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
             @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
-
-    public ResponseEntity<PIDRecord> getRecord (
+    ResponseEntity<PIDRecord> getRecord(
             @Parameter(
                     description = "If true, validation will be run on the" +
                             " resolved PID. On failure, an error will be" +
