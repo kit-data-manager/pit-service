@@ -19,10 +19,11 @@ package edu.kit.datamanager.pit.web;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
 
-public class PIDBuilder {
+public class PIDBuilder implements Cloneable {
     Long seed;
     private Random random;
     private String prefix;
@@ -142,5 +143,42 @@ public class PIDBuilder {
         }
         this.suffix = result.toString();
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return "PIDBuilder{" +
+                "prefix='" + prefix + '\'' +
+                ", suffix='" + suffix + '\'' +
+                ", seed=" + seed +
+                '}';
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (!(o instanceof PIDBuilder that)) return false;
+
+        return Objects.equals(prefix, that.prefix) && Objects.equals(suffix, that.suffix);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hashCode(prefix);
+        result = 31 * result + Objects.hashCode(suffix);
+        return result;
+    }
+
+    @Override
+    public PIDBuilder clone() {
+        try {
+            PIDBuilder clone = (PIDBuilder) super.clone();
+            clone.seed = this.seed;
+            clone.random = new Random(this.seed);
+            clone.prefix = this.prefix;
+            clone.suffix = this.suffix;
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 }
