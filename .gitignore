@@ -136,3 +136,7 @@ $RECYCLE.BIN/
 !/config/application-default.properties
 !/config/application-docker.properties
 ##############
+
+test_prefix_data/
+config/*.bin
+config/*.pem
