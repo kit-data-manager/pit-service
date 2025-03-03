@@ -51,6 +51,12 @@ ext {
     springDocVersion  = '2.8.4'
 }
 
+dependencyManagement {
+    imports {
+        mavenBom("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.13.3")
+    }
+}
+
 dependencies {
     // Due to the spring boot gradle plugin, we can omit versions in org.springframework.*
     // dependencies. It will automatically choose the fitting ones.
@@ -88,6 +94,12 @@ dependencies {
     implementation('org.apache.httpcomponents:httpclient-cache:4.5.14')
 
     implementation("net.handle:handle-client:9.3.1")
+
+    implementation("io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter")
+    implementation("io.opentelemetry.contrib:opentelemetry-samplers:1.44.0-alpha")
+//    implementation 'io.opentelemetry:opentelemetry-api:1.29.0'
+//    implementation 'io.opentelemetry:opentelemetry-sdk:1.29.0'
+//    implementation("io.opentelemetry:opentelemetry-exporter-zipkin:1.47.0")
 
     testImplementation(platform('org.junit:junit-bom:5.11.4'))
 	testImplementation('org.junit.jupiter:junit-jupiter')
