@@ -173,5 +173,5 @@ jobs:
           push: true
           tags: ${{ steps.meta-branch.outputs.tags }}
           labels: ${{ steps.meta-branch.outputs.labels }}
-          annotations: ${{ steps.meta.outputs.annotations }}
+          annotations: ${{ steps.meta-branch.outputs.annotations }}
           platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/riscv64,linux/s390x,windows/amd64
