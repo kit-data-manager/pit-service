@@ -94,7 +94,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           annotations: ${{ steps.meta.outputs.annotations }}
-          platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/riscv64,linux/s390x,windows/amd64
+          platforms: linux/amd64,linux/arm64,windows/amd64
 
   build-and-push-image-of-branch:
     runs-on: ubuntu-latest
@@ -174,4 +174,4 @@ jobs:
           tags: ${{ steps.meta-branch.outputs.tags }}
           labels: ${{ steps.meta-branch.outputs.labels }}
           annotations: ${{ steps.meta-branch.outputs.annotations }}
-          platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/riscv64,linux/s390x,windows/amd64
+          platforms: linux/amd64,linux/arm64,windows/amd64
