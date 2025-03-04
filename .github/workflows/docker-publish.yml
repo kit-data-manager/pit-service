@@ -31,7 +31,7 @@ env:
 # - build-and-push-image-of-branch -> triggered by tags matching '*-v*' (e.g.: Version_1-v1.2.3)
 jobs:
   build-and-push-image:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     if: ${{ contains(github.ref_name, '-v') == failure() }}
     # Sets the permissions granted to the `GITHUB_TOKEN`
     # for the actions in this job.
@@ -112,7 +112,7 @@ jobs:
           platforms: ${{ env.DOCKER_PLATFORMS }}
 
   build-and-push-image-of-branch:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     if: contains(github.ref_name, '-v')
     # Sets the permissions granted to the `GITHUB_TOKEN`
     # for the actions in this job.
