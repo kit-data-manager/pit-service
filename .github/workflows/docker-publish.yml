@@ -32,9 +32,6 @@ env:
 jobs:
   build-and-push-image:
     runs-on: windows-latest
-    defaults:
-      run:
-        shell: bash
     if: ${{ contains(github.ref_name, '-v') == failure() }}
     # Sets the permissions granted to the `GITHUB_TOKEN`
     # for the actions in this job.
@@ -116,9 +113,6 @@ jobs:
 
   build-and-push-image-of-branch:
     runs-on: windows-latest
-    defaults:
-      run:
-        shell: bash
     if: contains(github.ref_name, '-v')
     # Sets the permissions granted to the `GITHUB_TOKEN`
     # for the actions in this job.
