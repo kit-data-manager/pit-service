@@ -57,7 +57,7 @@ dependencies {
     implementation("edu.kit.datamanager:service-base:1.3.3")
     implementation("edu.kit.datamanager:repo-core:1.2.5")
     // com.google.common, LoadingCache
-    implementation("com.google.guava:guava:33.4.0-jre")
+    implementation("com.google.guava:guava:33.4.6-jre")
 
     // spring core, e.g. @EnableJpaRepositories
     implementation "org.springframework:spring-core"
