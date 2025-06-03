@@ -99,6 +99,10 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             HttpServletResponse response,
             UriComponentsBuilder uriBuilder
     ) throws IOException, RecordValidationException, ExternalServiceException {
+        if (rec == null || rec.isEmpty()) {
+            LOG.warn("No records provided for PID creation.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.emptyList());
+        }
         Instant startTime = Instant.now();
         LOG.info("Creating PIDs for {} records.", rec.size());
         String prefix = this.typingService.getPrefix().orElseThrow(() -> new IOException("No prefix configured."));
@@ -194,6 +198,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         Map<String, String> pidMappings = new HashMap<>();
         for (PIDRecord pidRecord : rec) {
             String internalPID = pidRecord.getPid(); // the internal PID is the one given by the user
+            if (internalPID == null) {
+                internalPID = ""; // if no PID was given, we set it to an empty string
+            }
             if (!internalPID.isBlank() && pidMappings.containsKey(internalPID)) { // check if the internal PID was already used
                 // This internal PID was already used by some other record in the same request.
                 throw new RecordValidationException(pidRecord, "The PID " + internalPID + " was used for multiple records in the same request.");

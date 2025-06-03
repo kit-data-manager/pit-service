@@ -48,7 +48,7 @@ public class PIDRecordBuilder implements Cloneable {
      * @param pidBuilder PID builder to use to generate a PID for the record
      */
     public PIDRecordBuilder(PIDBuilder pidBuilder) {
-        this(pidBuilder, new Random().nextLong());
+        this(pidBuilder, null);
     }
 
     /**
@@ -58,46 +58,46 @@ public class PIDRecordBuilder implements Cloneable {
      * @param seed       seed for the random generator
      */
     public PIDRecordBuilder(PIDBuilder pidBuilder, Long seed) {
-        this.seed = seed;
-        this.random = new Random(seed);
+        this.seed = seed != null ? seed : new Random().nextLong();
+        this.random = new Random(this.seed);
         this.record = new PIDRecord();
-        if (pidBuilder != null) {
-            this.record.setPid(pidBuilder.build());
-        } else {
-            this.record.setPid(new PIDBuilder(seed).validPrefix().validSuffix().build());
+
+        if (pidBuilder == null) {
+            pidBuilder = new PIDBuilder(this.seed).validPrefix().validSuffix();
         }
+        this.record.setPid(pidBuilder.build());
     }
 
     /**
      * This function connects multiple PIDRecordBuilders with each other. The builders are connected in a fully meshed way.
      *
-     * @param a_to_b_key              The key to use for the connection from A to B (forwards)
-     * @param b_to_a_key              The key to use for the connection from B to A (backwards)
-     * @param allowDuplicateRelations If true, duplicate relations are allowed in the record, so that
+     * @param a_to_b_key              The key to use for the connection from A to B (forwards).
+     *                                If null, the default key "21.T11148/d0773859091aeb451528" (hasMetadata) is used.
+     * @param b_to_a_key              The key to use for the connection from B to A (backwards).
+     *                                If null, the default key "21.T11148/4fe7cde52629b61e3b82" (isMetadataFor) is used.
+     * @param allowDuplicateRelations If true, duplicate relations are allowed in the record, so that multiple connections can be established between the same builders.
      * @param builders                A list of PIDRecordBuilders to connect
      * @return A list of connected PIDRecordBuilders
      * @throws IllegalArgumentException If less than two builders are given
      */
     public static List<PIDRecordBuilder> connectRecordBuilders(String a_to_b_key, String b_to_a_key, boolean allowDuplicateRelations, PIDRecordBuilder... builders) throws IllegalArgumentException {
         if (builders.length < 2) {
-            throw new IllegalArgumentException("At least two builders are needed to connect them.");
+            throw new IllegalArgumentException("At least two builders are required for connection");
         }
-        if (a_to_b_key == null) a_to_b_key = HAS_METADATA_KEY;
-        if (b_to_a_key == null) b_to_a_key = IS_METADATA_FOR_KEY;
 
-        List<PIDRecordBuilder> connectedBuilders = new ArrayList<>();
-        // Connect the builders in a fully meshed way
-        for (int i = 0; i < builders.length; i++) { // Iterate over all builders
-            PIDRecordBuilder builder = builders[i]; // The builder to connect to all other builders to
-            for (int j = 0; j < builders.length; j++) { // Iterate over all builders
-                if (i != j) { // Do not self-connect the builder
-                    builder.addConnection(a_to_b_key, !allowDuplicateRelations, builders[j]); // Connect builder to other builder
-                    builders[j].addConnection(b_to_a_key, !allowDuplicateRelations, builder); // Connect other builder to builder
+        String forwardKey = a_to_b_key != null ? a_to_b_key : HAS_METADATA_KEY;
+        String backwardKey = b_to_a_key != null ? b_to_a_key : IS_METADATA_FOR_KEY;
+
+        for (int i = 0; i < builders.length; i++) {
+            for (int j = 0; j < builders.length; j++) {
+                if (i != j) {
+                    builders[i].addConnection(forwardKey, false, builders[j]);
+                    builders[j].addConnection(backwardKey, false, builders[i]);
                 }
             }
-            connectedBuilders.add(builder); // Add the connected builder to the list
         }
-        return connectedBuilders; // Return the list of connected builders
+
+        return Arrays.asList(builders);
     }
 
     /**
@@ -145,11 +145,12 @@ public class PIDRecordBuilder implements Cloneable {
      */
     public PIDRecordBuilder addConnection(String key, boolean replaceIdentical, PIDRecordBuilder... builders) throws IllegalArgumentException {
         if (builders.length == 0) {
-            throw new IllegalArgumentException("At least one builder is needed to connect.");
+            throw new IllegalArgumentException("At least one builder is required for connection");
         }
         for (PIDRecordBuilder builder : builders) {
             this.addNotDuplicate(key, builder.record.getPid(), "connectedPID", replaceIdentical);
         }
+
         return this;
     }
 
@@ -191,16 +192,12 @@ public class PIDRecordBuilder implements Cloneable {
     public PIDRecordBuilder incompleteProfile() {
         this.addNotDuplicate(PROFILE_KEY, "21.T11148/301c6f04763a16f0f72a", "KernelInformationProfile", true);
 
-        Set<String> containedKeys = new HashSet<>();
         this.record.getEntries().keySet().forEach(key -> {
             if (KEYS_IN_PROFILE.contains(key)) {
-                containedKeys.add(key);
+                this.record.removeAllValuesOf(key);
             }
         });
-        if (!containedKeys.isEmpty()) {
-            int randomIndex = random.nextInt(containedKeys.size());
-            this.record.removeAllValuesOf(containedKeys.toArray()[randomIndex].toString());
-        }
+
         return this;
     }
 
@@ -282,11 +279,12 @@ public class PIDRecordBuilder implements Cloneable {
      * @param value   value of the entry
      * @param replace if true, replace the value of the entry if it already exists, even if it is a list of values
      */
-    private void addNotDuplicate(String key, String value, String name, boolean replace) {
+    public PIDRecordBuilder addNotDuplicate(String key, String value, String name, boolean replace) {
         if (this.record.getEntries().containsKey(key) && replace) {
             this.record.removeAllValuesOf(key);
         }
         this.record.addEntry(key, name, value);
+        return this;
     }
 
     /**
