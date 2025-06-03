@@ -204,6 +204,13 @@ springBoot {
     buildInfo()
 }
 
+// make sure that git properties plugin does not fail
+// on build without access to the git repo information
+// (zip download etc.)
+gitProperties {
+    failOnNoGitDirectory = false
+}
+
 release {
     // define tag pattern (tags have to start with 'v')
     tagTemplate = 'v${version}'
