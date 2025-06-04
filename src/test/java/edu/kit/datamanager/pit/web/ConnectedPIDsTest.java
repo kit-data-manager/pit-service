@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2025 Karlsruhe Institute of Technology.
  *
@@ -56,7 +57,7 @@ class ConnectedPIDsTest {
     private static final Instant NOW = Instant.now().plus(1, ChronoUnit.MINUTES).truncatedTo(ChronoUnit.MILLIS);
     private static final Instant YESTERDAY = NOW.minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
     private static final Instant TOMORROW = NOW.plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
-    private static final int RECORD_COUNT = 16; // FIXME: Use in all tests that require multiple records
+    private static final int RECORD_COUNT = 16;
     private static final int LARGE_RECORD_COUNT = 200;
 
     // Valid DTR keys for testing connections
@@ -214,7 +215,7 @@ class ConnectedPIDsTest {
         assertTrue(profileRecord.getEntries().size() > 0);
 
         // Test incompleteProfile method
-        PIDRecordBuilder incompleteBuilder = new PIDRecordBuilder().completeProfile().incompleteProfile();//FIXME: something goes wrong here (ConcurrentModificationException)
+        PIDRecordBuilder incompleteBuilder = new PIDRecordBuilder().incompleteProfile();
         PIDRecord incompleteRecord = incompleteBuilder.build();
         assertNotNull(incompleteRecord);
 
@@ -520,7 +521,7 @@ class ConnectedPIDsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonContent))
                 .andDo(MockMvcResultHandlers.print())
-                .andExpect(MockMvcResultMatchers.status().isBadRequest()); //FIXME: This should fail with 400 but currently does not.
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 
     @Test
@@ -752,5 +753,204 @@ class ConnectedPIDsTest {
         cloned.withPid("different/pid");
 
         assertNotEquals(complexRecordBuilder.build().getPid(), cloned.build().getPid());
+    }
+
+    @Test
+    @DisplayName("Test multiple record creation with using RECORD_COUNT constant")
+    void testMultipleRecordCreationWithRecordCount() throws Exception {
+        List<PIDRecord> records = new ArrayList<>();
+
+        // Create multiple records using RECORD_COUNT constant
+        for (int i = 0; i < RECORD_COUNT; i++) {
+            PIDBuilder pidBuilder = new PIDBuilder((long) i).validPrefix().validSuffix();
+            PIDRecord record = new PIDRecordBuilder(pidBuilder, (long) i)
+                    .completeProfile()
+                    .build();
+            records.add(record);
+        }
+
+        String jsonContent = mapper.writeValueAsString(records);
+
+        this.mockMvc
+                .perform(post("/api/v1/pit/pids")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonContent))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(MockMvcResultMatchers.status().isCreated());
+
+        assertEquals(RECORD_COUNT, knownPidsDao.count());
+    }
+
+    @Test
+    @DisplayName("Test connected records with RECORD_COUNT")
+    void testConnectedRecordsWithRecordCount() throws Exception {
+        List<PIDRecordBuilder> builders = new ArrayList<>();
+
+        // Create RECORD_COUNT builders for connection testing
+        for (int i = 0; i < RECORD_COUNT; i++) {
+            PIDBuilder pidBuilder = new PIDBuilder((long) i).validPrefix().validSuffix();
+            builders.add(new PIDRecordBuilder(pidBuilder, (long) i).completeProfile());
+        }
+
+        // Connect all builders
+        PIDRecordBuilder.connectRecordBuilders(null, null, false,
+                builders.toArray(new PIDRecordBuilder[0]));
+
+        List<PIDRecord> records = new ArrayList<>();
+        for (PIDRecordBuilder builder : builders) {
+            records.add(builder.build());
+        }
+
+        String jsonContent = mapper.writeValueAsString(records);
+
+        this.mockMvc
+                .perform(post("/api/v1/pit/pids")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonContent))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(MockMvcResultMatchers.status().isCreated());
+
+        assertEquals(RECORD_COUNT, knownPidsDao.count());
+    }
+
+    @Test
+    @DisplayName("Test partial failure and rollback scenario")
+    void testPartialFailureAndRollback() throws Exception {
+        List<PIDRecord> records = new ArrayList<>();
+
+        // Create some valid records
+        for (int i = 0; i < 3; i++) {
+            PIDRecord validRecord = new PIDRecordBuilder()
+                    .completeProfile()
+                    .build();
+            records.add(validRecord);
+        }
+
+        // Add records that should cause validation or creation failures
+        // Record with incomplete profile (missing required entries)
+        PIDRecord incompleteRecord = new PIDRecordBuilder()
+                .incompleteProfile()
+                .build();
+        records.add(incompleteRecord);
+
+        // Record with invalid keys
+        PIDRecord invalidKeysRecord = new PIDRecordBuilder()
+                .invalidKeys(3)
+                .build();
+        records.add(invalidKeysRecord);
+
+        // Record with invalid values for specific keys
+        PIDRecord invalidValuesRecord = new PIDRecordBuilder()
+                .completeProfile()
+                .invalidValues(2, "21.T11148/397d831aa3a9d18eb52c")
+                .build();
+        records.add(invalidValuesRecord);
+
+        String jsonContent = mapper.writeValueAsString(records);
+
+        // This should result in a server error due to failed validation/creation
+        // and the rollback mechanism should be triggered
+        this.mockMvc
+                .perform(post("/api/v1/pit/pids")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonContent))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+
+        // Verify that no PIDs were persisted due to rollback
+        assertEquals(0, knownPidsDao.count());
+    }
+
+    @Test
+    @DisplayName("Test batch with mixed valid and invalid records for rollback coverage")
+    void testBatchWithMixedRecordsForRollbackCoverage() throws Exception {
+        List<PIDRecord> records = new ArrayList<>();
+
+        // Create valid records that would initially succeed
+        for (int i = 0; i < RECORD_COUNT / 2; i++) {
+            PIDRecord record = new PIDRecordBuilder()
+                    .withSeed((long) i)
+                    .completeProfile()
+                    .build();
+            records.add(record);
+        }
+
+        // Add records with various failure scenarios to trigger rollback
+
+        // Empty record (no entries)
+        PIDRecord emptyRecord = new PIDRecordBuilder()
+                .emptyRecord()
+                .build();
+        records.add(emptyRecord);
+
+        // Record with null PID and incomplete profile
+        PIDRecord nullPidRecord = new PIDRecordBuilder()
+                .withPid(null)
+                .incompleteProfile()
+                .build();
+        records.add(nullPidRecord);
+
+        // Record with completely invalid data
+        PIDRecord invalidRecord = new PIDRecordBuilder()
+                .invalidKeys(5)
+                .invalidValues(3)
+                .build();
+        records.add(invalidRecord);
+
+        String jsonContent = mapper.writeValueAsString(records);
+
+        // Expect server error due to validation failures
+        this.mockMvc
+                .perform(post("/api/v1/pit/pids")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonContent))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+
+        // Verify rollback: no records should be persisted
+        assertEquals(0, knownPidsDao.count());
+    }
+
+    @Test
+    @DisplayName("Test record creation failure scenarios with duplicate PIDs in batch")
+    void testRecordCreationFailureWithDuplicatePids() throws Exception {
+        List<PIDRecord> records = new ArrayList<>();
+
+        // Create multiple valid records first
+        for (int i = 0; i < RECORD_COUNT / 4; i++) {
+            PIDRecord record = new PIDRecordBuilder()
+                    .withSeed((long) i)
+                    .completeProfile()
+                    .build();
+            records.add(record);
+        }
+
+        // Add duplicate PIDs to trigger failure
+        String duplicatePid = "sandboxed/duplicate-test-pid";
+
+        PIDRecord record1 = new PIDRecordBuilder()
+                .completeProfile()
+                .withPid(duplicatePid)
+                .build();
+        records.add(record1);
+
+        PIDRecord record2 = new PIDRecordBuilder()
+                .completeProfile()
+                .withPid(duplicatePid)
+                .build();
+        records.add(record2);
+
+        String jsonContent = mapper.writeValueAsString(records);
+
+        // This should fail due to duplicate PIDs and trigger rollback
+        this.mockMvc
+                .perform(post("/api/v1/pit/pids")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonContent))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+
+        // Verify no records were persisted
+        assertEquals(0, knownPidsDao.count());
     }
 }

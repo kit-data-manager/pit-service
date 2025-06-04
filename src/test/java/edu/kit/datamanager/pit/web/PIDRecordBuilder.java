@@ -190,7 +190,7 @@ public class PIDRecordBuilder implements Cloneable {
      * @return this builder
      */
     public PIDRecordBuilder incompleteProfile() {
-        this.addNotDuplicate(PROFILE_KEY, "21.T11148/301c6f04763a16f0f72a", "KernelInformationProfile", true);
+        this.addNotDuplicate(PROFILE_KEY, "21.T11148/b9b76f887845e32d29f7", "KernelInformationProfile", true);
 
         this.record.getEntries().keySet().forEach(key -> {
             if (KEYS_IN_PROFILE.contains(key)) {

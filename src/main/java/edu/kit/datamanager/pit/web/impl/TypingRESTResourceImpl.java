@@ -103,6 +103,13 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             LOG.warn("No records provided for PID creation.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.emptyList());
         }
+        if (rec.size() == 1) {
+            // If only one record is provided, we can use the single record creation method.
+            LOG.info("Only one record provided. Using single record creation method.");
+            var result = createPID(rec.getFirst(), dryrun, request, response, uriBuilder);
+            // Return the single record in a list
+            return ResponseEntity.status(result.getStatusCode()).headers(result.getHeaders()).body(Collections.singletonList(result.getBody()));
+        }
         Instant startTime = Instant.now();
         LOG.info("Creating PIDs for {} records.", rec.size());
         String prefix = this.typingService.getPrefix().orElseThrow(() -> new IOException("No prefix configured."));
