@@ -234,8 +234,11 @@ class ExplicitValidationParametersTest {
 
     @Test
     void testRecordWithAdditionalAttribute() throws Exception {
-        PIDRecord r = new PIDRecord();
-        r.addEntry("21.T11148/076759916209e5d62bd5", "for Testing", "21.T11148/301c6f04763a16f0f72a");
+        PIDRecord r = ApiMockUtils.getSomePidRecordInstance();
+        r.addEntry(
+                "21.T11969/86963861a2b249a83b93",
+                "additional attribute",
+                "{\"image-context-name\": \"itsa'me!\", \"image-context-uri\": \"https://example.com/mario\"}");
         this.mockMvc
             .perform(
                 post("/api/v1/pit/pid/")

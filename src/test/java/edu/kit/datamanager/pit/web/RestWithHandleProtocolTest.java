@@ -91,6 +91,7 @@ class RestWithHandleProtocolTest {
 
     @Test
     void testDryrunUpdateWithPidGiven() throws Exception {
+        // Get a real record
         String url = "/api/v1/pit/pid/21.11152/474a4b1c-de93-4d4a-b33d-1d32d63baf4b";
         MockHttpServletResponse response = this.mockMvc.perform(
             get(url).param("validation", "false")
@@ -100,14 +101,14 @@ class RestWithHandleProtocolTest {
             .andReturn()
             .getResponse();
         String etag = response.getHeader("ETag");
+
+        // Parse so we can edit the record easily
         PIDRecord record = mapper.readValue(response.getContentAsString(), PIDRecord.class);
+
         // fix record, it is actually invalid...
         record.removeAllValuesOf("URL");
-        // fix possible issue with this type in current state of type api
-        record.removeAllValuesOf("21.T11148/2f314c8fe5fb6a0063a8");
-        String licenseUrl = "21.T11969/e0efc41346cda4ba84ca";
-        record.removeAllValuesOf(licenseUrl);
-        record.addEntry(licenseUrl, "https://cdla.dev/permissive-2-0/");
+
+        // perform dryrun update
         this.mockMvc.perform(
             put(url)
                 .param("dryrun", "true")
