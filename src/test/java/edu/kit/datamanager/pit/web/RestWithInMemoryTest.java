@@ -150,6 +150,26 @@ class RestWithInMemoryTest {
     }
 
     @Test
+    @DisplayName("Test record with only a profile, no entries.")
+    void testRecordWithOnlyProfile() throws Exception {
+        PIDRecord incompleteRecord = new PIDRecord();
+        incompleteRecord.addEntry(
+                "21.T11148/076759916209e5d62bd5",
+                "kernelInformationProfile",
+                "21.T11148/b9b76f887845e32d29f7");
+
+        String jsonContent = new ObjectMapper().writeValueAsString(incompleteRecord);
+
+        this.mockMvc
+                .perform(post("/api/v1/pit/pid/")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .characterEncoding("utf-8")
+                        .content(jsonContent))
+                .andDo(MockMvcResultHandlers.print())
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("Testing PID Records with usual/larger size, with the InMemory PID system.")
     void testExtensiveRecord() throws Exception {
         // create mockup of a large record. It contains non-registered PIDs and can not be validated.
