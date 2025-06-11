@@ -13,10 +13,13 @@ public record RegisteredProfile(
         boolean allowAdditionalAttributes,
         ImmutableList<RegisteredProfileAttribute> attributes
 ) {
-
-    public void validateAttributes(PIDRecord pidRecord, boolean alwaysAllowAdditionalAttributes) {
+    public void validateAttributes(
+            PIDRecord pidRecord,
+            boolean alwaysAllowAdditionalAttributes
+    ) throws RecordValidationException
+    {
         Set<String> attributesNotDefinedInProfile = pidRecord.getPropertyIdentifiers().stream()
-                .filter(recordKey -> attributes.items().stream().anyMatch(
+                .filter(recordKey -> attributes.items().stream().noneMatch(
                         profileAttribute -> Objects.equals(profileAttribute.pid(), recordKey)))
                 .collect(Collectors.toSet());
 
