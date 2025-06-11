@@ -26,6 +26,7 @@ public record AttributeInfo(
 ) {
     public boolean validate(String value) {
         return this.jsonSchema().stream()
+                .filter(schemaInfo -> schemaInfo.error() == null)
                 .map(SchemaInfo::schema)
                 .filter(Objects::nonNull)
                 .anyMatch(schema -> validate(schema, value));
