@@ -4,6 +4,8 @@ import com.github.benmanes.caffeine.cache.AsyncLoadingCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import edu.kit.datamanager.pit.Application;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Set;
@@ -12,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class SchemaSetGenerator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SchemaSetGenerator.class);
     protected final Set<SchemaGenerator> GENERATORS;
     protected final AsyncLoadingCache<String, Set<SchemaInfo>> CACHE;
 
@@ -28,6 +31,15 @@ public class SchemaSetGenerator {
                 .expireAfterWrite(props.getCacheExpireAfterWriteLifetime(), TimeUnit.MINUTES)
                 .buildAsync(attributePid -> GENERATORS.stream()
                         .map(schemaGenerator -> schemaGenerator.generateSchema(attributePid))
+                        .peek(schemaInfo -> {
+                            if (schemaInfo.error() != null) {
+                                LOGGER.warn(
+                                        "Error when retrieving schema for attribute ({}): {}",
+                                        attributePid,
+                                        schemaInfo.error().getMessage());
+                            }
+                        }
+                        )
                         .collect(Collectors.toSet())
                 );
     }
