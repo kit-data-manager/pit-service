@@ -5,6 +5,8 @@ import com.networknt.schema.JsonSchema;
 import com.networknt.schema.ValidationMessage;
 import edu.kit.datamanager.pit.Application;
 import edu.kit.datamanager.pit.typeregistry.schema.SchemaInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -24,6 +26,8 @@ public record AttributeInfo(
         String typeName,
         Collection<SchemaInfo> jsonSchema
 ) {
+    private static final Logger log = LoggerFactory.getLogger(AttributeInfo.class);
+
     public boolean validate(String value) {
         return this.jsonSchema().stream()
                 .filter(schemaInfo -> schemaInfo.error() == null)
@@ -39,9 +43,12 @@ public record AttributeInfo(
                 // By default, since Draft 2019-09, the format keyword only generates annotations and not assertions
                 executionContext.getExecutionConfig().setFormatAssertionsEnabled(true);
             });
+            if (!errors.isEmpty()) {
+                log.warn("Validation errors for value '{}': {}", value, errors);
+            }
             return errors.isEmpty();
-            // TODO we could catch the validation errors here in order to return them to the user
         } catch (Exception e) {
+            log.error("Exception during validation for value '{}': {}", value, e.getMessage(), e);
             return false;
         }
     }
