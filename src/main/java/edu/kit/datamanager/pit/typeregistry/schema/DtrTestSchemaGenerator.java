@@ -68,7 +68,7 @@ public class DtrTestSchemaGenerator implements SchemaGenerator {
                                     .readTree(inputStream)
                                     .path("validationSchema");
                             schema = this.schemaFactory.getSchema(schemaDocument);
-                            if (schema == null || schema.getSchemaNode().isEmpty()) {
+                            if (schema == null || schema.getSchemaNode().isNull()) {
                                 throw new IOException("Could not create valid schema for %s from %s "
                                         .formatted(maybeTypePid, schemaDocument));
                             }

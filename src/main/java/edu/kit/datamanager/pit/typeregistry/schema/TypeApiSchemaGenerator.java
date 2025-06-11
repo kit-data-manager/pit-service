@@ -66,7 +66,7 @@ public class TypeApiSchemaGenerator implements SchemaGenerator {
                             JsonNode schemaDocument = Application.jsonObjectMapper()
                                     .readTree(inputStream);
                             schema = schemaFactory.getSchema(schemaDocument);
-                            if (schema == null || schema.getSchemaNode().isEmpty()) {
+                            if (schema == null || schema.getSchemaNode().isNull()) {
                                 throw new IOException("Could not create valid schema for %s from %s "
                                         .formatted(maybeTypePid, schemaDocument));
                             }
