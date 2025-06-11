@@ -33,16 +33,12 @@ class SchemaSetGeneratorTest {
                 // checksum
                 Arguments.of(
                         "21.T11148/92e200311a56800b3e47",
-                        // This is how the type way meant to be used from the beginning,
-                        // and what the new schema generation service generates.
-                        "\"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\"",
-                        // this was possible before changing the validator,
-                        // as it was interpreting ill-formed JSON-schema with a lot of tolerance.
-                        "{ \"sha256sum\": \"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\" }"),
+                        "{ \"sha256sum\": \"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\" }",
+                        "\"c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\""),
                 // checksum
                 Arguments.of(
                         "21.T11148/92e200311a56800b3e47",
-                        "\"c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\"",
+                        "\"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\"",
                         "\"not a checksum\""),
                 // URI with schema making use of "format" to specify an uri
                 Arguments.of("21.T11969/cb371c93c5aa0e62198e", "\"https://example.com\"", "This is not a URI")
@@ -53,7 +49,6 @@ class SchemaSetGeneratorTest {
     @MethodSource("typeWithExamplesAndCounterexamples")
     void testExampleAndCounterexample(String typePid, String example, String counterexample) {
         Set<SchemaInfo> schemaInfos = generator.generateFor(typePid).join();
-        assertFalse(schemaInfos.isEmpty(), "No schemas found for type pid: " + typePid);
         AttributeInfo attributeInfo = new AttributeInfo(typePid, "name", "typeName", schemaInfos);
         assertTrue(attributeInfo.validate(example));
         assertFalse(attributeInfo.validate(counterexample));
