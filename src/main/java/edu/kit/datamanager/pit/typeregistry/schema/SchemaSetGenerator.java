@@ -34,7 +34,8 @@ public class SchemaSetGenerator {
                         .peek(schemaInfo -> {
                             if (schemaInfo.error() != null) {
                                 LOGGER.warn(
-                                        "Error when retrieving schema for attribute ({}): {}",
+                                        "Error when retrieving schema from {} for attribute ({}): {}",
+                                        schemaInfo.origin(),
                                         attributePid,
                                         schemaInfo.error().getMessage());
                             }
