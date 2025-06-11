@@ -1,6 +1,8 @@
 package edu.kit.datamanager.pit.typeregistry;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.ValidationMessage;
 import edu.kit.datamanager.pit.Application;
@@ -38,7 +40,7 @@ public record AttributeInfo(
 
     private boolean validate(JsonSchema schema, String value) {
         try {
-            JsonNode toValidate = Application.jsonObjectMapper().readTree(value);
+            JsonNode toValidate = valueToJsonNode(value);
             Set<ValidationMessage> errors = schema.validate(toValidate, executionContext -> {
                 // By default, since Draft 2019-09, the format keyword only generates annotations and not assertions
                 executionContext.getExecutionConfig().setFormatAssertionsEnabled(true);
@@ -51,5 +53,25 @@ public record AttributeInfo(
             log.error("Exception during validation for value '{}': {}", value, e.getMessage(), e);
             return false;
         }
+    }
+
+    /**
+     * Converts the given value to a JsonNode.
+     *
+     * @param value the value to convert
+     * @return a JsonNode representation of the value
+     */
+    public static JsonNode valueToJsonNode(String value) {
+        JsonNode toValidate;
+        if (value.isBlank()) {
+            return new TextNode(value);
+        }
+        try {
+            toValidate = Application.jsonObjectMapper().readTree(value);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to parse value '{}' as JSON, treating it as a plain text node.", value);
+            toValidate = new TextNode(value);
+        }
+        return toValidate;
     }
 }
