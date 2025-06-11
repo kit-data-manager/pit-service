@@ -33,9 +33,9 @@ public record AttributeInfo(
     public boolean validate(String value) {
         return this.jsonSchema().stream()
                 .filter(schemaInfo -> schemaInfo.error() == null)
-                .map(SchemaInfo::schema)
-                .filter(Objects::nonNull)
-                .anyMatch(schema -> validate(schema, value));
+                .filter(schemaInfo -> schemaInfo.schema() != null)
+                .peek(schemaInfo -> log.warn("Found valid schema from {} to validate {} / {}.", schemaInfo.origin(), pid, value))
+                .anyMatch(schemaInfo -> this.validate(schemaInfo.schema(), value));
     }
 
     private boolean validate(JsonSchema schema, String value) {
