@@ -34,7 +34,7 @@ class SchemaSetGeneratorTest {
                 Arguments.of(
                         "21.T11148/92e200311a56800b3e47",
                         "{ \"sha256sum\": \"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\" }",
-                        "\"c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\""),
+                        "\"blabla c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\""),
                 // checksum
                 Arguments.of(
                         "21.T11148/92e200311a56800b3e47",

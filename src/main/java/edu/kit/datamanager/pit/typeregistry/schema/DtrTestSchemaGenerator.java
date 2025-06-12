@@ -29,7 +29,7 @@ public class DtrTestSchemaGenerator implements SchemaGenerator {
     protected static final String ORIGIN = "dtr-test";
     protected final URI baseUrl;
     protected final RestClient http;
-    JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
+    JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V4);
 
     public DtrTestSchemaGenerator(@NotNull ApplicationProperties props) {
         try {
@@ -64,14 +64,17 @@ public class DtrTestSchemaGenerator implements SchemaGenerator {
                     if (status.is2xxSuccessful()) {
                         JsonSchema schema = null;
                         try (InputStream inputStream = response.getBody()) {
-                            JsonNode schemaDocument = Application.jsonObjectMapper()
-                                    .readTree(inputStream)
-                                    .path("validationSchema");
-                            schema = this.schemaFactory.getSchema(schemaDocument);
-                            if (schema == null || schema.getSchemaNode().isNull()) {
-                                throw new IOException("Could not create valid schema for %s from %s "
-                                        .formatted(maybeTypePid, schemaDocument));
+                            JsonNode schemaNode = Application.jsonObjectMapper().readTree(
+                                    Application.jsonObjectMapper()
+                                            .readTree(inputStream)
+                                            .path("validationSchema")
+                                            .asText());
+                            schema = this.schemaFactory.getSchema(schemaNode);
+                            if (schema == null || schema.getSchemaNode().isMissingNode() || schema.getSchemaNode().isTextual()) {
+                                throw new IOException(ORIGIN + "could not create valid schema for %s from %s "
+                                        .formatted(maybeTypePid, schemaNode));
                             }
+                            schema.initializeValidators();
                         } catch (IOException e) {
                             return new SchemaInfo(
                                     ORIGIN,
