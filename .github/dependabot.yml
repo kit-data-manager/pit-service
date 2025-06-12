@@ -6,10 +6,14 @@
 version: 2
 updates:
   - package-ecosystem: "gradle" # See documentation for possible values
+    target-branch: "development"
+    open-pull-requests-limit: 0 # PRs disabled, we currently use Renovate
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
   - package-ecosystem: "github-actions"
+    target-branch: "development"
+    open-pull-requests-limit: 0 # PRs disabled, we currently use Renovate
     directory: "/"
     schedule:
       interval: "weekly"
