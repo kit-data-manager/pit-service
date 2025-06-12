@@ -31,6 +31,7 @@ tasks.register('updateCff') {
     group = 'release'
     description = 'Updates the version in CITATION.cff file'
 
+    inputs.file("CITATION.cff")
     outputs.file("CITATION.cff")
 
     doLast {
