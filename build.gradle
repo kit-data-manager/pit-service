@@ -26,7 +26,7 @@ plugins {
 
 lombok {
     // check here for new versions: https://projectlombok.org/download
-    version = '1.18.30'
+    version = '1.18.38'
 }
 
 jacoco {
