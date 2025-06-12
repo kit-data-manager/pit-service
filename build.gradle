@@ -223,3 +223,5 @@ tasks.withType(Jar).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUD
 tasks.withType(Tar).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
 tasks.withType(Copy).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
 tasks.withType(Zip).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
+
+apply from: 'gradle/updateCff.gradle'
