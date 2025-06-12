@@ -81,7 +81,7 @@ dependencies {
     implementation "org.springframework.data:spring-data-elasticsearch"
 
     // More flexibility when (de-)serializing json:
-    implementation(group: 'com.networknt', name: 'json-schema-validator', version: '1.5.5');
+    implementation(group: 'com.networknt', name: 'json-schema-validator', version: '1.5.7');
     
     implementation('org.apache.httpcomponents:httpclient:4.5.14')
     implementation('org.apache.httpcomponents:httpclient-cache:4.5.14')
