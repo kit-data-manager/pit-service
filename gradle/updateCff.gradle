@@ -45,14 +45,14 @@ tasks.register('updateCff') {
         }
 
         // Update or insert version
-        if (content.contains('\nversion:')) {
+        if (content =~ /(?m)^version:/) {
             content = content.replaceAll(/(?m)^version:\s*.+$/, "version: ${version}")
         } else {
             content = content + "version: ${version}\n"
         }
 
         // Update or insert date-released
-        if (content.contains('\ndate-released:')) {
+        if (content =~ /(?m)^date-released:/) {
             content = content.replaceAll(/(?m)^date-released:\s*.+$/, "date-released: ${today}")
         } else {
             content = content + "date-released: ${today}\n"
