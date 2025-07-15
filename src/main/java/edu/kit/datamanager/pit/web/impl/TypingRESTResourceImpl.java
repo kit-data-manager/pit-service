@@ -30,6 +30,7 @@ import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.resolver.Resolver;
+import edu.kit.datamanager.pit.web.BatchRecordResponse;
 import edu.kit.datamanager.pit.web.ITypingRestResource;
 import edu.kit.datamanager.pit.web.TabulatorPaginationFormat;
 import edu.kit.datamanager.service.IMessagingService;
@@ -92,7 +93,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
-    public ResponseEntity<List<PIDRecord>> createPIDs(
+    public ResponseEntity<BatchRecordResponse> createPIDs(
             List<PIDRecord> rec,
             boolean dryrun,
             WebRequest request,
@@ -101,14 +102,15 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     ) throws IOException, RecordValidationException, ExternalServiceException {
         if (rec == null || rec.isEmpty()) {
             LOG.warn("No records provided for PID creation.");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.emptyList());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new BatchRecordResponse(Collections.emptyList(), Collections.emptyMap()));
         }
         if (rec.size() == 1) {
             // If only one record is provided, we can use the single record creation method.
             LOG.info("Only one record provided. Using single record creation method.");
             var result = createPID(rec.getFirst(), dryrun, request, response, uriBuilder);
             // Return the single record in a list
-            return ResponseEntity.status(result.getStatusCode()).headers(result.getHeaders()).body(Collections.singletonList(result.getBody()));
+            assert result.getBody() != null;
+            return ResponseEntity.status(result.getStatusCode()).headers(result.getHeaders()).body(new BatchRecordResponse(Collections.singletonList(result.getBody()), Collections.singletonMap(rec.getFirst().getPid(), result.getBody().getPid())));
         }
         Instant startTime = Instant.now();
         LOG.info("Creating PIDs for {} records.", rec.size());
@@ -128,7 +130,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             LOG.info("-- Time taken for mapping: {} ms", ChronoUnit.MILLIS.between(startTime, mappingTime));
             LOG.info("-- Time taken for validation: {} ms", ChronoUnit.MILLIS.between(mappingTime, validationTime));
             LOG.info("Dryrun finished. Returning validated records for {} records.", validatedRecords.size());
-            return ResponseEntity.status(HttpStatus.OK).body(validatedRecords);
+            return ResponseEntity.status(HttpStatus.OK).body(new BatchRecordResponse(validatedRecords, pidMappings));
         }
 
         List<PIDRecord> failedRecords = new ArrayList<>();
@@ -184,10 +186,10 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             }
 
             LOG.info("Creation finished. Returning validated records for {} records. {} records failed to be created.", validatedRecords.size(), failedRecords.size());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(failedRecords);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new BatchRecordResponse(failedRecords, pidMappings));
         } else {
             LOG.info("Creation finished. Returning validated records for {} records.", validatedRecords.size());
-            return ResponseEntity.status(HttpStatus.CREATED).body(validatedRecords);
+            return ResponseEntity.status(HttpStatus.CREATED).body(new BatchRecordResponse(validatedRecords, pidMappings));
         }
     }
 
@@ -197,11 +199,10 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
      * @param rec    the list of records produced by the user
      * @param dryrun whether the operation is a dryrun or not
      * @return a map between the user-provided PIDs (key) and the real PIDs (values)
-     * @throws IOException               if the prefix is not configured
      * @throws RecordValidationException if the same internal PID is used for multiple records
      * @throws ExternalServiceException  if the PID generation fails
      */
-    private Map<String, String> generatePIDMapping(List<PIDRecord> rec, boolean dryrun) throws IOException, RecordValidationException, ExternalServiceException {
+    private Map<String, String> generatePIDMapping(List<PIDRecord> rec, boolean dryrun) throws RecordValidationException, ExternalServiceException {
         Map<String, String> pidMappings = new HashMap<>();
         for (PIDRecord pidRecord : rec) {
             String internalPID = pidRecord.getPid(); // the internal PID is the one given by the user
@@ -264,7 +265,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder
-    ) throws IOException {
+    ) {
         LOG.info("Creating PID");
 
         if (dryrun) {
@@ -304,7 +305,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return pidRecord.getPid() != null && !pidRecord.getPid().isBlank();
     }
 
-    private void setPid(PIDRecord pidRecord) throws IOException {
+    private void setPid(PIDRecord pidRecord) {
         boolean hasCustomPid = hasPid(pidRecord);
         boolean allowsCustomPids = pidGenerationProperties.isCustomClientPidsEnabled();
 
@@ -344,7 +345,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder
-    ) throws IOException {
+    ) {
         // PID validation
         String pid = getContentPathFromRequest("pid", request);
         String pidInternal = pidRecord.getPid();
@@ -427,7 +428,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final WebRequest request,
             final HttpServletResponse response,
             final UriComponentsBuilder uriBuilder
-    ) throws IOException {
+    ) {
         String pid = getContentPathFromRequest("pid", request);
         PIDRecord pidRecord = this.resolver.resolve(pid);
         if (applicationProps.getStorageStrategy().storesResolved()) {
@@ -456,10 +457,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     ) throws IOException {
         String pid = getContentPathFromRequest("known-pid", request);
         Optional<KnownPid> known = this.localPidStorage.findByPid(pid);
-        if (known.isPresent()) {
-            return ResponseEntity.ok().body(known.get());
-        }
-        return ResponseEntity.notFound().build();
+        return known
+                .map(knownPid -> ResponseEntity.ok().body(knownPid))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     public Page<KnownPid> findAllPage(
@@ -515,7 +515,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             Pageable pageable,
             WebRequest request,
             HttpServletResponse response,
-            UriComponentsBuilder uriBuilder) throws IOException {
+            UriComponentsBuilder uriBuilder) {
         Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
         response.addHeader(
                 HeaderConstants.CONTENT_RANGE,
@@ -535,7 +535,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             Pageable pageable,
             WebRequest request,
             HttpServletResponse response,
-            UriComponentsBuilder uriBuilder) throws IOException {
+            UriComponentsBuilder uriBuilder) {
         Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
         response.addHeader(
                 HeaderConstants.CONTENT_RANGE,

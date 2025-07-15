@@ -18,12 +18,8 @@
 package edu.kit.datamanager.pit.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
-import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
-import edu.kit.datamanager.pit.pitservice.ITypingService;
-import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,8 +35,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,9 +48,6 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppC
 @TestPropertySource("/test/application-test.properties")
 @ActiveProfiles("test")
 class ConnectedPIDsTest {
-    private static final Instant NOW = Instant.now().plus(1, ChronoUnit.MINUTES).truncatedTo(ChronoUnit.MILLIS);
-    private static final Instant YESTERDAY = NOW.minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
-    private static final Instant TOMORROW = NOW.plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS);
     private static final int RECORD_COUNT = 16;
     private static final int LARGE_RECORD_COUNT = 200;
 
@@ -68,22 +59,14 @@ class ConnectedPIDsTest {
     };
 
     @Autowired
-    ITypingService typingService;
-    @Autowired
-    ITypeRegistry typeRegistry;
-    @Autowired
     private WebApplicationContext webApplicationContext;
-    @Autowired
-    private PidSuffixGenerator pidGenerator;
-    @Autowired
-    private ApplicationProperties appProps;
     private MockMvc mockMvc;
     private ObjectMapper mapper;
     @Autowired
     private KnownPidsDao knownPidsDao;
 
     @BeforeEach
-    void setup() throws Exception {
+    void setup() {
         this.mockMvc = webAppContextSetup(webApplicationContext).build();
         this.mapper = new ObjectMapper();
         knownPidsDao.deleteAll();
@@ -91,10 +74,10 @@ class ConnectedPIDsTest {
 
     @Test
     void checkTestSetup() {
-        assertNotNull(mockMvc);
-        assertNotNull(mapper);
-        assertNotNull(knownPidsDao);
-        assertEquals(0, knownPidsDao.count());
+        assertNotNull(mockMvc, "MockMvc should be initialized");
+        assertNotNull(mapper, "Object mapper should be initialized");
+        assertNotNull(knownPidsDao, "KnownPidsDao should be initialized");
+        assertEquals(0, knownPidsDao.count(), "Database should be empty at test start");
     }
 
     @Test
@@ -104,78 +87,78 @@ class ConnectedPIDsTest {
 
         // Test default constructor
         PIDBuilder defaultBuilder = new PIDBuilder();
-        assertNotNull(defaultBuilder);
-        assertNotNull(defaultBuilder.build());
+        assertNotNull(defaultBuilder, "Default PIDBuilder constructor should create non-null instance");
+        assertNotNull(defaultBuilder.build(), "Default PIDBuilder should build non-null PID");
 
         // Test constructor with seed
         PIDBuilder seededBuilder = new PIDBuilder(testSeed);
-        assertNotNull(seededBuilder);
-        assertEquals(testSeed, seededBuilder.seed);
+        assertNotNull(seededBuilder, "Seeded PIDBuilder constructor should create non-null instance");
+        assertEquals(testSeed, seededBuilder.seed, "Seeded PIDBuilder should have the correct seed value");
 
         // Test withSeed method
         PIDBuilder seedModified = new PIDBuilder().withSeed(testSeed);
-        assertEquals(testSeed, seedModified.seed);
+        assertEquals(testSeed, seedModified.seed, "withSeed method should set the correct seed value");
 
         // Test all prefix methods
         PIDBuilder validPrefixBuilder = new PIDBuilder(testSeed).validPrefix();
         String validPid = validPrefixBuilder.build();
-        assertTrue(validPid.startsWith("sandboxed/"));
+        assertTrue(validPid.startsWith("sandboxed/"), "validPrefix should create PID starting with 'sandboxed/'");
 
         PIDBuilder unauthorizedPrefixBuilder = new PIDBuilder(testSeed).unauthorizedPrefix();
         String unauthorizedPid = unauthorizedPrefixBuilder.build();
-        assertTrue(unauthorizedPid.startsWith("0.NA/"));
+        assertTrue(unauthorizedPid.startsWith("0.NA/"), "unauthorizedPrefix should create PID starting with '0.NA/'");
 
         PIDBuilder emptyPrefixBuilder = new PIDBuilder(testSeed).emptyPrefix();
         String emptyPrefixPid = emptyPrefixBuilder.build();
-        assertTrue(emptyPrefixPid.startsWith("/"));
+        assertTrue(emptyPrefixPid.startsWith("/"), "emptyPrefix should create PID starting with '/'");
 
         PIDBuilder invalidPrefixBuilder = new PIDBuilder(testSeed).invalidCharactersPrefix();
         String invalidPrefixPid = invalidPrefixBuilder.build();
-        assertNotNull(invalidPrefixPid);
+        assertNotNull(invalidPrefixPid, "invalidCharactersPrefix should create non-null PID");
 
         // Test withPrefix method
         PIDBuilder customPrefixBuilder = new PIDBuilder(testSeed).withPrefix("custom.prefix");
         String customPrefixPid = customPrefixBuilder.build();
-        assertTrue(customPrefixPid.startsWith("custom.prefix/"));
+        assertTrue(customPrefixPid.startsWith("custom.prefix/"), "withPrefix should create PID starting with the specified prefix");
 
         // Test all suffix methods
         PIDBuilder validSuffixBuilder = new PIDBuilder(testSeed).validPrefix().validSuffix();
         String validSuffixPid = validSuffixBuilder.build();
-        assertNotNull(validSuffixPid);
+        assertNotNull(validSuffixPid, "validSuffix should create non-null PID");
 
         PIDBuilder emptySuffixBuilder = new PIDBuilder(testSeed).validPrefix().emptySuffix();
         String emptySuffixPid = emptySuffixBuilder.build();
-        assertTrue(emptySuffixPid.endsWith("/"));
+        assertTrue(emptySuffixPid.endsWith("/"), "emptySuffix should create PID ending with '/'");
 
         PIDBuilder invalidSuffixBuilder = new PIDBuilder(testSeed).validPrefix().invalidCharactersSuffix();
         String invalidSuffixPid = invalidSuffixBuilder.build();
-        assertNotNull(invalidSuffixPid);
+        assertNotNull(invalidSuffixPid, "invalidCharactersSuffix should create non-null PID");
 
         // Test withSuffix method
         PIDBuilder customSuffixBuilder = new PIDBuilder(testSeed).validPrefix().withSuffix("custom-suffix");
         String customSuffixPid = customSuffixBuilder.build();
-        assertTrue(customSuffixPid.endsWith("custom-suffix"));
+        assertTrue(customSuffixPid.endsWith("custom-suffix"), "withSuffix should create PID ending with the specified suffix");
 
         // Test clone method
         PIDBuilder originalBuilder = new PIDBuilder(testSeed).validPrefix().validSuffix();
         PIDBuilder clonedBuilder = originalBuilder.clone();
-        assertEquals(originalBuilder.build(), clonedBuilder.build());
-        assertNotSame(originalBuilder, clonedBuilder);
+        assertEquals(originalBuilder.build(), clonedBuilder.build(), "Cloned builder should produce the same PID");
+        assertNotSame(originalBuilder, clonedBuilder, "Cloned builder should be a different instance");
 
         // Test clone(PIDBuilder) method
         PIDBuilder targetBuilder = new PIDBuilder();
         targetBuilder.clone(originalBuilder);
-        assertEquals(originalBuilder.build(), targetBuilder.build());
+        assertEquals(originalBuilder.build(), targetBuilder.build(), "Target builder should produce the same PID after cloning");
 
         // Test equals and hashCode
         PIDBuilder builder1 = new PIDBuilder(testSeed).validPrefix().validSuffix();
         PIDBuilder builder2 = new PIDBuilder(testSeed).validPrefix().validSuffix();
-        assertEquals(builder1, builder2);
-        assertEquals(builder1.hashCode(), builder2.hashCode());
+        assertEquals(builder1, builder2, "Builders with same configuration should be equal");
+        assertEquals(builder1.hashCode(), builder2.hashCode(), "Equal builders should have same hash code");
 
         // Test toString
-        assertNotNull(originalBuilder.toString());
-        assertTrue(originalBuilder.toString().contains("PIDBuilder"));
+        assertNotNull(originalBuilder.toString(), "toString should not return null");
+        assertTrue(originalBuilder.toString().contains("PIDBuilder"), "toString should contain class name");
     }
 
     @Test
@@ -185,97 +168,97 @@ class ConnectedPIDsTest {
 
         // Test default constructor
         PIDRecordBuilder defaultBuilder = new PIDRecordBuilder();
-        assertNotNull(defaultBuilder);
-        assertNotNull(defaultBuilder.build());
+        assertNotNull(defaultBuilder, "Default PIDRecordBuilder constructor should create non-null instance");
+        assertNotNull(defaultBuilder.build(), "Default PIDRecordBuilder should build non-null record");
 
         // Test constructor with PIDBuilder
         PIDBuilder pidBuilder = new PIDBuilder(testSeed).validPrefix().validSuffix();
         PIDRecordBuilder builderWithPid = new PIDRecordBuilder(pidBuilder);
-        assertNotNull(builderWithPid);
-        assertEquals(pidBuilder.build(), builderWithPid.build().getPid());
+        assertNotNull(builderWithPid, "PIDRecordBuilder with PIDBuilder should create non-null instance");
+        assertEquals(pidBuilder.build(), builderWithPid.build().getPid(), "PIDRecordBuilder should use PID from provided PIDBuilder");
 
         // Test constructor with PIDBuilder and seed
         PIDRecordBuilder builderWithSeed = new PIDRecordBuilder(pidBuilder, testSeed);
-        assertNotNull(builderWithSeed);
-        assertEquals(testSeed, builderWithSeed.seed);
+        assertNotNull(builderWithSeed, "PIDRecordBuilder with PIDBuilder and seed should create non-null instance");
+        assertEquals(testSeed, builderWithSeed.seed, "PIDRecordBuilder should store the provided seed");
 
         // Test withSeed method
         PIDRecordBuilder seedModified = new PIDRecordBuilder().withSeed(testSeed);
-        assertEquals(testSeed, seedModified.seed);
+        assertEquals(testSeed, seedModified.seed, "withSeed method should set the correct seed value");
 
         // Test withPid method
         String customPid = "test/custom-pid";
         PIDRecordBuilder pidModified = new PIDRecordBuilder().withPid(customPid);
-        assertEquals(customPid, pidModified.build().getPid());
+        assertEquals(customPid, pidModified.build().getPid(), "withPid method should set the custom PID value");
 
-        // Test completeProfile method
+        // Test the completeProfile method
         PIDRecordBuilder profileBuilder = new PIDRecordBuilder().completeProfile();
         PIDRecord profileRecord = profileBuilder.build();
-        assertNotNull(profileRecord);
-        assertTrue(profileRecord.getEntries().size() > 0);
+        assertNotNull(profileRecord, "completeProfile should produce a non-null record");
+        assertFalse(profileRecord.getEntries().isEmpty(), "completeProfile should generate record entries");
 
         // Test incompleteProfile method
         PIDRecordBuilder incompleteBuilder = new PIDRecordBuilder().incompleteProfile();
         PIDRecord incompleteRecord = incompleteBuilder.build();
-        assertNotNull(incompleteRecord);
+        assertNotNull(incompleteRecord, "incompleteProfile should produce a non-null record");
 
         // Test invalidValues method with different parameters
         PIDRecordBuilder invalidValuesBuilder1 = new PIDRecordBuilder().invalidValues(3);
         PIDRecord invalidRecord1 = invalidValuesBuilder1.build();
-        assertNotNull(invalidRecord1);
+        assertNotNull(invalidRecord1, "invalidValues(3) should produce a non-null record");
 
         PIDRecordBuilder invalidValuesBuilder2 = new PIDRecordBuilder().invalidValues(2, "21.T11148/397d831aa3a9d18eb52c");
         PIDRecord invalidRecord2 = invalidValuesBuilder2.build();
-        assertNotNull(invalidRecord2);
+        assertNotNull(invalidRecord2, "invalidValues with specific key should produce a non-null record");
 
         PIDRecordBuilder invalidValuesBuilder3 = new PIDRecordBuilder().invalidValues(0);
         PIDRecord invalidRecord3 = invalidValuesBuilder3.build();
-        assertNotNull(invalidRecord3);
+        assertNotNull(invalidRecord3, "invalidValues(0) should produce a non-null record");
 
         // Test invalidKeys method
         PIDRecordBuilder invalidKeysBuilder = new PIDRecordBuilder().invalidKeys(3);
         PIDRecord invalidKeysRecord = invalidKeysBuilder.build();
-        assertNotNull(invalidKeysRecord);
-        assertTrue(invalidKeysRecord.getEntries().size() >= 3);
+        assertNotNull(invalidKeysRecord, "invalidKeys should produce a non-null record");
+        assertTrue(invalidKeysRecord.getEntries().size() >= 3, "invalidKeys(3) should generate at least 3 entries");
 
         // Test emptyRecord method
         PIDRecordBuilder emptyBuilder = new PIDRecordBuilder().completeProfile().emptyRecord();
         PIDRecord emptyRecord = emptyBuilder.build();
-        assertNotNull(emptyRecord);
-        assertEquals(0, emptyRecord.getEntries().size());
+        assertNotNull(emptyRecord, "emptyRecord should produce a non-null record");
+        assertEquals(0, emptyRecord.getEntries().size(), "emptyRecord should have no entries");
 
         // Test nullRecord method
         PIDRecordBuilder nullBuilder = new PIDRecordBuilder().nullRecord();
-        assertThrows(Exception.class, () -> nullBuilder.build());
+        assertThrows(Exception.class, nullBuilder::build, "nullRecord should throw exception when built");
 
         // Test withPIDRecord method
         PIDRecord existingRecord = new PIDRecord().withPID("test/existing");
         existingRecord.addEntry("test.key", "test.value");
         PIDRecordBuilder recordBuilder = new PIDRecordBuilder().withPIDRecord(existingRecord);
-        assertEquals(existingRecord.getPid(), recordBuilder.build().getPid());
+        assertEquals(existingRecord.getPid(), recordBuilder.build().getPid(), "withPIDRecord should use PID from existing record");
 
         // Test clone method
         PIDRecordBuilder originalRecordBuilder = new PIDRecordBuilder().completeProfile();
         PIDRecordBuilder clonedRecordBuilder = originalRecordBuilder.clone();
-        assertNotSame(originalRecordBuilder, clonedRecordBuilder);
-        assertEquals(originalRecordBuilder.seed, clonedRecordBuilder.seed);
+        assertNotSame(originalRecordBuilder, clonedRecordBuilder, "Cloned builder should be a different instance");
+        assertEquals(originalRecordBuilder.seed, clonedRecordBuilder.seed, "Cloned builder should have the same seed");
 
         // Test equals and hashCode
         PIDRecordBuilder builder1 = new PIDRecordBuilder(null, testSeed).completeProfile();
         PIDRecordBuilder builder2 = new PIDRecordBuilder(null, testSeed).completeProfile();
         // Note: equals might not be equal due to random elements, but we test the method exists
-        assertNotNull(builder1.equals(builder2));
-        assertNotNull(builder1.hashCode());
+        assertEquals(builder1, builder2, "Builders with same configuration should be equal");
+        assertNotEquals(0, builder1.hashCode(), "hashCode should not return null");
 
         // Test toString
-        assertNotNull(originalRecordBuilder.toString());
-        assertTrue(originalRecordBuilder.toString().contains("PIDRecordBuilder"));
+        assertNotNull(originalRecordBuilder.toString(), "toString should not return null");
+        assertTrue(originalRecordBuilder.toString().contains("PIDRecordBuilder"), "toString should contain class name");
     }
 
     @Test
     @DisplayName("Test PIDRecordBuilder connection functionality")
     void testPIDRecordBuilderConnections() {
-        Long testSeed = 111L;
+        long testSeed = 111L;
 
         // Create multiple builders for connection testing
         PIDRecordBuilder builder1 = new PIDRecordBuilder(null, testSeed).completeProfile();
@@ -287,28 +270,28 @@ class ConnectedPIDsTest {
         builder1.addConnection(connectionKey, false, builder2, builder3);
 
         PIDRecord connectedRecord = builder1.build();
-        assertTrue(connectedRecord.hasProperty(connectionKey));
+        assertTrue(connectedRecord.hasProperty(connectionKey), "Record should have the connection property after addConnection");
 
-        // Test addConnection with replace
+        // Test addConnection with replacement
         builder1.addConnection(connectionKey, true, builder2);
         PIDRecord replacedRecord = builder1.build();
-        assertTrue(replacedRecord.hasProperty(connectionKey));
+        assertTrue(replacedRecord.hasProperty(connectionKey), "Record should have connection property after replace");
 
         // Test addConnection error case
         assertThrows(IllegalArgumentException.class, () ->
-                builder1.addConnection(connectionKey, false));
+                builder1.addConnection(connectionKey, false), "addConnection should throw exception when no builders provided");
 
         // Test connectRecordBuilders static method with default keys
         List<PIDRecordBuilder> connectedBuilders = PIDRecordBuilder.connectRecordBuilders(
                 null, null, false, builder1, builder2, builder3);
 
-        assertEquals(3, connectedBuilders.size());
+        assertEquals(3, connectedBuilders.size(), "connectRecordBuilders should return the same number of builders");
 
         // Verify connections were established
         for (PIDRecordBuilder builder : connectedBuilders) {
             PIDRecord record = builder.build();
             assertTrue(record.hasProperty("21.T11148/d0773859091aeb451528") ||
-                    record.hasProperty("21.T11148/4fe7cde52629b61e3b82"));
+                    record.hasProperty("21.T11148/4fe7cde52629b61e3b82"), "Connected records should have forward or backward connection property");
         }
 
         // Test connectRecordBuilders with custom keys
@@ -318,18 +301,18 @@ class ConnectedPIDsTest {
         List<PIDRecordBuilder> customConnectedBuilders = PIDRecordBuilder.connectRecordBuilders(
                 "custom.forward.key", "custom.backward.key", true, builder4, builder5);
 
-        assertEquals(2, customConnectedBuilders.size());
+        assertEquals(2, customConnectedBuilders.size(), "connectRecordBuilders with custom keys should return the correct number of builders");
 
         // Test connectRecordBuilders error case
         assertThrows(IllegalArgumentException.class, () ->
-                PIDRecordBuilder.connectRecordBuilders(null, null, false, builder1));
+                PIDRecordBuilder.connectRecordBuilders(null, null, false, builder1), "connectRecordBuilders should throw exception with single builder");
     }
 
     @Test
     @DisplayName("Test valid connected records creation")
     void checkValidConnectedRecords() throws Exception {
         // Create connected records using all builder functionality
-        Long baseSeed = 12345L;
+        long baseSeed = 12345L;
 
         List<PIDRecord> records = new ArrayList<>();
 
@@ -363,10 +346,16 @@ class ConnectedPIDsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonContent))
                 .andDo(MockMvcResultHandlers.print())
-                .andExpect(MockMvcResultMatchers.status().isCreated());
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").isArray())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords.length()").value(records.size()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.mapping").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.mapping").isMap());
 
-        assertEquals(records.size(), knownPidsDao.count());
+        assertEquals(records.size(), knownPidsDao.count(), "Number of stored records should match the number of records submitted");
     }
+
 
     @Test
     @DisplayName("Test single valid record creation")
@@ -390,10 +379,15 @@ class ConnectedPIDsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonContent))
                 .andDo(MockMvcResultHandlers.print())
-                .andExpect(MockMvcResultMatchers.status().isCreated());
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").isArray())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords.length()").value(1))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.mapping").exists());
 
-        assertEquals(1, knownPidsDao.count());
+        assertEquals(1, knownPidsDao.count(), "Exactly one record should be stored in the database");
     }
+
 
     @Test
     @DisplayName("Test empty list")
@@ -408,7 +402,7 @@ class ConnectedPIDsTest {
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
 
-        assertEquals(0, knownPidsDao.count());
+        assertEquals(0, knownPidsDao.count(), "No records should be stored in database when submitting an empty list");
     }
 
     @Test
@@ -427,9 +421,12 @@ class ConnectedPIDsTest {
                         .content(jsonContent)
                         .param("dryrun", "true"))
                 .andDo(MockMvcResultHandlers.print())
-                .andExpect(MockMvcResultMatchers.status().isOk());
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").isArray())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.mapping").exists());
 
-        assertEquals(0, knownPidsDao.count());
+        assertEquals(0, knownPidsDao.count(), "No records should be stored in database when using dryrun mode");
     }
 
     @Test
@@ -479,9 +476,13 @@ class ConnectedPIDsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonContent))
                 .andDo(MockMvcResultHandlers.print())
-                .andExpect(MockMvcResultMatchers.status().isCreated());
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").isArray())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords.length()").value(2))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.mapping").exists());
 
-        assertEquals(2, knownPidsDao.count());
+        assertEquals(2, knownPidsDao.count(), "Both circularly connected records should be stored in the database");
     }
 
     @Test
@@ -508,7 +509,7 @@ class ConnectedPIDsTest {
     @Test
     @DisplayName("Test records with missing entries")
     void testRecordsWithMissingEntries() throws Exception {
-        // Create incomplete record
+        // Create an incomplete record
         PIDRecord incompleteRecord = new PIDRecordBuilder()
                 .incompleteProfile()
                 .build();
@@ -550,9 +551,13 @@ class ConnectedPIDsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonContent))
                 .andDo(MockMvcResultHandlers.print())
-                .andExpect(MockMvcResultMatchers.status().isCreated());
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").isArray())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords.length()").value(LARGE_RECORD_COUNT))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.mapping").exists());
 
-        assertEquals(LARGE_RECORD_COUNT, knownPidsDao.count());
+        assertEquals(LARGE_RECORD_COUNT, knownPidsDao.count(), "All records from large batch should be stored in the database");
     }
 
     @Test
@@ -573,10 +578,15 @@ class ConnectedPIDsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonContent))
                 .andDo(MockMvcResultHandlers.print())
-                .andExpect(MockMvcResultMatchers.status().isCreated());
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").isArray())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords.length()").value(1))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.mapping").exists());
 
-        assertEquals(1, knownPidsDao.count());
+        assertEquals(1, knownPidsDao.count(), "Record with external reference should be stored in the database");
     }
+
 
     @Test
     @DisplayName("Test records with mixed connection types")
@@ -598,9 +608,13 @@ class ConnectedPIDsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonContent))
                 .andDo(MockMvcResultHandlers.print())
-                .andExpect(MockMvcResultMatchers.status().isCreated());
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").isArray())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords.length()").value(3))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.mapping").exists());
 
-        assertEquals(3, knownPidsDao.count());
+        assertEquals(3, knownPidsDao.count(), "All three records with mixed connection types should be stored in the database");
     }
 
     @Test
@@ -619,7 +633,11 @@ class ConnectedPIDsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonContent))
                 .andDo(MockMvcResultHandlers.print())
-                .andExpect(MockMvcResultMatchers.status().isCreated());
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").isArray())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords.length()").value(1))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.mapping").exists());
     }
 
     @Test
@@ -639,12 +657,12 @@ class ConnectedPIDsTest {
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(MockMvcResultMatchers.status().isCreated());
 
-        assertEquals(1, knownPidsDao.count());
+        assertEquals(1, knownPidsDao.count(), "One record should be stored in the database");
 
         // Verify the PID was actually stored
-        String storedPid = knownPidsDao.findAll().get(0).getPid();
-        assertNotNull(storedPid);
-        assertFalse(storedPid.isEmpty());
+        String storedPid = knownPidsDao.findAll().getFirst().getPid();
+        assertNotNull(storedPid, "Stored PID should not be null");
+        assertFalse(storedPid.isEmpty(), "Stored PID should not be empty");
     }
 
     @Test
@@ -658,29 +676,29 @@ class ConnectedPIDsTest {
                 .unauthorizedPrefix()
                 .validSuffix();
         String unauthorizedValidPid = unauthorizedValid.build();
-        assertTrue(unauthorizedValidPid.startsWith("0.NA/"));
+        assertTrue(unauthorizedValidPid.startsWith("0.NA/"), "Unauthorized prefix with valid suffix should start with '0.NA/'");
 
         // Test empty prefix with empty suffix
         PIDBuilder emptyEmpty = new PIDBuilder(seed)
                 .emptyPrefix()
                 .emptySuffix();
         String emptyEmptyPid = emptyEmpty.build();
-        assertEquals("/", emptyEmptyPid);
+        assertEquals("/", emptyEmptyPid, "Empty prefix with empty suffix should result in just '/'");
 
         // Test invalid characters combinations
         PIDBuilder invalidCombination = new PIDBuilder(seed)
                 .invalidCharactersPrefix()
                 .invalidCharactersSuffix();
         String invalidPid = invalidCombination.build();
-        assertNotNull(invalidPid);
-        assertTrue(invalidPid.contains("/"));
+        assertNotNull(invalidPid, "Invalid characters combination should still produce non-null PID");
+        assertTrue(invalidPid.contains("/"), "Invalid characters combination should still contain the separator");
 
         // Test custom prefix with custom suffix
         PIDBuilder customBoth = new PIDBuilder(seed)
                 .withPrefix("test.prefix")
                 .withSuffix("test-suffix");
         String customPid = customBoth.build();
-        assertEquals("test.prefix/test-suffix", customPid);
+        assertEquals("test.prefix/test-suffix", customPid, "Custom prefix and suffix should be combined correctly");
     }
 
     @Test
@@ -691,7 +709,7 @@ class ConnectedPIDsTest {
                 .invalidKeys(5)
                 .build();
 
-        assertTrue(invalidKeysRecord.getEntries().size() >= 5);
+        assertTrue(invalidKeysRecord.getEntries().size() >= 5, "invalidKeys(5) should generate at least 5 entries");
 
         // Test record with invalid values for specific keys
         PIDRecord invalidSpecificRecord = new PIDRecordBuilder()
@@ -699,14 +717,14 @@ class ConnectedPIDsTest {
                 .invalidValues(2, "21.T11148/397d831aa3a9d18eb52c", "21.T11148/8074aed799118ac263ad")
                 .build();
 
-        assertNotNull(invalidSpecificRecord);
+        assertNotNull(invalidSpecificRecord, "Invalid values for specific keys should produce non-null record");
 
         // Test empty record
         PIDRecord emptyRecord = new PIDRecordBuilder()
                 .emptyRecord()
                 .build();
 
-        assertEquals(0, emptyRecord.getEntries().size());
+        assertEquals(0, emptyRecord.getEntries().size(), "emptyRecord should have no entries");
 
         // Submit invalid records to test API response
         List<PIDRecord> invalidRecords = List.of(invalidKeysRecord);
@@ -734,7 +752,7 @@ class ConnectedPIDsTest {
                 .withSuffix("chained-suffix");
 
         String complexPid = complexBuilder.build();
-        assertEquals("chained.prefix/chained-suffix", complexPid);
+        assertEquals("chained.prefix/chained-suffix", complexPid, "Chained builder methods should override previous settings");
 
         // Test complex PIDRecordBuilder chaining
         PIDRecordBuilder complexRecordBuilder = new PIDRecordBuilder()
@@ -745,14 +763,14 @@ class ConnectedPIDsTest {
                 .invalidKeys(1);
 
         PIDRecord complexRecord = complexRecordBuilder.build();
-        assertEquals("custom/pid", complexRecord.getPid());
-        assertTrue(complexRecord.getEntries().size() > 0);
+        assertEquals("custom/pid", complexRecord.getPid(), "Chained record builder should use the custom PID");
+        assertFalse(complexRecord.getEntries().isEmpty(), "Chained record builder should generate entries");
 
         // Test cloning and modification
         PIDRecordBuilder cloned = complexRecordBuilder.clone();
         cloned.withPid("different/pid");
 
-        assertNotEquals(complexRecordBuilder.build().getPid(), cloned.build().getPid());
+        assertNotEquals(complexRecordBuilder.build().getPid(), cloned.build().getPid(), "Modifying a cloned builder should not affect the original");
     }
 
     @Test
@@ -776,9 +794,13 @@ class ConnectedPIDsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonContent))
                 .andDo(MockMvcResultHandlers.print())
-                .andExpect(MockMvcResultMatchers.status().isCreated());
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").isArray())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords.length()").value(RECORD_COUNT))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.mapping").exists());
 
-        assertEquals(RECORD_COUNT, knownPidsDao.count());
+        assertEquals(RECORD_COUNT, knownPidsDao.count(), "All RECORD_COUNT records should be stored in the database");
     }
 
     @Test
@@ -808,9 +830,13 @@ class ConnectedPIDsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonContent))
                 .andDo(MockMvcResultHandlers.print())
-                .andExpect(MockMvcResultMatchers.status().isCreated());
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").isArray())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords.length()").value(RECORD_COUNT))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.mapping").exists());
 
-        assertEquals(RECORD_COUNT, knownPidsDao.count());
+        assertEquals(RECORD_COUNT, knownPidsDao.count(), "All RECORD_COUNT connected records should be stored in the database");
     }
 
     @Test
@@ -848,7 +874,7 @@ class ConnectedPIDsTest {
 
         String jsonContent = mapper.writeValueAsString(records);
 
-        // This should result in a server error due to failed validation/creation
+        // This should result in a server error due to failed validation/ creation,
         // and the rollback mechanism should be triggered
         this.mockMvc
                 .perform(post("/api/v1/pit/pids")
@@ -858,7 +884,7 @@ class ConnectedPIDsTest {
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
 
         // Verify that no PIDs were persisted due to rollback
-        assertEquals(0, knownPidsDao.count());
+        assertEquals(0, knownPidsDao.count(), "Rollback should prevent any records from being stored due to partial failures");
     }
 
     @Test
@@ -897,6 +923,12 @@ class ConnectedPIDsTest {
                 .build();
         records.add(invalidRecord);
 
+        // Incomplete record with missing required entries
+        PIDRecord incompleteRecord = new PIDRecordBuilder()
+                .incompleteProfile()
+                .build();
+        records.add(incompleteRecord);
+
         String jsonContent = mapper.writeValueAsString(records);
 
         // Expect server error due to validation failures
@@ -908,7 +940,7 @@ class ConnectedPIDsTest {
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
 
         // Verify rollback: no records should be persisted
-        assertEquals(0, knownPidsDao.count());
+        assertEquals(0, knownPidsDao.count(), "Rollback should prevent any records from being stored due to mixed valid and invalid records");
     }
 
     @Test
@@ -951,6 +983,6 @@ class ConnectedPIDsTest {
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
 
         // Verify no records were persisted
-        assertEquals(0, knownPidsDao.count());
+        assertEquals(0, knownPidsDao.count(), "Rollback should prevent any records from being stored due to duplicate PIDs");
     }
 }

@@ -59,7 +59,7 @@ public interface ITypingRestResource {
      * @param dryrun If true, only validation will be done and no PIDs will be created. No data will be changed and no services will be notified.
      * @return either 201 and a list of record representations, or an error (see ApiResponse annotations and tests).
      * @throws IOException                                              if an error occurs.
-     * @throws edu.kit.datamanager.pit.common.RecordValidationException if any of the records is invalid or a PID was used for multiple records in the same request.
+     * @throws edu.kit.datamanager.pit.common.RecordValidationException if any of the records is invalid, or a PID was used for multiple records in the same request.
      */
     @PostMapping(
             path = "pids",
@@ -80,7 +80,7 @@ public interface ITypingRestResource {
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "201",
-                    description = "Successfully created all records and resolved references (if they exist). The response contains the created records.",
+                    description = "Successfully created all records and resolved references (if they exist). The response contains the created records and the mapping used to map from the user-provided, fictionary PIDs to the actual Handle PIDs created in the process.",
                     content = {
                             @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, array = @ArraySchema(schema = @Schema(implementation = PIDRecord.class)))
                     }),
@@ -91,10 +91,10 @@ public interface ITypingRestResource {
             @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
             @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
-    ResponseEntity<List<PIDRecord>> createPIDs(
+    ResponseEntity<BatchRecordResponse> createPIDs(
             @RequestBody final List<PIDRecord> rec,
 
-            @Parameter(description = "If true, only validation will be done and no PIDs will be created. No data will be changed and no services will be notified.", required = false)
+            @Parameter(description = "If true, only validation will be done and no PIDs will be created. No data will be changed and no services will be notified.")
             @RequestParam(name = "dryrun", required = false, defaultValue = "false")
             boolean dryrun,
 
@@ -119,7 +119,7 @@ public interface ITypingRestResource {
      * @param rec The PID record.
      * @return either 201 and a record representation, or an error (see ApiResponse
      * annotations and tests).
-     * @throws IOException
+     * @throws IOException if an error occurs.
      */
     @PostMapping(
             path = "pid/",
@@ -134,7 +134,7 @@ public interface ITypingRestResource {
                     " the profile." +
                     " Validation takes some time, depending on the context. It depends a lot on the size" +
                     " of your record and the already cached information. This information is gathered" +
-                    " from external services. If there are connection issues or hickups at these sites," +
+                    " from external services. If there are connection issues or hiccups at these sites," +
                     " validation may even take up to a few seconds. Usually you can expect the request" +
                     " to be between 100ms up to 1000ms on a fast machine with reliable connections."
     )
@@ -167,8 +167,7 @@ public interface ITypingRestResource {
             @Parameter(
                     description = "If true, only validation will be done" +
                             " and no PID will be created. No data will be changed" +
-                            " and no services will be notified.",
-                    required = false
+                            " and no services will be notified."
             )
             @RequestParam(name = "dryrun", required = false, defaultValue = "false")
             boolean dryrun,
@@ -188,7 +187,7 @@ public interface ITypingRestResource {
      *
      * @param rec the PID record.
      * @return the record (on success).
-     * @throws IOException
+     * @throws IOException if an error occurs.
      */
     @PutMapping(
             path = "pid/**",
@@ -235,8 +234,7 @@ public interface ITypingRestResource {
                             " validation checks are performed, and the expected" +
                             " response, including the new eTag, will be returned." +
                             " No data will be changed and no services will be" +
-                            " notified.",
-                    required = false
+                            " notified."
             )
             @RequestParam(name = "dryrun", required = false, defaultValue = "false")
             boolean dryrun,
@@ -273,8 +271,7 @@ public interface ITypingRestResource {
             @Parameter(
                     description = "If true, validation will be run on the" +
                             " resolved PID. On failure, an error will be" +
-                            " returned. On success, the PID will be resolved.",
-                    required = false
+                            " returned. On success, the PID will be resolved."
             )
             @RequestParam(name = "validation", required = false, defaultValue = "false")
             boolean validation,
@@ -289,12 +286,13 @@ public interface ITypingRestResource {
      * returned together with the timestamps of creation and modification executed
      * on this PID by this service.
      * <p>
-     * This store is not a cache! Instead, the service remembers every PID which it
+     * This store is not a cache!
+     * Instead, the service remembers every PID that it
      * created (and resolved, depending on the configuration parameter
      * `pit.storage.strategy` of the service) on request.
      *
      * @return the known PID and its timestamps.
-     * @throws IOException
+     * @throws IOException if an error occurs.
      */
     @Operation(
             summary = "Returns a PID and its timestamps from the local store, if available.",
@@ -329,7 +327,7 @@ public interface ITypingRestResource {
      * Several filtering criteria are also available.
      * <p>
      * Known PIDs are defined as being stored in a local store. This store is not a
-     * cache! Instead, the service remembers every PID which it created (and
+     * cache! Instead, the service remembers every PID that it created (and
      * resolved, depending on the configuration parameter `pit.storage.strategy` of
      * the service) on request.
      *
@@ -340,7 +338,7 @@ public interface ITypingRestResource {
      * @param modifiedBefore defines the latest date for the modification timestamp.
      * @param pageable       defines page size and page to navigate through large
      *                       lists.
-     * @return the PIDs matching all given contraints.
+     * @return the PIDs matching all given constraints.
      */
     @Operation(
             summary = "Returns all known PIDs. Supports paging, filtering criteria, and different formats.",
@@ -362,19 +360,19 @@ public interface ITypingRestResource {
     @GetMapping(path = "known-pid")
     @PageableAsQueryParam
     ResponseEntity<List<KnownPid>> findAll(
-            @Parameter(name = "created_after", description = "The UTC time of the earliest creation timestamp of a returned PID.", required = false)
+            @Parameter(name = "created_after", description = "The UTC time of the earliest creation timestamp of a returned PID.")
             @RequestParam(name = "created_after", required = false)
             Instant createdAfter,
 
-            @Parameter(name = "created_before", description = "The UTC time of the latest creation timestamp of a returned PID.", required = false)
+            @Parameter(name = "created_before", description = "The UTC time of the latest creation timestamp of a returned PID.")
             @RequestParam(name = "created_before", required = false)
             Instant createdBefore,
 
-            @Parameter(name = "modified_after", description = "The UTC time of the earliest modification timestamp of a returned PID.", required = false)
+            @Parameter(name = "modified_after", description = "The UTC time of the earliest modification timestamp of a returned PID.")
             @RequestParam(name = "modified_after", required = false)
             Instant modifiedAfter,
 
-            @Parameter(name = "modified_before", description = "The UTC time of the latest modification timestamp of a returned PID.", required = false)
+            @Parameter(name = "modified_before", description = "The UTC time of the latest modification timestamp of a returned PID.")
             @RequestParam(name = "modified_before", required = false)
             Instant modifiedBefore,
 
@@ -391,7 +389,7 @@ public interface ITypingRestResource {
 
     /**
      * Like findAll, but the return value is formatted for the tabulator
-     * javascript library.
+     * JavaScript library.
      *
      * @param createdAfter   defines the earliest date for the creation timestamp.
      * @param createdBefore  defines the latest date for the creation timestamp.
@@ -400,7 +398,7 @@ public interface ITypingRestResource {
      * @param modifiedBefore defines the latest date for the modification timestamp.
      * @param pageable       defines page size and page to navigate through large
      *                       lists.
-     * @return the PIDs matching all given contraints.
+     * @return the PIDs matching all given constraints.
      */
     @Operation(
             summary = "Returns all known PIDs. Supports paging, filtering criteria, and different formats.",
@@ -422,19 +420,19 @@ public interface ITypingRestResource {
     @GetMapping(path = "known-pid", produces = {"application/tabulator+json"}, headers = "Accept=application/tabulator+json")
     @PageableAsQueryParam
     ResponseEntity<TabulatorPaginationFormat<KnownPid>> findAllForTabular(
-            @Parameter(name = "created_after", description = "The UTC time of the earliest creation timestamp of a returned PID.", required = false)
+            @Parameter(name = "created_after", description = "The UTC time of the earliest creation timestamp of a returned PID.")
             @RequestParam(name = "created_after", required = false)
             Instant createdAfter,
 
-            @Parameter(name = "created_before", description = "The UTC time of the latest creation timestamp of a returned PID.", required = false)
+            @Parameter(name = "created_before", description = "The UTC time of the latest creation timestamp of a returned PID.")
             @RequestParam(name = "created_before", required = false)
             Instant createdBefore,
 
-            @Parameter(name = "modified_after", description = "The UTC time of the earliest modification timestamp of a returned PID.", required = false)
+            @Parameter(name = "modified_after", description = "The UTC time of the earliest modification timestamp of a returned PID.")
             @RequestParam(name = "modified_after", required = false)
             Instant modifiedAfter,
 
-            @Parameter(name = "modified_before", description = "The UTC time of the latest modification timestamp of a returned PID.", required = false)
+            @Parameter(name = "modified_before", description = "The UTC time of the latest modification timestamp of a returned PID.")
             @RequestParam(name = "modified_before", required = false)
             Instant modifiedBefore,
 
