@@ -134,6 +134,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
 
         List<PIDRecord> failedRecords = new ArrayList<>();
+        List<PIDRecord> successfulRecords = new ArrayList<>();
         // register the records
         validatedRecords.forEach(pidRecord -> {
             try {
@@ -160,10 +161,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
                 // save the record to elastic
                 this.saveToElastic(pidRecord);
+                successfulRecords.add(pidRecord);
+                LOG.debug("Successfully registered PID for record: {}", pidRecord);
             } catch (Exception e) {
                 LOG.error("Could not register PID for record {}. Error: {}", pidRecord, e.getMessage());
                 failedRecords.add(pidRecord);
-                validatedRecords.remove(pidRecord);
             }
         });
 
@@ -176,20 +178,26 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         LOG.info("-- Time taken for registration: {} ms", ChronoUnit.MILLIS.between(validationTime, endTime));
 
         if (!failedRecords.isEmpty()) {
-            for (PIDRecord successfulRecord : validatedRecords) { // rollback the successful records
+            List<String> rollbackFailures = new ArrayList<>();
+            for (PIDRecord successfulRecord : successfulRecords) { // rollback the successful records
                 try {
                     LOG.debug("Rolling back PID creation for record with PID {}.", successfulRecord.getPid());
                     this.typingService.deletePid(successfulRecord.getPid());
                 } catch (Exception e) {
+                    rollbackFailures.add(successfulRecord.getPid());
                     LOG.error("Could not rollback PID creation for record with PID {}. Error: {}", successfulRecord.getPid(), e.getMessage());
                 }
+            }
+
+            if (!rollbackFailures.isEmpty()) {
+                LOG.error("Failed to rollback {} PIDs: {}", rollbackFailures.size(), rollbackFailures);
             }
 
             LOG.info("Creation finished. Returning validated records for {} records. {} records failed to be created.", validatedRecords.size(), failedRecords.size());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new BatchRecordResponse(failedRecords, pidMappings));
         } else {
-            LOG.info("Creation finished. Returning validated records for {} records.", validatedRecords.size());
-            return ResponseEntity.status(HttpStatus.CREATED).body(new BatchRecordResponse(validatedRecords, pidMappings));
+            LOG.info("Creation finished. Returning successfully validated and created records for {} records of {}.", successfulRecords.size(), validatedRecords.size());
+            return ResponseEntity.status(HttpStatus.CREATED).body(new BatchRecordResponse(successfulRecords, pidMappings));
         }
     }
 

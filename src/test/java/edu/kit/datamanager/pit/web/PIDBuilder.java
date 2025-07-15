@@ -115,7 +115,7 @@ public class PIDBuilder implements Cloneable {
      */
     private static UUID generateUUID(String seed) {
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-1");
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] hash = md.digest(seed.getBytes(StandardCharsets.UTF_8));
             long msb = 0;
             long lsb = 0;
@@ -173,7 +173,7 @@ public class PIDBuilder implements Cloneable {
      * @param builder The source PIDBuilder to copy from
      * @return This builder instance for method chaining
      */
-    public PIDBuilder clone(PIDBuilder builder) {
+    public PIDBuilder copyFrom(PIDBuilder builder) {
         this.seed = builder.seed;
         this.random = new Random(seed);
         this.prefix = builder.prefix;
@@ -288,14 +288,14 @@ public class PIDBuilder implements Cloneable {
      * @return This builder instance for method chaining
      */
     public PIDBuilder invalidCharactersSuffix() {
-        // generate a random String not fulfilling this regex: ^[a-f0-9-]+$
+        // generate a random String not fulfilling this regex: ^[a-zA-Z0-9.-]+$
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < random.nextInt(256); i++) { // Random length
-            // generate a random character that is not a letter, number or hyphen
+            // generate a random character that is not a letter, number, dot or hyphen
             char c;
             do {
                 c = (char) random.nextInt(Character.MAX_VALUE); // Random character
-            } while (Character.digit(c, 16) == -1 && c != '-'); // Continue until an invalid character is found
+            } while (Character.isLetterOrDigit(c) || c == '.' || c == '-'); // Continue until an invalid character is found
             result.append(c);
         }
         this.suffix = result.toString();

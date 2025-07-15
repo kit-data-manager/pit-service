@@ -26,10 +26,9 @@ import java.util.Map;
  * Contains a list of the processed PID records and a mapping of the user-provided "fictionary" identifiers to their corresponding real record Handle PIDs.
  * This mapping was used to link the user-provided identifiers with the actual records in the system.
  * <p>
- * Arguments:
- * - pidRecords: List of PIDRecord objects representing the processed records. (List<PIDRecord>)
- * - mapping: Map where keys are user-provided identifiers (fictionary) and values are the corresponding real record Handle PIDs. (Map<String, String>)
  *
+ * @param pidRecords List of PIDRecord objects representing the processed records. (List<PIDRecord>)
+ * @param mapping    Map where keys are user-provided identifiers (fictionary) and values are the corresponding real record Handle PIDs. (Map<String, String>)
  * @see PIDRecord
  */
 public record BatchRecordResponse(List<PIDRecord> pidRecords, Map<String, String> mapping) {

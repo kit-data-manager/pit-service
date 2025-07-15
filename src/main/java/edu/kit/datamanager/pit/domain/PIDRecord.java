@@ -85,6 +85,11 @@ public class PIDRecord implements EtagSupport, Cloneable {
         return entries;
     }
 
+    /**
+     * Sets the entries of this record.
+     *
+     * @param entries the entries to set.
+     */
     public void setEntries(Map<String, List<PIDRecordEntry>> entries) {
         this.entries = entries;
     }

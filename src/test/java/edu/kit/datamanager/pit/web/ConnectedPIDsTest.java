@@ -147,7 +147,7 @@ class ConnectedPIDsTest {
 
         // Test clone(PIDBuilder) method
         PIDBuilder targetBuilder = new PIDBuilder();
-        targetBuilder.clone(originalBuilder);
+        targetBuilder.copyFrom(originalBuilder);
         assertEquals(originalBuilder.build(), targetBuilder.build(), "Target builder should produce the same PID after cloning");
 
         // Test equals and hashCode
