@@ -36,19 +36,16 @@ import edu.kit.datamanager.pit.web.TabulatorPaginationFormat;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.stream.Streams;
 import org.apache.http.client.cache.HeaderConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.WebRequest;
@@ -62,34 +59,29 @@ import java.util.*;
 import java.util.stream.Stream;
 
 @RestController
-@RequestMapping(value = "/api/v1/pit")
-@Schema(description = "PID Information Types API")
 public class TypingRESTResourceImpl implements ITypingRestResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypingRESTResourceImpl.class);
-    @Autowired
-    protected ITypingService typingService;
-    @Autowired
-    protected Resolver resolver;
-    @Autowired
-    private ApplicationProperties applicationProps;
-    @Autowired
-    private IMessagingService messagingService;
 
-    @Autowired
-    private KnownPidsDao localPidStorage;
+    private final ITypingService typingService;
+    private final Resolver resolver;
+    private final ApplicationProperties applicationProps;
+    private final IMessagingService messagingService;
+    private final KnownPidsDao localPidStorage;
+    private final Optional<PidRecordElasticRepository> elastic;
+    private final PidSuffixGenerator suffixGenerator;
+    private final PidGenerationProperties pidGenerationProperties;
 
-    @Autowired
-    private Optional<PidRecordElasticRepository> elastic;
-
-    @Autowired
-    private PidSuffixGenerator suffixGenerator;
-
-    @Autowired
-    private PidGenerationProperties pidGenerationProperties;
-
-    public TypingRESTResourceImpl() {
+    public TypingRESTResourceImpl(ITypingService typingService, Resolver resolver, ApplicationProperties applicationProps, IMessagingService messagingService, KnownPidsDao localPidStorage, Optional<PidRecordElasticRepository> elastic, PidSuffixGenerator suffixGenerator, PidGenerationProperties pidGenerationProperties) {
         super();
+        this.typingService = typingService;
+        this.resolver = resolver;
+        this.applicationProps = applicationProps;
+        this.messagingService = messagingService;
+        this.localPidStorage = localPidStorage;
+        this.elastic = elastic;
+        this.suffixGenerator = suffixGenerator;
+        this.pidGenerationProperties = pidGenerationProperties;
     }
 
     @Override

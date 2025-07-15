@@ -31,5 +31,7 @@ import java.util.Map;
  * @param mapping    Map where keys are user-provided identifiers (fictionary) and values are the corresponding real record Handle PIDs. (Map<String, String>)
  * @see PIDRecord
  */
-public record BatchRecordResponse(List<PIDRecord> pidRecords, Map<String, String> mapping) {
+public record BatchRecordResponse(
+        List<PIDRecord> pidRecords,
+        Map<String, String> mapping) {
 }

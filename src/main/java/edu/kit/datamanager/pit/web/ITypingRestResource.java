@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Karlsruhe Institute of Technology.
+ * Copyright (c) 2020-2025 Karlsruhe Institute of Technology.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springdoc.core.converters.models.PageableAsQueryParam;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +44,10 @@ import java.util.List;
 /**
  * @author jejkal
  */
+@RestController
+@RequestMapping(value = "/api/v1/pit")
+@Schema(description = "PID Information Types API")
+@Tag(name = "PID Management", description = "PID Information Types API")
 public interface ITypingRestResource {
 
     /**
@@ -82,7 +87,7 @@ public interface ITypingRestResource {
                     responseCode = "201",
                     description = "Successfully created all records and resolved references (if they exist). The response contains the created records and the mapping used to map from the user-provided, fictionary PIDs to the actual Handle PIDs created in the process.",
                     content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, array = @ArraySchema(schema = @Schema(implementation = PIDRecord.class)))
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = BatchRecordResponse.class))
                     }),
             @ApiResponse(responseCode = "400", description = "Validation failed. See body for details. Contains also the validated records.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
             @ApiResponse(responseCode = "406", description = "Provided input is invalid with regard to the supported accept header (Not acceptable)", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
