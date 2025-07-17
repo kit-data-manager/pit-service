@@ -1,12 +1,18 @@
 package edu.kit.datamanager.pit.typeregistry;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.ValidationMessage;
+import edu.kit.datamanager.pit.Application;
 import edu.kit.datamanager.pit.typeregistry.schema.SchemaInfo;
-import org.everit.json.schema.Schema;
-import org.everit.json.schema.ValidationException;
-import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * @param pid the pid of this attribute
@@ -22,23 +28,50 @@ public record AttributeInfo(
         String typeName,
         Collection<SchemaInfo> jsonSchema
 ) {
+    private static final Logger log = LoggerFactory.getLogger(AttributeInfo.class);
+
     public boolean validate(String value) {
         return this.jsonSchema().stream()
-                .map(SchemaInfo::schema)
-                .filter(Objects::nonNull)
-                .anyMatch(schema -> validate(schema, value));
+                .filter(schemaInfo -> schemaInfo.error() == null)
+                .filter(schemaInfo -> schemaInfo.schema() != null)
+                .peek(schemaInfo -> log.warn("Found valid schema from {} to validate {} / {}.", schemaInfo.origin(), pid, value))
+                .anyMatch(schemaInfo -> this.validate(schemaInfo.schema(), value));
     }
 
-    private boolean validate(Schema schema, String value) {
-        Object toValidate = value;
-        if (value.startsWith("{")) {
-            toValidate = new JSONObject(value);
-        }
+    private boolean validate(JsonSchema schema, String value) {
         try {
-            schema.validate(toValidate);
-        } catch (ValidationException e) {
+            JsonNode toValidate = valueToJsonNode(value);
+            Set<ValidationMessage> errors = schema.validate(toValidate, executionContext -> {
+                // By default, since Draft 2019-09, the format keyword only generates annotations and not assertions
+                executionContext.getExecutionConfig().setFormatAssertionsEnabled(true);
+            });
+            if (!errors.isEmpty()) {
+                log.warn("Validation errors for value '{}': {}", value, errors);
+            }
+            return errors.isEmpty();
+        } catch (Exception e) {
+            log.error("Exception during validation for value '{}': {}", value, e.getMessage(), e);
             return false;
         }
-        return true;
+    }
+
+    /**
+     * Converts the given value to a JsonNode.
+     *
+     * @param value the value to convert
+     * @return a JsonNode representation of the value
+     */
+    public static JsonNode valueToJsonNode(String value) {
+        JsonNode toValidate;
+        if (value.isBlank()) {
+            return new TextNode(value);
+        }
+        try {
+            toValidate = Application.jsonObjectMapper().readTree(value);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to parse value '{}' as JSON, treating it as a plain text node.", value);
+            toValidate = new TextNode(value);
+        }
+        return toValidate;
     }
 }
