@@ -48,7 +48,7 @@ repositories {
 }
 
 ext {
-    springDocVersion  = '2.8.4'
+    springDocVersion = '2.8.9'
 }
 
 dependencies {
@@ -89,7 +89,7 @@ dependencies {
     implementation("net.handle:handle-client:9.3.1")
 
     testImplementation(platform('org.junit:junit-bom:5.11.4'))
-	testImplementation('org.junit.jupiter:junit-jupiter')
+    testImplementation('org.junit.jupiter:junit-jupiter')
     testImplementation('org.junit.jupiter:junit-jupiter-params')
 
     testImplementation("org.springframework:spring-test")
@@ -154,7 +154,7 @@ test {
         println "Tests will have verbose output"
         testLogging {
             // tests are never "up-to-date", always print everything
-            outputs.upToDateWhen {false}
+            outputs.upToDateWhen { false }
             // show stdio when tests are running
             showStandardStreams = true
             // for junit5
