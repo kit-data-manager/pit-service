@@ -304,21 +304,21 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
 
         HandleResolver resolver = new HandleResolver();
         SiteInfo site;
+        String prefix = handleCredentials.getHandleIdentifierPrefix().replace("/", "");
         {
             HandleValue[] prefixValues;
             try {
-                prefixValues = resolver.resolveHandle(handleCredentials.getHandleIdentifierPrefix());
+                prefixValues = resolver.resolveHandle(prefix);
                 site = BatchUtil.getFirstPrimarySiteFromHserv(prefixValues, resolver);
             } catch (HandleException e) {
-                throw new ExternalServiceException(SERVICE_NAME_HANDLE, e);
+                throw new ExternalServiceException(SERVICE_NAME_HANDLE, "Tried resolving " + prefix, e);
             }
         }
 
-        String prefix = handleCredentials.getHandleIdentifierPrefix();
         try {
             return BatchUtil.listHandles(prefix, site, resolver, auth);
         } catch (HandleException e) {
-            throw new ExternalServiceException(SERVICE_NAME_HANDLE, e);
+            throw new ExternalServiceException(SERVICE_NAME_HANDLE, "Tried resolving " + prefix, e);
         }
     }
 
