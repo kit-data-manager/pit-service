@@ -29,7 +29,7 @@ jobs:
         jdk: [ 21 ]  # (open)JDK releases
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Set up openJDK version
       uses: actions/setup-java@v4
       with:
