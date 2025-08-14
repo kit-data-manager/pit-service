@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2025 Karlsruhe Institute of Technology.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package edu.kit.datamanager.pit.typeregistry.schema;
 
 import edu.kit.datamanager.pit.Application;
@@ -5,6 +21,12 @@ import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.common.TypeNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
+import io.micrometer.observation.annotation.Observed;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.validation.constraints.NotNull;
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.loader.SchemaLoader;
@@ -23,10 +45,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 
-public class DtrTestSchemaGenerator implements SchemaGenerator {
-    private static final Logger LOG = LoggerFactory.getLogger(DtrTestSchemaGenerator.class);
 
+@Observed
+public class DtrTestSchemaGenerator implements SchemaGenerator {
     protected static final String ORIGIN = "dtr-test";
+    private static final Logger LOG = LoggerFactory.getLogger(DtrTestSchemaGenerator.class);
     protected final URI baseUrl;
     protected final RestClient http;
 
@@ -44,7 +67,7 @@ public class DtrTestSchemaGenerator implements SchemaGenerator {
                 .requestFactory(new JdkClientHttpRequestFactory(httpClient))
                 .requestInterceptor((request, body, execution) -> {
                     long start = System.currentTimeMillis();
-                    ClientHttpResponse response = execution.execute(request,  body);
+                    ClientHttpResponse response = execution.execute(request, body);
                     long timeSpan = System.currentTimeMillis() - start;
                     boolean isLongRequest = timeSpan > Application.LONG_HTTP_REQUEST_THRESHOLD;
                     if (isLongRequest) {
@@ -56,7 +79,10 @@ public class DtrTestSchemaGenerator implements SchemaGenerator {
     }
 
     @Override
-    public SchemaInfo generateSchema(@NotNull String maybeTypePid) {
+    @WithSpan(kind = SpanKind.CLIENT)
+    @Timed(value = "dtr_test_schema_generate", description = "Time taken to generate schema from DTR Test")
+    @Counted(value = "dtr_test_schema_generate_total", description = "Total number of DTR Test schema generations")
+    public SchemaInfo generateSchema(@SpanAttribute @NotNull String maybeTypePid) {
         return this.http.get().uri(uriBuilder -> uriBuilder.pathSegment(maybeTypePid).build())
                 .exchange((request, response) -> {
                     HttpStatusCode status = response.getStatusCode();

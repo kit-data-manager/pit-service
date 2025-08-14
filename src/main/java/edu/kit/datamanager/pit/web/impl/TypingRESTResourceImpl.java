@@ -35,6 +35,12 @@ import edu.kit.datamanager.pit.web.TabulatorPaginationFormat;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
+import io.micrometer.observation.annotation.Observed;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.stream.Streams;
@@ -63,6 +69,7 @@ import java.util.stream.Stream;
 @RestController
 @RequestMapping(value = "/api/v1/pit")
 @Schema(description = "PID Information Types API")
+@Observed
 public class TypingRESTResourceImpl implements ITypingRestResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypingRESTResourceImpl.class);
@@ -92,9 +99,12 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_create_pids", description = "Time taken to create multiple PID records")
+    @Counted(value = "pit_create_pids_total", description = "Total number of create PIDs requests")
     public ResponseEntity<List<PIDRecord>> createPIDs(
-            List<PIDRecord> rec,
-            boolean dryrun,
+            @SpanAttribute List<PIDRecord> rec,
+            @SpanAttribute boolean dryrun,
             WebRequest request,
             HttpServletResponse response,
             UriComponentsBuilder uriBuilder
@@ -190,7 +200,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
      * @throws RecordValidationException if the same internal PID is used for multiple records
      * @throws ExternalServiceException  if the PID generation fails
      */
-    private Map<String, String> generatePIDMapping(List<PIDRecord> rec, boolean dryrun) throws IOException, RecordValidationException, ExternalServiceException {
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "pit_generate_pid_mapping", description = "Time taken to generate PID mappings")
+    private Map<String, String> generatePIDMapping(@SpanAttribute List<PIDRecord> rec, @SpanAttribute boolean dryrun) throws IOException, RecordValidationException, ExternalServiceException {
         Map<String, String> pidMappings = new HashMap<>();
         for (PIDRecord pidRecord : rec) {
             String internalPID = pidRecord.getPid(); // the internal PID is the one given by the user
@@ -220,7 +232,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
      * @throws RecordValidationException as a possible validation outcome
      * @throws ExternalServiceException  as a possible validation outcome
      */
-    private List<PIDRecord> applyMappingsToRecordsAndValidate(List<PIDRecord> rec, Map<String, String> pidMappings, String prefix) throws RecordValidationException, ExternalServiceException {
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "pit_apply_mappings_and_validate", description = "Time taken to apply mappings and validate records")
+    private List<PIDRecord> applyMappingsToRecordsAndValidate(@SpanAttribute List<PIDRecord> rec, Map<String, String> pidMappings, @SpanAttribute String prefix) throws RecordValidationException, ExternalServiceException {
         List<PIDRecord> validatedRecords = new ArrayList<>();
         for (PIDRecord pidRecord : rec) {
 
@@ -243,9 +257,12 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_create_pid", description = "Time taken to create a single PID record")
+    @Counted(value = "pit_create_pid_total", description = "Total number of create PID requests")
     public ResponseEntity<PIDRecord> createPID(
-            PIDRecord pidRecord,
-            boolean dryrun,
+            @SpanAttribute PIDRecord pidRecord,
+            @SpanAttribute boolean dryrun,
 
             final WebRequest request,
             final HttpServletResponse response,
@@ -286,11 +303,14 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return ResponseEntity.status(HttpStatus.CREATED).eTag(quotedEtag(pidRecord)).body(pidRecord);
     }
 
-    private boolean hasPid(PIDRecord pidRecord) {
+    @WithSpan(kind = SpanKind.INTERNAL)
+    private boolean hasPid(@SpanAttribute PIDRecord pidRecord) {
         return pidRecord.getPid() != null && !pidRecord.getPid().isBlank();
     }
 
-    private void setPid(PIDRecord pidRecord) throws IOException {
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "pit_set_pid", description = "Time taken to set PID on record")
+    private void setPid(@SpanAttribute PIDRecord pidRecord) throws IOException {
         boolean hasCustomPid = hasPid(pidRecord);
         boolean allowsCustomPids = pidGenerationProperties.isCustomClientPidsEnabled();
 
@@ -323,9 +343,12 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_update_pid", description = "Time taken to update a PID record")
+    @Counted(value = "pit_update_pid_total", description = "Total number of update PID requests")
     public ResponseEntity<PIDRecord> updatePID(
-            PIDRecord pidRecord,
-            boolean dryrun,
+            @SpanAttribute PIDRecord pidRecord,
+            @SpanAttribute boolean dryrun,
 
             final WebRequest request,
             final HttpServletResponse response,
@@ -385,7 +408,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
      *               If it does not exist, it will be created with both timestamps
      *               (created and modified) being the same.
      */
-    private void storeLocally(String pid, boolean update) {
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "pit_store_locally", description = "Time taken to store PID locally")
+    private void storeLocally(@SpanAttribute String pid, @SpanAttribute boolean update) {
         Instant now = Instant.now();
         Optional<KnownPid> oldPid = localPidStorage.findByPid(pid);
         if (oldPid.isEmpty()) {
@@ -397,7 +422,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
     }
 
-    private String getContentPathFromRequest(String lastPathElement, WebRequest request) {
+    @WithSpan(kind = SpanKind.INTERNAL)
+    private String getContentPathFromRequest(@SpanAttribute String lastPathElement, WebRequest request) {
         String requestedUri = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE,
                 RequestAttributes.SCOPE_REQUEST);
         if (requestedUri == null) {
@@ -407,8 +433,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_get_record", description = "Time taken to get a PID record")
+    @Counted(value = "pit_get_record_total", description = "Total number of get PID record requests")
     public ResponseEntity<PIDRecord> getRecord(
-            boolean validation,
+            @SpanAttribute boolean validation,
 
             final WebRequest request,
             final HttpServletResponse response,
@@ -426,7 +455,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return ResponseEntity.ok().eTag(quotedEtag(pidRecord)).body(pidRecord);
     }
 
-    private void saveToElastic(PIDRecord rec) {
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "pit_save_to_elastic", description = "Time taken to save record to Elasticsearch")
+    private void saveToElastic(@SpanAttribute PIDRecord rec) {
         this.elastic.ifPresent(
                 database -> database.save(
                         new PidRecordElasticWrapper(rec, typingService.getOperations())
@@ -435,6 +466,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_find_by_pid", description = "Time taken to find a known PID")
+    @Counted(value = "pit_find_by_pid_total", description = "Total number of find by PID requests")
     public ResponseEntity<KnownPid> findByPid(
             WebRequest request,
             HttpServletResponse response,
@@ -448,11 +482,13 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return ResponseEntity.notFound().build();
     }
 
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "pit_find_all_page", description = "Time taken to find paginated known PIDs")
     public Page<KnownPid> findAllPage(
-            Instant createdAfter,
-            Instant createdBefore,
-            Instant modifiedAfter,
-            Instant modifiedBefore,
+            @SpanAttribute Instant createdAfter,
+            @SpanAttribute Instant createdBefore,
+            @SpanAttribute Instant modifiedAfter,
+            @SpanAttribute Instant modifiedBefore,
             Pageable pageable
     ) {
         final boolean queriesCreated = createdAfter != null || createdBefore != null;
@@ -493,11 +529,14 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_find_all", description = "Time taken to find all known PIDs")
+    @Counted(value = "pit_find_all_total", description = "Total number of find all PIDs requests")
     public ResponseEntity<List<KnownPid>> findAll(
-            Instant createdAfter,
-            Instant createdBefore,
-            Instant modifiedAfter,
-            Instant modifiedBefore,
+            @SpanAttribute Instant createdAfter,
+            @SpanAttribute Instant createdBefore,
+            @SpanAttribute Instant modifiedAfter,
+            @SpanAttribute Instant modifiedBefore,
             Pageable pageable,
             WebRequest request,
             HttpServletResponse response,
@@ -513,11 +552,14 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_find_all_tabular", description = "Time taken to find all known PIDs in tabular format")
+    @Counted(value = "pit_find_all_tabular_total", description = "Total number of find all PIDs tabular requests")
     public ResponseEntity<TabulatorPaginationFormat<KnownPid>> findAllForTabular(
-            Instant createdAfter,
-            Instant createdBefore,
-            Instant modifiedAfter,
-            Instant modifiedBefore,
+            @SpanAttribute Instant createdAfter,
+            @SpanAttribute Instant createdBefore,
+            @SpanAttribute Instant modifiedAfter,
+            @SpanAttribute Instant modifiedBefore,
             Pageable pageable,
             WebRequest request,
             HttpServletResponse response,
@@ -533,7 +575,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return ResponseEntity.ok().body(tabPage);
     }
 
-    private String quotedEtag(PIDRecord pidRecord) {
+    @WithSpan(kind = SpanKind.INTERNAL)
+    private String quotedEtag(@SpanAttribute PIDRecord pidRecord) {
         return String.format("\"%s\"", pidRecord.getEtag());
     }
 

@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2025 Karlsruhe Institute of Technology.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package edu.kit.datamanager.pit.pitservice.impl;
 
 import edu.kit.datamanager.pit.common.ExternalServiceException;
@@ -8,14 +24,21 @@ import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.pitservice.IValidationStrategy;
 import edu.kit.datamanager.pit.typeregistry.AttributeInfo;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
+import io.micrometer.observation.annotation.Observed;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.*;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 /**
  * Validates a PID record using embedded profile(s).
@@ -24,6 +47,7 @@ import org.slf4j.LoggerFactory;
  * - validates all available attributes
  * - fails if an attribute is not defined within the profile
  */
+@Observed
 public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedStrictValidatorStrategy.class);
@@ -41,10 +65,36 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
         this.alwaysAcceptAdditionalAttributes = config.isValidationAlwaysAllowAdditionalAttributes();
     }
 
+    /**
+     * Checks Exceptions' causes for a RecordValidationExceptions, and throws them, if present.
+     * <p>
+     * Usually used to avoid exposing exceptions related to futures.
+     *
+     * @param e the exception to unwrap.
+     */
+    @WithSpan(kind = SpanKind.INTERNAL)
+    private static void unpackAsyncExceptions(@SpanAttribute PIDRecord pidRecord, Throwable e) {
+        final int MAX_LEVEL = 10;
+        Throwable cause = e;
+
+        for (int level = 0; level <= MAX_LEVEL && cause != null; level++) {
+            cause = cause.getCause();
+            if (cause instanceof RecordValidationException rve) {
+                throw rve;
+            } else if (cause instanceof TypeNotFoundException tnf) {
+                throw new RecordValidationException(
+                        pidRecord,
+                        "Type not found: %s".formatted(tnf.getMessage()));
+            }
+        }
+    }
+
     @Override
-    public void validate(PIDRecord pidRecord)
-            throws RecordValidationException, ExternalServiceException
-    {
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "validation_embedded_strict", description = "Time taken for embedded strict validation")
+    @Counted(value = "validation_embedded_strict_total", description = "Total number of embedded strict validations")
+    public void validate(@SpanAttribute PIDRecord pidRecord)
+            throws RecordValidationException, ExternalServiceException {
         if (pidRecord.getPropertyIdentifiers().isEmpty()) {
             throw new RecordValidationException(pidRecord, "Record is empty!");
         }
@@ -96,28 +146,6 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
             throw new RecordValidationException(
                     pidRecord,
                     String.format("Validation task was cancelled for %s. Please report.", pidRecord.getPid()));
-        }
-    }
-
-    /**
-     * Checks Exceptions' causes for a RecordValidationExceptions, and throws them, if present.
-     * <p>
-     * Usually used to avoid exposing exceptions related to futures.
-     * @param e the exception to unwrap.
-     */
-    private static void unpackAsyncExceptions(PIDRecord pidRecord, Throwable e) {
-        final int MAX_LEVEL = 10;
-        Throwable cause = e;
-
-        for (int level = 0; level <= MAX_LEVEL && cause != null; level++) {
-            cause = cause.getCause();
-            if (cause instanceof RecordValidationException rve) {
-                throw rve;
-            } else if (cause instanceof TypeNotFoundException tnf) {
-                throw new RecordValidationException(
-                        pidRecord,
-                        "Type not found: %s".formatted(tnf.getMessage()));
-            }
         }
     }
 }

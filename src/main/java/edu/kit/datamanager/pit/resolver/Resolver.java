@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2025 Karlsruhe Institute of Technology.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package edu.kit.datamanager.pit.resolver;
 
 import edu.kit.datamanager.pit.common.ExternalServiceException;
@@ -5,6 +21,12 @@ import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleBehavior;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
+import io.micrometer.observation.annotation.Observed;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import net.handle.api.HSAdapter;
 import net.handle.api.HSAdapterFactory;
 import net.handle.hdllib.HandleException;
@@ -22,19 +44,20 @@ import java.util.stream.Collectors;
  * <p>
  * - Handle System
  */
+
+@Observed
 public class Resolver {
+    private static final String SERVICE_NAME_HANDLE = "Handle System (read-only access)";
     /**
      * The configured system to which we usually have write access.
      * Only used if the prefix of the PID matches the prefix of this system.
      */
     private final ITypingService identifierSystem;
-
     /**
      * The client to the Handle System, used in read-only mode.
      * Used as a fallback, if the prefix is not the one of the configured system.
      */
     private final HSAdapter client = HSAdapterFactory.newInstance();
-    private static final String SERVICE_NAME_HANDLE = "Handle System (read-only access)";
 
     public Resolver(ITypingService identifierSystem) {
         this.identifierSystem = identifierSystem;
@@ -48,13 +71,16 @@ public class Resolver {
      *
      * @param pid the PID to resolve.
      * @return the PIDRecord associated with the PID.
-     * @throws PidNotFoundException if the PID could not be found in any system.
+     * @throws PidNotFoundException     if the PID could not be found in any system.
      * @throws ExternalServiceException if there was an error with the communication to an external system.
      */
-    public PIDRecord resolve(String pid) throws PidNotFoundException, ExternalServiceException {
+    @WithSpan(kind = SpanKind.CLIENT)
+    @Timed(value = "resolver_resolve_pid", description = "Time taken to resolve PID from any system")
+    @Counted(value = "resolver_resolve_pid_total", description = "Total number of PID resolutions")
+    public PIDRecord resolve(@SpanAttribute String pid) throws PidNotFoundException, ExternalServiceException {
         String prefix = Arrays.stream(
-                pid.split("/", 2)
-        )
+                        pid.split("/", 2)
+                )
                 .findFirst()
                 .orElseThrow(() -> new PidNotFoundException(pid, "Could not find prefix in PID."))
                 + "/"; // needed because the prefix is always followed by a slash

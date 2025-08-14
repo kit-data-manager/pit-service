@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2025 Karlsruhe Institute of Technology.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package edu.kit.datamanager.pit.typeregistry.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -15,6 +31,12 @@ import edu.kit.datamanager.pit.typeregistry.RegisteredProfile;
 import edu.kit.datamanager.pit.typeregistry.RegisteredProfileAttribute;
 import edu.kit.datamanager.pit.typeregistry.schema.SchemaInfo;
 import edu.kit.datamanager.pit.typeregistry.schema.SchemaSetGenerator;
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
+import io.micrometer.observation.annotation.Observed;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.client.ClientHttpResponse;
@@ -33,6 +55,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 
+@Observed
 public class TypeApi implements ITypeRegistry {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypeApi.class);
@@ -57,7 +80,7 @@ public class TypeApi implements ITypeRegistry {
                 .baseUrl(baseUri)
                 .requestInterceptor((request, body, execution) -> {
                     long start = System.currentTimeMillis();
-                    ClientHttpResponse response = execution.execute(request,  body);
+                    ClientHttpResponse response = execution.execute(request, body);
                     long timeSpan = System.currentTimeMillis() - start;
                     boolean isLongRequest = timeSpan > Application.LONG_HTTP_REQUEST_THRESHOLD;
                     if (isLongRequest) {
@@ -89,7 +112,7 @@ public class TypeApi implements ITypeRegistry {
                 .refreshAfterWrite(Duration.ofMinutes(expireAfterWrite / 2))
                 .expireAfterWrite(expireAfterWrite, TimeUnit.MINUTES)
                 .removalListener((key, value, cause) ->
-                    LOG.trace("Removing profile {} from profile cache. Cause: {}", key, cause)
+                        LOG.trace("Removing profile {} from profile cache. Cause: {}", key, cause)
                 )
                 .buildAsync(attributePid -> {
                     LOG.trace("Loading attribute {} to cache.", attributePid);
@@ -97,7 +120,10 @@ public class TypeApi implements ITypeRegistry {
                 });
     }
 
-    protected AttributeInfo queryAttribute(String attributePid) {
+    @WithSpan(kind = SpanKind.CLIENT)
+    @Timed(value = "typeregistry_query_attribute", description = "Time taken to query attribute from type registry")
+    @Counted(value = "typeregistry_query_attribute_total", description = "Total number of attribute queries")
+    protected AttributeInfo queryAttribute(@SpanAttribute String attributePid) {
         return http.get()
                 .uri(uriBuilder -> uriBuilder
                         .path(attributePid)
@@ -116,18 +142,25 @@ public class TypeApi implements ITypeRegistry {
                 });
     }
 
-    protected AttributeInfo extractAttributeInformation(String attributePid, JsonNode jsonNode) {
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "typeregistry_extract_attribute", description = "Time taken to extract attribute information from JSON")
+    protected AttributeInfo extractAttributeInformation(@SpanAttribute String attributePid, JsonNode jsonNode) {
         String typeName = jsonNode.path("type").asText();
         String name = jsonNode.path("name").asText();
         Set<SchemaInfo> schemas = this.querySchemas(attributePid);
         return new AttributeInfo(attributePid, name, typeName, schemas);
     }
 
-    protected Set<SchemaInfo> querySchemas(String maybeSchemaPid) throws TypeNotFoundException, ExternalServiceException {
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "typeregistry_query_schemas", description = "Time taken to query schemas")
+    protected Set<SchemaInfo> querySchemas(@SpanAttribute String maybeSchemaPid) throws TypeNotFoundException, ExternalServiceException {
         return schemaSetGenerator.generateFor(maybeSchemaPid).join();
     }
 
-    protected RegisteredProfile queryProfile(String maybeProfilePid) throws TypeNotFoundException, ExternalServiceException {
+    @WithSpan(kind = SpanKind.CLIENT)
+    @Timed(value = "typeregistry_query_profile", description = "Time taken to query profile from type registry")
+    @Counted(value = "typeregistry_query_profile_total", description = "Total number of profile queries")
+    protected RegisteredProfile queryProfile(@SpanAttribute String maybeProfilePid) throws TypeNotFoundException, ExternalServiceException {
         return http.get()
                 .uri(uriBuilder -> uriBuilder
                         .path(maybeProfilePid)
@@ -144,7 +177,9 @@ public class TypeApi implements ITypeRegistry {
                 });
     }
 
-    protected RegisteredProfile extractProfileInformation(String profilePid, JsonNode typeApiResponse)
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "typeregistry_extract_profile", description = "Time taken to extract profile information from JSON")
+    protected RegisteredProfile extractProfileInformation(@SpanAttribute String profilePid, JsonNode typeApiResponse)
             throws TypeNotFoundException, ExternalServiceException {
 
         List<RegisteredProfileAttribute> attributes = new ArrayList<>();
@@ -178,10 +213,10 @@ public class TypeApi implements ITypeRegistry {
         });
 
         boolean additionalAttributesDtrTestStyle = StreamSupport.stream(typeApiResponse
-                .path("content")
-                .path("representationsAndSemantics")
-                .spliterator(),
-                true)
+                                .path("content")
+                                .path("representationsAndSemantics")
+                                .spliterator(),
+                        true)
                 .filter(JsonNode::isObject)
                 .filter(node -> node.path("expression").asText("").equals("Format"))
                 .map(node -> node.path("subSchemaRelation").asText("").equals("allowAdditionalProperties"))
@@ -198,12 +233,18 @@ public class TypeApi implements ITypeRegistry {
     }
 
     @Override
-    public CompletableFuture<AttributeInfo> queryAttributeInfo(String attributePid) {
+    @WithSpan(kind = SpanKind.CLIENT)
+    @Timed(value = "typeregistry_query_attribute_info", description = "Time taken to get attribute info (with cache)")
+    @Counted(value = "typeregistry_query_attribute_info_total", description = "Total number of attribute info requests")
+    public CompletableFuture<AttributeInfo> queryAttributeInfo(@SpanAttribute String attributePid) {
         return this.attributeCache.get(attributePid);
     }
 
     @Override
-    public CompletableFuture<RegisteredProfile> queryAsProfile(String profilePid) {
+    @WithSpan(kind = SpanKind.CLIENT)
+    @Timed(value = "typeregistry_query_as_profile", description = "Time taken to get profile (with cache)")
+    @Counted(value = "typeregistry_query_as_profile_total", description = "Total number of profile requests")
+    public CompletableFuture<RegisteredProfile> queryAsProfile(@SpanAttribute String profilePid) {
         return this.profileCache.get(profilePid);
     }
 

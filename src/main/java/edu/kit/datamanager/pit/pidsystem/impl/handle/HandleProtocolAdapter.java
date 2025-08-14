@@ -1,44 +1,52 @@
+/*
+ * Copyright (c) 2025 Karlsruhe Institute of Technology.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package edu.kit.datamanager.pit.pidsystem.impl.handle;
 
-import java.io.IOException;
-import java.security.PrivateKey;
-import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
+import edu.kit.datamanager.pit.common.*;
+import edu.kit.datamanager.pit.configuration.HandleCredentials;
+import edu.kit.datamanager.pit.configuration.HandleProtocolProperties;
+import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import edu.kit.datamanager.pit.recordModifiers.RecordModifier;
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
+import io.micrometer.observation.annotation.Observed;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.constraints.NotNull;
-
+import net.handle.api.HSAdapter;
+import net.handle.api.HSAdapterFactory;
+import net.handle.apps.batch.BatchUtil;
+import net.handle.hdllib.*;
 import org.apache.commons.lang3.stream.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
-import edu.kit.datamanager.pit.common.ExternalServiceException;
-import edu.kit.datamanager.pit.common.InvalidConfigException;
-import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
-import edu.kit.datamanager.pit.common.PidNotFoundException;
-import edu.kit.datamanager.pit.common.RecordValidationException;
-import edu.kit.datamanager.pit.configuration.HandleCredentials;
-import edu.kit.datamanager.pit.configuration.HandleProtocolProperties;
-import edu.kit.datamanager.pit.domain.PIDRecord;
-import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
-import net.handle.api.HSAdapter;
-import net.handle.api.HSAdapterFactory;
-import net.handle.apps.batch.BatchUtil;
-import net.handle.hdllib.HandleException;
-import net.handle.hdllib.HandleResolver;
-import net.handle.hdllib.HandleValue;
-import net.handle.hdllib.PublicKeyAuthenticationInfo;
-import net.handle.hdllib.SiteInfo;
-import net.handle.hdllib.Util;
+
+import java.io.IOException;
+import java.security.PrivateKey;
+import java.security.spec.InvalidKeySpecException;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Uses the official java library to interact with the handle system using the
@@ -46,6 +54,7 @@ import net.handle.hdllib.Util;
  */
 @Component
 @ConditionalOnBean(HandleProtocolProperties.class)
+@Observed
 public class HandleProtocolAdapter implements IIdentifierSystem {
 
     private static final Logger LOG = LoggerFactory.getLogger(HandleProtocolAdapter.class);
@@ -72,7 +81,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
      * We use this method with the @PostConstruct annotation to run it
      * after the constructor and after springs autowiring is done properly
      * to make sure that all properties are already autowired.
-     * 
+     *
      * @throws HandleException        if a handle system error occurs.
      * @throws InvalidConfigException if the configuration is invalid, e.g. a path
      *                                does not lead to a file.
@@ -116,7 +125,10 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public boolean isPidRegistered(final String pid) throws ExternalServiceException {
+    @WithSpan(kind = SpanKind.CLIENT)
+    @Timed(value = "handle_system_is_pid_registered", description = "Time taken to check if PID is registered in Handle system")
+    @Counted(value = "handle_system_is_pid_registered_total", description = "Total number of PID registration checks")
+    public boolean isPidRegistered(@SpanAttribute final String pid) throws ExternalServiceException {
         HandleValue[] recordProperties;
         try {
             recordProperties = this.client.resolveHandle(pid, null, null);
@@ -131,7 +143,10 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public PIDRecord queryPid(final String pid) throws PidNotFoundException, ExternalServiceException {
+    @WithSpan(kind = SpanKind.CLIENT)
+    @Timed(value = "handle_system_query_pid", description = "Time taken to query PID from Handle system")
+    @Counted(value = "handle_system_query_pid_total", description = "Total number of PID queries")
+    public PIDRecord queryPid(@SpanAttribute final String pid) throws PidNotFoundException, ExternalServiceException {
         Collection<HandleValue> allValues = this.queryAllHandleValues(pid);
         if (allValues.isEmpty()) {
             return null;
@@ -143,7 +158,9 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @NotNull
-    protected Collection<HandleValue> queryAllHandleValues(final String pid) throws PidNotFoundException, ExternalServiceException {
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "handle_system_query_all_values", description = "Time taken to query all handle values")
+    protected Collection<HandleValue> queryAllHandleValues(@SpanAttribute final String pid) throws PidNotFoundException, ExternalServiceException {
         try {
             HandleValue[] values = this.client.resolveHandle(pid, null, null);
             return Stream.of(values)
@@ -158,7 +175,10 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public String registerPidUnchecked(final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
+    @WithSpan(kind = SpanKind.CLIENT)
+    @Timed(value = "handle_system_register_pid", description = "Time taken to register PID in Handle system")
+    @Counted(value = "handle_system_register_pid_total", description = "Total number of PID registrations")
+    public String registerPidUnchecked(@SpanAttribute final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
         // Add admin value for configured user only
         // TODO add options to add additional adminValues e.g. for user lists?
         ArrayList<HandleValue> admin = new ArrayList<>();
@@ -169,7 +189,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
         }
         ArrayList<HandleValue> futurePairs = HandleBehavior.handleValuesFrom(preparedRecord, Optional.of(admin));
 
-        HandleValue[] futurePairsArray = futurePairs.toArray(new HandleValue[] {});
+        HandleValue[] futurePairsArray = futurePairs.toArray(new HandleValue[]{});
 
         try {
             this.client.createHandle(preparedRecord.getPid(), futurePairsArray);
@@ -185,7 +205,10 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public boolean updatePid(final PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
+    @WithSpan(kind = SpanKind.CLIENT)
+    @Timed(value = "handle_system_update_pid", description = "Time taken to update PID in Handle system")
+    @Counted(value = "handle_system_update_pid_total", description = "Total number of PID updates")
+    public boolean updatePid(@SpanAttribute final PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
         if (!this.isValidPID(pidRecord.getPid())) {
             return false;
         }
@@ -251,7 +274,10 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public boolean deletePid(final String pid) throws ExternalServiceException {
+    @WithSpan(kind = SpanKind.CLIENT)
+    @Timed(value = "handle_system_delete_pid", description = "Time taken to delete PID from Handle system")
+    @Counted(value = "handle_system_delete_pid_total", description = "Total number of PID deletions")
+    public boolean deletePid(@SpanAttribute final String pid) throws ExternalServiceException {
         try {
             this.client.deleteHandle(pid);
         } catch (HandleException e) {
@@ -265,6 +291,9 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
+    @WithSpan(kind = SpanKind.CLIENT)
+    @Timed(value = "handle_system_resolve_all_pids", description = "Time taken to resolve all PIDs from Handle system")
+    @Counted(value = "handle_system_resolve_all_pids_total", description = "Total number of resolve all PIDs requests")
     public Collection<String> resolveAllPidsOfPrefix() throws ExternalServiceException, InvalidConfigException {
         HandleCredentials handleCredentials = this.props.getCredentials();
         if (handleCredentials == null) {
@@ -325,13 +354,15 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     /**
      * Returns true if the PID is valid according to the following criteria:
      * - PID is valid according to isIdentifierRegistered
-     * - If a generator prefix is set, the PID is expedted to have this prefix.
-     * 
+     * - If a generator prefix is set, the PID is expeted to have this prefix.
+     *
      * @param pid the identifier / PID to check.
      * @return true if PID is registered (and if has the generatorPrefix, if it
-     *         exists).
+     * exists).
      */
-    protected boolean isValidPID(final String pid) {
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "handle_system_is_valid_pid", description = "Time taken to validate PID")
+    protected boolean isValidPID(@SpanAttribute final String pid) {
         boolean isAuthMode = this.props.getCredentials() != null;
         if (isAuthMode && !pid.startsWith(this.props.getCredentials().getHandleIdentifierPrefix())) {
             return false;
