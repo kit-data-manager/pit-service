@@ -1,7 +1,7 @@
 plugins {
     // Spring boot & dependency management:
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
-    id 'org.springframework.boot' version '3.4.2'
+    id 'org.springframework.boot' version '3.5.4'
     // https://docs.spring.io/dependency-management-plugin/docs/current-SNAPSHOT/reference/html/
     id "io.spring.dependency-management" version "1.1.7"
     // Lombok generates getter and setter and more. https://projectlombok.org/
@@ -48,12 +48,13 @@ repositories {
 }
 
 ext {
-    springDocVersion  = '2.8.4'
+    springDocVersion = '2.8.9'
+    openTelemetryInstrumentationVersion = "2.18.1"
 }
 
 dependencyManagement {
     imports {
-        mavenBom("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.13.3")
+        mavenBom("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:${openTelemetryInstrumentationVersion}")
     }
 }
 
@@ -88,21 +89,24 @@ dependencies {
 
     // More flexibility when (de-)serializing json:
     //implementation("com.monitorjbl:spring-json-view:1.1.0")
-	implementation("com.github.everit-org.json-schema:org.everit.json.schema:1.14.4")
-    
+    implementation("com.github.everit-org.json-schema:org.everit.json.schema:1.14.4")
+
     implementation('org.apache.httpcomponents:httpclient:4.5.14')
     implementation('org.apache.httpcomponents:httpclient-cache:4.5.14')
 
     implementation("net.handle:handle-client:9.3.1")
 
-    implementation("io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter")
-    implementation("io.opentelemetry.contrib:opentelemetry-samplers:1.44.0-alpha")
-//    implementation 'io.opentelemetry:opentelemetry-api:1.29.0'
-//    implementation 'io.opentelemetry:opentelemetry-sdk:1.29.0'
-//    implementation("io.opentelemetry:opentelemetry-exporter-zipkin:1.47.0")
+    /* Observability */
+    implementation(platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:${openTelemetryInstrumentationVersion}"))
+    implementation "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter"
+    implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations"
+    implementation "io.opentelemetry.contrib:opentelemetry-samplers:1.48.0-alpha"
+    implementation "org.springframework.boot:spring-boot-starter-aop"
+    implementation "io.micrometer:micrometer-tracing-bridge-otel"
+    implementation "io.opentelemetry:opentelemetry-exporter-otlp"
 
     testImplementation(platform('org.junit:junit-bom:5.11.4'))
-	testImplementation('org.junit.jupiter:junit-jupiter')
+    testImplementation('org.junit.jupiter:junit-jupiter')
     testImplementation('org.junit.jupiter:junit-jupiter-params')
 
     testImplementation("org.springframework:spring-test")
@@ -167,7 +171,7 @@ test {
         println "Tests will have verbose output"
         testLogging {
             // tests are never "up-to-date", always print everything
-            outputs.upToDateWhen {false}
+            outputs.upToDateWhen { false }
             // show stdio when tests are running
             showStandardStreams = true
             // for junit5
@@ -200,15 +204,15 @@ jacocoTestReport {
     afterEvaluate {
         //exclude some classes/package from code coverage report
         classDirectories.setFrom(files(classDirectories.files.collect {
-                    fileTree(dir: it, exclude: [\
-            'edu/kit/datamanager/pit/configuration/**', \
-            'edu/kit/datamanager/pit/web/converter/**', \
-            'edu/kit/datamanager/pit/web/ExtendedErrorAttributes**', \
-            'edu/kit/datamanager/pit/web/UncontrolledExceptionHandler**', \
-            'edu/kit/datamanager/pit/common/**', \
-            'edu/kit/datamanager/pit/Application*'
-                        ])
-                }))
+            fileTree(dir: it, exclude: [\
+            'edu/kit/datamanager/pit/configuration/**',           \
+                      'edu/kit/datamanager/pit/web/converter/**',           \
+                      'edu/kit/datamanager/pit/web/ExtendedErrorAttributes**',           \
+                      'edu/kit/datamanager/pit/web/UncontrolledExceptionHandler**',           \
+                      'edu/kit/datamanager/pit/common/**',           \
+                      'edu/kit/datamanager/pit/Application*'
+            ])
+        }))
     }
 }
 
