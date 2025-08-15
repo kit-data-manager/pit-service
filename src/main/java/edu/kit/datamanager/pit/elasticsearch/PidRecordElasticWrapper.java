@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- */
 package edu.kit.datamanager.pit.elasticsearch;
 
 import edu.kit.datamanager.pit.domain.Operations;
@@ -40,21 +39,16 @@ import java.util.*;
 public class PidRecordElasticWrapper {
 
     private static final Logger LOG = LoggerFactory.getLogger(PidRecordElasticWrapper.class);
-
-    @Id
-    private String pid;
-
-    @ElementCollection(fetch = FetchType.EAGER)
-    private Map<String, ArrayList<String>> attributes = new HashMap<>();
-
-    @Field(type = FieldType.Date, format = DateFormat.basic_date_time)
-    private Date created;
-
-    @Field(type = FieldType.Date, format = DateFormat.basic_date_time)
-    private Date lastUpdate;
-
     @Field(type = FieldType.Text)
     private final List<String> read = new ArrayList<>();
+    @Id
+    private String pid;
+    @ElementCollection(fetch = FetchType.EAGER)
+    private Map<String, ArrayList<String>> attributes = new HashMap<>();
+    @Field(type = FieldType.Date, format = DateFormat.basic_date_time)
+    private Date created;
+    @Field(type = FieldType.Date, format = DateFormat.basic_date_time)
+    private Date lastUpdate;
 
     @WithSpan(kind = SpanKind.INTERNAL)
     public PidRecordElasticWrapper(PIDRecord pidRecord, Operations dateOperations) {
@@ -67,8 +61,7 @@ public class PidRecordElasticWrapper {
             this.created = dateOperations.findDateCreated(pidRecord).orElse(null);
             this.lastUpdate = dateOperations.findDateModified(pidRecord).orElse(null);
         } catch (IOException e) {
-            LOG.error("Could not retrieve date from record (pid: " + pidRecord.getPid() + ").", e);
-            e.printStackTrace();
+            LOG.error("Could not retrieve date from record (pid: {}).", pidRecord.getPid(), e);
         }
     }
 }
