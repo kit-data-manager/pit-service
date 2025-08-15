@@ -27,11 +27,7 @@ public class PIDRecordEntry implements Cloneable {
     @Override
     public PIDRecordEntry clone() {
         try {
-            PIDRecordEntry clone = (PIDRecordEntry) super.clone();
-            clone.setKey(this.key);
-            clone.setName(this.name);
-            clone.setValue(this.value);
-            return clone;
+            return (PIDRecordEntry) super.clone();
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
         }

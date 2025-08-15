@@ -117,17 +117,19 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
                     return attributeInfo;
                 }))
                 // resolve profiles and apply their validation
-                .map(attributeInfoFuture -> attributeInfoFuture.thenApply(attributeInfo -> {
+                .map(attributeInfoFuture -> attributeInfoFuture.thenCompose(attributeInfo -> {
                     boolean indicatesProfileValue = this.profileKeys.contains(attributeInfo.pid());
-                    if (indicatesProfileValue) {
-                        Arrays.stream(pidRecord.getPropertyValues(attributeInfo.pid()))
-                                .map(this.typeRegistry::queryAsProfile)
-                                .forEach(registeredProfileFuture -> registeredProfileFuture.thenApply(registeredProfile -> {
-                                    registeredProfile.validateAttributes(pidRecord, this.alwaysAcceptAdditionalAttributes);
-                                    return registeredProfile;
-                                }));
+                    if (!indicatesProfileValue) {
+                        return CompletableFuture.completedFuture(attributeInfo);
                     }
-                    return attributeInfo;
+                    CompletableFuture<?>[] profileFutures = Arrays.stream(pidRecord.getPropertyValues(attributeInfo.pid()))
+                            .map(this.typeRegistry::queryAsProfile)
+                            .map(registeredProfileFuture -> registeredProfileFuture.thenAccept(
+                                    registeredProfile -> {
+                                        registeredProfile.validateAttributes(pidRecord, this.alwaysAcceptAdditionalAttributes);
+                                    }))
+                            .toArray(CompletableFuture[]::new);
+                    return CompletableFuture.allOf(profileFutures).thenApply(v -> attributeInfo);
                 }))
                 .toList();
 

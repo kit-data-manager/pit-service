@@ -26,6 +26,8 @@ import io.micrometer.observation.annotation.Observed;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Set;
@@ -36,6 +38,7 @@ import java.util.stream.Collectors;
 
 @Observed
 public class SchemaSetGenerator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SchemaSetGenerator.class);
     protected final Set<SchemaGenerator> GENERATORS;
     protected final AsyncLoadingCache<String, Set<SchemaInfo>> CACHE;
 
@@ -52,6 +55,16 @@ public class SchemaSetGenerator {
                 .expireAfterWrite(props.getCacheExpireAfterWriteLifetime(), TimeUnit.MINUTES)
                 .buildAsync(attributePid -> GENERATORS.stream()
                         .map(schemaGenerator -> schemaGenerator.generateSchema(attributePid))
+                        .peek(schemaInfo -> {
+                            if (schemaInfo.error() != null) {
+                                LOGGER.warn(
+                                        "Error when retrieving schema from {} for attribute ({}): {}",
+                                        schemaInfo.origin(),
+                                        attributePid,
+                                        schemaInfo.error().getMessage());
+                            }
+                        }
+                        )
                         .collect(Collectors.toSet())
                 );
     }

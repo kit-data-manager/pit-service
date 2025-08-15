@@ -2,13 +2,14 @@ package edu.kit.datamanager.pit.typeregistry.schema;
 
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.typeregistry.AttributeInfo;
-import org.everit.json.schema.ValidationException;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.URI;
-import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,17 +28,29 @@ class SchemaSetGeneratorTest {
         generator = new SchemaSetGenerator(properties);
     }
 
-    /**
-     * @throws ValidationException if a schema fails to validate
-     * @throws NoSuchElementException if no schema is found
-     */
-    @Test
-    void testChecksumValidation() throws ValidationException, NoSuchElementException {
-        // generated test for this error message: Reason:\nAttribute 21.T11148/92e200311a56800b3e47 has a non-complying value { \"sha256sum\": \"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\" }
-        Set<SchemaInfo> schemaInfos = generator.generateFor("21.T11148/92e200311a56800b3e47").join();
-        AttributeInfo attributeInfo = new AttributeInfo("21.T11148/92e200311a56800b3e47", "name", "typeName", schemaInfos);
-        assertTrue(attributeInfo.validate("{ \"sha256sum\": \"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\" }"));
-        // This is currently not supported, but would be nice to have:
-        assertFalse(attributeInfo.validate("\"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\""));
+    private static Stream<Arguments> typeWithExamplesAndCounterexamples() {
+        return Stream.of( // typePid, example, counterexample
+                // checksum
+                Arguments.of(
+                        "21.T11148/92e200311a56800b3e47",
+                        "{ \"sha256sum\": \"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\" }",
+                        "\"blabla c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\""),
+                // checksum
+                Arguments.of(
+                        "21.T11148/92e200311a56800b3e47",
+                        "\"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\"",
+                        "\"not a checksum\""),
+                // URI with schema making use of "format" to specify an uri
+                Arguments.of("21.T11969/cb371c93c5aa0e62198e", "\"https://example.com\"", "This is not a URI")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("typeWithExamplesAndCounterexamples")
+    void testExampleAndCounterexample(String typePid, String example, String counterexample) {
+        Set<SchemaInfo> schemaInfos = generator.generateFor(typePid).join();
+        AttributeInfo attributeInfo = new AttributeInfo(typePid, "name", "typeName", schemaInfos);
+        assertTrue(attributeInfo.validate(example));
+        assertFalse(attributeInfo.validate(counterexample));
     }
 }

@@ -1,12 +1,13 @@
 plugins {
     // Spring boot & dependency management:
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
+
     id 'org.springframework.boot' version '3.5.4'
     // https://docs.spring.io/dependency-management-plugin/docs/current-SNAPSHOT/reference/html/
     id "io.spring.dependency-management" version "1.1.7"
     // Lombok generates getter and setter and more. https://projectlombok.org/
     // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
-    id "io.freefair.lombok" version "8.12"
+    id "io.freefair.lombok" version "8.13.1"
     // Release tagging with `./gradlew release`
     // Check for new versions here: https://plugins.gradle.org/plugin/net.researchgate.release
     // Usage: https://github.com/researchgate/gradle-release
@@ -19,19 +20,19 @@ plugins {
     id 'jacoco'
     // Adds coveralls task for CI to send results to the coveralls service.
     id "com.github.kt3k.coveralls" version "2.12.2"
-    id "org.owasp.dependencycheck" version "12.0.1"
+    id "org.owasp.dependencycheck" version "12.1.2"
     // include build and git information via Spring Actuator
-    id "com.gorylenko.gradle-git-properties" version "2.4.2"
+    id "com.gorylenko.gradle-git-properties" version "2.5.0"
 }
 
 lombok {
     // check here for new versions: https://projectlombok.org/download
-    version = '1.18.30'
+    version = '1.18.38'
 }
 
 jacoco {
     // check here for new versions: https://www.jacoco.org/jacoco/
-    toolVersion = "0.8.11"
+    toolVersion = "0.8.13"
 }
 
 description = "A gateway to manage PIDs containing profiles and typed attributes."
@@ -61,7 +62,7 @@ dependencyManagement {
 dependencies {
     // Due to the spring boot gradle plugin, we can omit versions in org.springframework.*
     // dependencies. It will automatically choose the fitting ones.
-    implementation("edu.kit.datamanager:service-base:1.3.3")
+    implementation("edu.kit.datamanager:service-base:1.3.4")
     implementation("edu.kit.datamanager:repo-core:1.2.5")
     // AsyncLoadingCache https://github.com/ben-manes/caffeine
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
@@ -88,13 +89,12 @@ dependencies {
     implementation "org.springframework.data:spring-data-elasticsearch"
 
     // More flexibility when (de-)serializing json:
-    //implementation("com.monitorjbl:spring-json-view:1.1.0")
-    implementation("com.github.everit-org.json-schema:org.everit.json.schema:1.14.4")
-
+    implementation(group: 'com.networknt', name: 'json-schema-validator', version: '1.5.7');
+    
     implementation('org.apache.httpcomponents:httpclient:4.5.14')
     implementation('org.apache.httpcomponents:httpclient-cache:4.5.14')
 
-    implementation("net.handle:handle-client:9.3.1")
+    implementation("net.handle:handle-client:9.3.2")
 
     /* Observability */
     implementation(platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:${openTelemetryInstrumentationVersion}"))
@@ -105,8 +105,8 @@ dependencies {
     implementation "io.micrometer:micrometer-tracing-bridge-otel"
     implementation "io.opentelemetry:opentelemetry-exporter-otlp"
 
-    testImplementation(platform('org.junit:junit-bom:5.11.4'))
-    testImplementation('org.junit.jupiter:junit-jupiter')
+    testImplementation(platform('org.junit:junit-bom:5.13.1'))
+	  testImplementation('org.junit.jupiter:junit-jupiter')
     testImplementation('org.junit.jupiter:junit-jupiter-params')
 
     testImplementation("org.springframework:spring-test")
@@ -220,6 +220,13 @@ springBoot {
     buildInfo()
 }
 
+// make sure that git properties plugin does not fail
+// on build without access to the git repo information
+// (zip download etc.)
+gitProperties {
+    failOnNoGitDirectory = false
+}
+
 release {
     // define tag pattern (tags have to start with 'v')
     tagTemplate = 'v${version}'
@@ -232,3 +239,5 @@ tasks.withType(Jar).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUD
 tasks.withType(Tar).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
 tasks.withType(Copy).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
 tasks.withType(Zip).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
+
+apply from: 'gradle/updateCff.gradle'
