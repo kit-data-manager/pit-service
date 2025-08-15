@@ -30,6 +30,7 @@ import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.resolver.Resolver;
+import edu.kit.datamanager.pit.web.BatchRecordResponse;
 import edu.kit.datamanager.pit.web.ITypingRestResource;
 import edu.kit.datamanager.pit.web.TabulatorPaginationFormat;
 import edu.kit.datamanager.service.IMessagingService;
@@ -41,19 +42,16 @@ import io.micrometer.observation.annotation.Observed;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.stream.Streams;
 import org.apache.http.client.cache.HeaderConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.WebRequest;
@@ -67,48 +65,55 @@ import java.util.*;
 import java.util.stream.Stream;
 
 @RestController
-@RequestMapping(value = "/api/v1/pit")
-@Schema(description = "PID Information Types API")
 @Observed
 public class TypingRESTResourceImpl implements ITypingRestResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypingRESTResourceImpl.class);
-    @Autowired
-    protected ITypingService typingService;
-    @Autowired
-    protected Resolver resolver;
-    @Autowired
-    private ApplicationProperties applicationProps;
-    @Autowired
-    private IMessagingService messagingService;
 
-    @Autowired
-    private KnownPidsDao localPidStorage;
+    private final ITypingService typingService;
+    private final Resolver resolver;
+    private final ApplicationProperties applicationProps;
+    private final IMessagingService messagingService;
+    private final KnownPidsDao localPidStorage;
+    private final Optional<PidRecordElasticRepository> elastic;
+    private final PidSuffixGenerator suffixGenerator;
+    private final PidGenerationProperties pidGenerationProperties;
 
-    @Autowired
-    private Optional<PidRecordElasticRepository> elastic;
-
-    @Autowired
-    private PidSuffixGenerator suffixGenerator;
-
-    @Autowired
-    private PidGenerationProperties pidGenerationProperties;
-
-    public TypingRESTResourceImpl() {
+    public TypingRESTResourceImpl(ITypingService typingService, Resolver resolver, ApplicationProperties applicationProps, IMessagingService messagingService, KnownPidsDao localPidStorage, Optional<PidRecordElasticRepository> elastic, PidSuffixGenerator suffixGenerator, PidGenerationProperties pidGenerationProperties) {
         super();
+        this.typingService = typingService;
+        this.resolver = resolver;
+        this.applicationProps = applicationProps;
+        this.messagingService = messagingService;
+        this.localPidStorage = localPidStorage;
+        this.elastic = elastic;
+        this.suffixGenerator = suffixGenerator;
+        this.pidGenerationProperties = pidGenerationProperties;
     }
 
     @Override
     @WithSpan(kind = SpanKind.SERVER)
     @Timed(value = "pit_create_pids", description = "Time taken to create multiple PID records")
     @Counted(value = "pit_create_pids_total", description = "Total number of create PIDs requests")
-    public ResponseEntity<List<PIDRecord>> createPIDs(
+    public ResponseEntity<BatchRecordResponse> createPIDs(
             @SpanAttribute List<PIDRecord> rec,
             @SpanAttribute boolean dryrun,
             WebRequest request,
             HttpServletResponse response,
             UriComponentsBuilder uriBuilder
     ) throws IOException, RecordValidationException, ExternalServiceException {
+        if (rec == null || rec.isEmpty()) {
+            LOG.warn("No records provided for PID creation.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new BatchRecordResponse(Collections.emptyList(), Collections.emptyMap()));
+        }
+        if (rec.size() == 1) {
+            // If only one record is provided, we can use the single record creation method.
+            LOG.info("Only one record provided. Using single record creation method.");
+            var result = createPID(rec.getFirst(), dryrun, request, response, uriBuilder);
+            // Return the single record in a list
+            assert result.getBody() != null;
+            return ResponseEntity.status(result.getStatusCode()).headers(result.getHeaders()).body(new BatchRecordResponse(Collections.singletonList(result.getBody()), Collections.singletonMap(rec.getFirst().getPid(), result.getBody().getPid())));
+        }
         Instant startTime = Instant.now();
         LOG.info("Creating PIDs for {} records.", rec.size());
         String prefix = this.typingService.getPrefix().orElseThrow(() -> new IOException("No prefix configured."));
@@ -127,10 +132,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             LOG.info("-- Time taken for mapping: {} ms", ChronoUnit.MILLIS.between(startTime, mappingTime));
             LOG.info("-- Time taken for validation: {} ms", ChronoUnit.MILLIS.between(mappingTime, validationTime));
             LOG.info("Dryrun finished. Returning validated records for {} records.", validatedRecords.size());
-            return ResponseEntity.status(HttpStatus.OK).body(validatedRecords);
+            return ResponseEntity.status(HttpStatus.OK).body(new BatchRecordResponse(validatedRecords, pidMappings));
         }
 
         List<PIDRecord> failedRecords = new ArrayList<>();
+        List<PIDRecord> successfulRecords = new ArrayList<>();
         // register the records
         validatedRecords.forEach(pidRecord -> {
             try {
@@ -157,10 +163,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
                 // save the record to elastic
                 this.saveToElastic(pidRecord);
+                successfulRecords.add(pidRecord);
+                LOG.debug("Successfully registered PID for record: {}", pidRecord);
             } catch (Exception e) {
                 LOG.error("Could not register PID for record {}. Error: {}", pidRecord, e.getMessage());
                 failedRecords.add(pidRecord);
-                validatedRecords.remove(pidRecord);
             }
         });
 
@@ -173,21 +180,329 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         LOG.info("-- Time taken for registration: {} ms", ChronoUnit.MILLIS.between(validationTime, endTime));
 
         if (!failedRecords.isEmpty()) {
-            for (PIDRecord successfulRecord : validatedRecords) { // rollback the successful records
+            List<String> rollbackFailures = new ArrayList<>();
+            for (PIDRecord successfulRecord : successfulRecords) { // rollback the successful records
                 try {
                     LOG.debug("Rolling back PID creation for record with PID {}.", successfulRecord.getPid());
                     this.typingService.deletePid(successfulRecord.getPid());
                 } catch (Exception e) {
+                    rollbackFailures.add(successfulRecord.getPid());
                     LOG.error("Could not rollback PID creation for record with PID {}. Error: {}", successfulRecord.getPid(), e.getMessage());
                 }
             }
 
+            if (!rollbackFailures.isEmpty()) {
+                LOG.error("Failed to rollback {} PIDs: {}", rollbackFailures.size(), rollbackFailures);
+            }
+
             LOG.info("Creation finished. Returning validated records for {} records. {} records failed to be created.", validatedRecords.size(), failedRecords.size());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(failedRecords);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new BatchRecordResponse(failedRecords, pidMappings));
         } else {
-            LOG.info("Creation finished. Returning validated records for {} records.", validatedRecords.size());
-            return ResponseEntity.status(HttpStatus.CREATED).body(validatedRecords);
+            LOG.info("Creation finished. Returning successfully validated and created records for {} records of {}.", successfulRecords.size(), validatedRecords.size());
+            return ResponseEntity.status(HttpStatus.CREATED).body(new BatchRecordResponse(successfulRecords, pidMappings));
         }
+    }
+
+    @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_create_pid", description = "Time taken to create a single PID record")
+    @Counted(value = "pit_create_pid_total", description = "Total number of create PID requests")
+    public ResponseEntity<PIDRecord> createPID(
+            @SpanAttribute PIDRecord pidRecord,
+            @SpanAttribute boolean dryrun,
+
+            final WebRequest request,
+            final HttpServletResponse response,
+            final UriComponentsBuilder uriBuilder
+    ) {
+        LOG.info("Creating PID");
+
+        if (dryrun) {
+            pidRecord.setPid("dryrun");
+        } else {
+            setPid(pidRecord);
+        }
+
+        this.typingService.validate(pidRecord);
+
+        if (dryrun) {
+            // dryrun only does validation. Stop now and return as we would later on.
+            return ResponseEntity.status(HttpStatus.OK).eTag(quotedEtag(pidRecord)).body(pidRecord);
+        }
+
+        String pid = this.typingService.registerPid(pidRecord);
+        pidRecord.setPid(pid);
+
+        if (applicationProps.getStorageStrategy().storesModified()) {
+            storeLocally(pid, true);
+        }
+        PidRecordMessage message = PidRecordMessage.creation(
+                pid,
+                "", // TODO parameter is deprecated and will be removed soon.
+                AuthenticationHelper.getPrincipal(),
+                ControllerUtils.getLocalHostname());
+        try {
+            this.messagingService.send(message);
+        } catch (Exception e) {
+            LOG.error("Could not notify messaging service about the following message: {}", message);
+        }
+        this.saveToElastic(pidRecord);
+        return ResponseEntity.status(HttpStatus.CREATED).eTag(quotedEtag(pidRecord)).body(pidRecord);
+    }
+
+    @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_update_pid", description = "Time taken to update a PID record")
+    @Counted(value = "pit_update_pid_total", description = "Total number of update PID requests")
+    public ResponseEntity<PIDRecord> updatePID(
+            @SpanAttribute PIDRecord pidRecord,
+            @SpanAttribute boolean dryrun,
+
+            final WebRequest request,
+            final HttpServletResponse response,
+            final UriComponentsBuilder uriBuilder
+    ) {
+        // PID validation
+        String pid = getContentPathFromRequest("pid", request);
+        String pidInternal = pidRecord.getPid();
+        if (hasPid(pidRecord) && !pid.equals(pidInternal)) {
+            throw new RecordValidationException(
+                    pidRecord,
+                    "Optional PID in record is given (%s), but it was not the same as the PID in the URL (%s). Ignore request, assuming this was not intended.".formatted(pidInternal, pid));
+        }
+
+        PIDRecord existingRecord = this.resolver.resolve(pid);
+        if (existingRecord == null) {
+            throw new PidNotFoundException(pid);
+        }
+
+        // record validation
+        pidRecord.setPid(pid);
+        this.typingService.validate(pidRecord);
+
+        // throws exception (HTTP 412) if check fails.
+        ControllerUtils.checkEtag(request, existingRecord);
+
+        if (dryrun) {
+            // dryrun only does validation. Stop now and return as we would later on.
+            return ResponseEntity.ok().eTag(quotedEtag(pidRecord)).body(pidRecord);
+        }
+
+        // update and send message
+        if (this.typingService.updatePid(pidRecord)) {
+            // store pid locally
+            if (applicationProps.getStorageStrategy().storesModified()) {
+                storeLocally(pidRecord.getPid(), true);
+            }
+            // distribute pid to other services
+            PidRecordMessage message = PidRecordMessage.update(
+                    pid,
+                    "", // TODO parameter is depricated and will be removed soon.
+                    AuthenticationHelper.getPrincipal(),
+                    ControllerUtils.getLocalHostname());
+            this.messagingService.send(message);
+            this.saveToElastic(pidRecord);
+            return ResponseEntity.ok().eTag(quotedEtag(pidRecord)).body(pidRecord);
+        } else {
+            throw new PidNotFoundException(pid);
+        }
+    }
+
+    private boolean hasPid(PIDRecord pidRecord) {
+        return pidRecord.getPid() != null && !pidRecord.getPid().isBlank();
+    }
+
+    /**
+     * Stores the PID in a local database.
+     *
+     * @param pid    the PID
+     * @param update if true, updates the modified timestamp if it already exists.
+     *               If it does not exist, it will be created with both timestamps
+     *               (created and modified) being the same.
+     */
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "pit_store_locally", description = "Time taken to store PID locally")
+    private void storeLocally(String pid, boolean update) {
+        Instant now = Instant.now();
+        Optional<KnownPid> oldPid = localPidStorage.findByPid(pid);
+        if (oldPid.isEmpty()) {
+            localPidStorage.saveAndFlush(new KnownPid(pid, now, now));
+        } else if (update) {
+            KnownPid newPid = oldPid.get();
+            newPid.setModified(now);
+            localPidStorage.saveAndFlush(newPid);
+        }
+    }
+
+    /**
+     * Extracts and returns the content path from the incoming web request, based on the specified last path element.
+     *
+     * @param lastPathElement the last path element used to determine the content path
+     * @param request         the incoming web request containing the requested URI and attributes
+     * @return the extracted content path from the request
+     * @throws CustomInternalServerError if the requested URI cannot be obtained from the web request
+     */
+    @WithSpan(kind = SpanKind.INTERNAL)
+    private String getContentPathFromRequest(@SpanAttribute String lastPathElement, WebRequest request) {
+        String requestedUri = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE,
+                RequestAttributes.SCOPE_REQUEST);
+        if (requestedUri == null) {
+            throw new CustomInternalServerError("Unable to obtain request URI.");
+        }
+        return requestedUri.substring(requestedUri.indexOf(lastPathElement + "/") + (lastPathElement + "/").length());
+    }
+
+    @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_get_record", description = "Time taken to get a PID record")
+    @Counted(value = "pit_get_record_total", description = "Total number of get PID record requests")
+    public ResponseEntity<PIDRecord> getRecord(
+            @SpanAttribute boolean validation,
+
+            final WebRequest request,
+            final HttpServletResponse response,
+            final UriComponentsBuilder uriBuilder
+    ) {
+        String pid = getContentPathFromRequest("pid", request);
+        PIDRecord pidRecord = this.resolver.resolve(pid);
+        if (applicationProps.getStorageStrategy().storesResolved()) {
+            storeLocally(pid, false);
+        }
+        this.saveToElastic(pidRecord);
+        if (validation) {
+            typingService.validate(pidRecord);
+        }
+        return ResponseEntity.ok().eTag(quotedEtag(pidRecord)).body(pidRecord);
+    }
+
+    @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_find_by_pid", description = "Time taken to find a known PID")
+    @Counted(value = "pit_find_by_pid_total", description = "Total number of find by PID requests")
+    public ResponseEntity<KnownPid> findByPid(
+            WebRequest request,
+            HttpServletResponse response,
+            UriComponentsBuilder uriBuilder
+    ) throws IOException {
+        String pid = getContentPathFromRequest("known-pid", request);
+        Optional<KnownPid> known = this.localPidStorage.findByPid(pid);
+        return known
+                .map(knownPid -> ResponseEntity.ok().body(knownPid))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "pit_find_all", description = "Time taken to find  known PIDs")
+    @Counted(value = "pit_find_all_total", description = "Total number of find all PIDs requests")
+    @Override
+    public ResponseEntity<List<KnownPid>> findAll(
+            Instant createdAfter,
+            Instant createdBefore,
+            Instant modifiedAfter,
+            Instant modifiedBefore,
+            Pageable pageable,
+            WebRequest request,
+            HttpServletResponse response,
+            UriComponentsBuilder uriBuilder) {
+        Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
+        response.addHeader(
+                HeaderConstants.CONTENT_RANGE,
+                ControllerUtils.getContentRangeHeader(
+                        page.getNumber(),
+                        page.getSize(),
+                        page.getTotalElements()));
+        return ResponseEntity.ok().body(page.getContent());
+    }
+
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "pit_find_all_page", description = "Time taken to find paginated known PIDs")
+    @Counted(value = "pit_find_all_page_total", description = "Total number of paginated find all PIDs requests")
+    public Page<KnownPid> findAllPage(
+            @SpanAttribute Instant createdAfter,
+            @SpanAttribute Instant createdBefore,
+            @SpanAttribute Instant modifiedAfter,
+            @SpanAttribute Instant modifiedBefore,
+            Pageable pageable
+    ) {
+        final boolean queriesCreated = createdAfter != null || createdBefore != null;
+        final boolean queriesModified = modifiedAfter != null || modifiedBefore != null;
+        if (queriesCreated && createdAfter == null) {
+            createdAfter = Instant.EPOCH;
+        }
+        if (queriesCreated && createdBefore == null) {
+            createdBefore = Instant.now().plus(1, ChronoUnit.DAYS);
+        }
+        if (queriesModified && modifiedAfter == null) {
+            modifiedAfter = Instant.EPOCH;
+        }
+        if (queriesModified && modifiedBefore == null) {
+            modifiedBefore = Instant.now().plus(1, ChronoUnit.DAYS);
+        }
+
+        Page<KnownPid> resultCreatedTimestamp = Page.empty();
+        Page<KnownPid> resultModifiedTimestamp = Page.empty();
+        if (queriesCreated) {
+            resultCreatedTimestamp = this.localPidStorage
+                    .findDistinctPidsByCreatedBetween(createdAfter, createdBefore, pageable);
+        }
+        if (queriesModified) {
+            resultModifiedTimestamp = this.localPidStorage
+                    .findDistinctPidsByModifiedBetween(modifiedAfter, modifiedBefore, pageable);
+        }
+        if (queriesCreated && queriesModified) {
+            final Page<KnownPid> tmp = resultModifiedTimestamp;
+            final List<KnownPid> intersection = resultCreatedTimestamp.filter((x) -> tmp.getContent().contains(x)).toList();
+            return new PageImpl<>(intersection);
+        } else if (queriesCreated) {
+            return resultCreatedTimestamp;
+        } else if (queriesModified) {
+            return resultModifiedTimestamp;
+        }
+        return new PageImpl<>(this.localPidStorage.findAll());
+    }
+
+    @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_find_all_tabular", description = "Time taken to find all known PIDs in tabular format")
+    @Counted(value = "pit_find_all_tabular_total", description = "Total number of find all PIDs tabular requests")
+    public ResponseEntity<TabulatorPaginationFormat<KnownPid>> findAllForTabular(
+            @SpanAttribute Instant createdAfter,
+            @SpanAttribute Instant createdBefore,
+            @SpanAttribute Instant modifiedAfter,
+            @SpanAttribute Instant modifiedBefore,
+            Pageable pageable,
+            WebRequest request,
+            HttpServletResponse response,
+            UriComponentsBuilder uriBuilder) {
+        Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
+        response.addHeader(
+                HeaderConstants.CONTENT_RANGE,
+                ControllerUtils.getContentRangeHeader(
+                        page.getNumber(),
+                        page.getSize(),
+                        page.getTotalElements()));
+        TabulatorPaginationFormat<KnownPid> tabPage = new TabulatorPaginationFormat<>(page);
+        return ResponseEntity.ok().body(tabPage);
+    }
+
+    /**
+     * Saves a PIDRecord to Elasticsearch if the Elasticsearch database is available.
+     *
+     * @param rec the PIDRecord object to be saved to Elasticsearch
+     */
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "pit_save_to_elastic", description = "Time taken to save record to Elasticsearch")
+    private void saveToElastic(PIDRecord rec) {
+        this.elastic.ifPresent(
+                database -> database.save(
+                        new PidRecordElasticWrapper(rec, typingService.getOperations())
+                )
+        );
+    }
+
+    @WithSpan(kind = SpanKind.INTERNAL)
+    private String quotedEtag(@SpanAttribute PIDRecord pidRecord) {
+        return String.format("\"%s\"", pidRecord.getEtag());
     }
 
     /**
@@ -196,16 +511,18 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
      * @param rec    the list of records produced by the user
      * @param dryrun whether the operation is a dryrun or not
      * @return a map between the user-provided PIDs (key) and the real PIDs (values)
-     * @throws IOException               if the prefix is not configured
      * @throws RecordValidationException if the same internal PID is used for multiple records
      * @throws ExternalServiceException  if the PID generation fails
      */
     @WithSpan(kind = SpanKind.INTERNAL)
     @Timed(value = "pit_generate_pid_mapping", description = "Time taken to generate PID mappings")
-    private Map<String, String> generatePIDMapping(@SpanAttribute List<PIDRecord> rec, @SpanAttribute boolean dryrun) throws IOException, RecordValidationException, ExternalServiceException {
+    private Map<String, String> generatePIDMapping(@SpanAttribute List<PIDRecord> rec, @SpanAttribute boolean dryrun) throws RecordValidationException, ExternalServiceException {
         Map<String, String> pidMappings = new HashMap<>();
         for (PIDRecord pidRecord : rec) {
             String internalPID = pidRecord.getPid(); // the internal PID is the one given by the user
+            if (internalPID == null) {
+                internalPID = ""; // if no PID was given, we set it to an empty string
+            }
             if (!internalPID.isBlank() && pidMappings.containsKey(internalPID)) { // check if the internal PID was already used
                 // This internal PID was already used by some other record in the same request.
                 throw new RecordValidationException(pidRecord, "The PID " + internalPID + " was used for multiple records in the same request.");
@@ -256,61 +573,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return validatedRecords;
     }
 
-    @Override
-    @WithSpan(kind = SpanKind.SERVER)
-    @Timed(value = "pit_create_pid", description = "Time taken to create a single PID record")
-    @Counted(value = "pit_create_pid_total", description = "Total number of create PID requests")
-    public ResponseEntity<PIDRecord> createPID(
-            @SpanAttribute PIDRecord pidRecord,
-            @SpanAttribute boolean dryrun,
-
-            final WebRequest request,
-            final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder
-    ) throws IOException {
-        LOG.info("Creating PID");
-
-        if (dryrun) {
-            pidRecord.setPid("dryrun");
-        } else {
-            setPid(pidRecord);
-        }
-
-        this.typingService.validate(pidRecord);
-
-        if (dryrun) {
-            // dryrun only does validation. Stop now and return as we would later on.
-            return ResponseEntity.status(HttpStatus.OK).eTag(quotedEtag(pidRecord)).body(pidRecord);
-        }
-
-        String pid = this.typingService.registerPid(pidRecord);
-        pidRecord.setPid(pid);
-
-        if (applicationProps.getStorageStrategy().storesModified()) {
-            storeLocally(pid, true);
-        }
-        PidRecordMessage message = PidRecordMessage.creation(
-                pid,
-                "", // TODO parameter is deprecated and will be removed soon.
-                AuthenticationHelper.getPrincipal(),
-                ControllerUtils.getLocalHostname());
-        try {
-            this.messagingService.send(message);
-        } catch (Exception e) {
-            LOG.error("Could not notify messaging service about the following message: {}", message);
-        }
-        this.saveToElastic(pidRecord);
-        return ResponseEntity.status(HttpStatus.CREATED).eTag(quotedEtag(pidRecord)).body(pidRecord);
-    }
-
-    @WithSpan(kind = SpanKind.INTERNAL)
-    private boolean hasPid(@SpanAttribute PIDRecord pidRecord) {
-        return pidRecord.getPid() != null && !pidRecord.getPid().isBlank();
-    }
-
-    @WithSpan(kind = SpanKind.INTERNAL)
-    @Timed(value = "pit_set_pid", description = "Time taken to set PID on record")
-    private void setPid(@SpanAttribute PIDRecord pidRecord) throws IOException {
+    private void setPid(PIDRecord pidRecord) {
         boolean hasCustomPid = hasPid(pidRecord);
         boolean allowsCustomPids = pidGenerationProperties.isCustomClientPidsEnabled();
 
@@ -340,244 +603,6 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                     .orElseThrow(() -> new ExternalServiceException("Could not generate PID suffix which did not exist yet."));
             pidRecord.setPid(suffix.get());
         }
-    }
-
-    @Override
-    @WithSpan(kind = SpanKind.SERVER)
-    @Timed(value = "pit_update_pid", description = "Time taken to update a PID record")
-    @Counted(value = "pit_update_pid_total", description = "Total number of update PID requests")
-    public ResponseEntity<PIDRecord> updatePID(
-            @SpanAttribute PIDRecord pidRecord,
-            @SpanAttribute boolean dryrun,
-
-            final WebRequest request,
-            final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder
-    ) throws IOException {
-        // PID validation
-        String pid = getContentPathFromRequest("pid", request);
-        String pidInternal = pidRecord.getPid();
-        if (hasPid(pidRecord) && !pid.equals(pidInternal)) {
-            throw new RecordValidationException(
-                    pidRecord,
-                    "Optional PID in record is given (%s), but it was not the same as the PID in the URL (%s). Ignore request, assuming this was not intended.".formatted(pidInternal, pid));
-        }
-
-        PIDRecord existingRecord = this.resolver.resolve(pid);
-        if (existingRecord == null) {
-            throw new PidNotFoundException(pid);
-        }
-
-        // record validation
-        pidRecord.setPid(pid);
-        this.typingService.validate(pidRecord);
-
-        // throws exception (HTTP 412) if check fails.
-        ControllerUtils.checkEtag(request, existingRecord);
-
-        if (dryrun) {
-            // dryrun only does validation. Stop now and return as we would later on.
-            return ResponseEntity.ok().eTag(quotedEtag(pidRecord)).body(pidRecord);
-        }
-
-        // update and send message
-        if (this.typingService.updatePid(pidRecord)) {
-            // store pid locally
-            if (applicationProps.getStorageStrategy().storesModified()) {
-                storeLocally(pidRecord.getPid(), true);
-            }
-            // distribute pid to other services
-            PidRecordMessage message = PidRecordMessage.update(
-                    pid,
-                    "", // TODO parameter is depricated and will be removed soon.
-                    AuthenticationHelper.getPrincipal(),
-                    ControllerUtils.getLocalHostname());
-            this.messagingService.send(message);
-            this.saveToElastic(pidRecord);
-            return ResponseEntity.ok().eTag(quotedEtag(pidRecord)).body(pidRecord);
-        } else {
-            throw new PidNotFoundException(pid);
-        }
-    }
-
-    /**
-     * Stores the PID in a local database.
-     *
-     * @param pid    the PID
-     * @param update if true, updates the modified timestamp if it already exists.
-     *               If it does not exist, it will be created with both timestamps
-     *               (created and modified) being the same.
-     */
-    @WithSpan(kind = SpanKind.INTERNAL)
-    @Timed(value = "pit_store_locally", description = "Time taken to store PID locally")
-    private void storeLocally(@SpanAttribute String pid, @SpanAttribute boolean update) {
-        Instant now = Instant.now();
-        Optional<KnownPid> oldPid = localPidStorage.findByPid(pid);
-        if (oldPid.isEmpty()) {
-            localPidStorage.saveAndFlush(new KnownPid(pid, now, now));
-        } else if (update) {
-            KnownPid newPid = oldPid.get();
-            newPid.setModified(now);
-            localPidStorage.saveAndFlush(newPid);
-        }
-    }
-
-    @WithSpan(kind = SpanKind.INTERNAL)
-    private String getContentPathFromRequest(@SpanAttribute String lastPathElement, WebRequest request) {
-        String requestedUri = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE,
-                RequestAttributes.SCOPE_REQUEST);
-        if (requestedUri == null) {
-            throw new CustomInternalServerError("Unable to obtain request URI.");
-        }
-        return requestedUri.substring(requestedUri.indexOf(lastPathElement + "/") + (lastPathElement + "/").length());
-    }
-
-    @Override
-    @WithSpan(kind = SpanKind.SERVER)
-    @Timed(value = "pit_get_record", description = "Time taken to get a PID record")
-    @Counted(value = "pit_get_record_total", description = "Total number of get PID record requests")
-    public ResponseEntity<PIDRecord> getRecord(
-            @SpanAttribute boolean validation,
-
-            final WebRequest request,
-            final HttpServletResponse response,
-            final UriComponentsBuilder uriBuilder
-    ) throws IOException {
-        String pid = getContentPathFromRequest("pid", request);
-        PIDRecord pidRecord = this.resolver.resolve(pid);
-        if (applicationProps.getStorageStrategy().storesResolved()) {
-            storeLocally(pid, false);
-        }
-        this.saveToElastic(pidRecord);
-        if (validation) {
-            typingService.validate(pidRecord);
-        }
-        return ResponseEntity.ok().eTag(quotedEtag(pidRecord)).body(pidRecord);
-    }
-
-    @WithSpan(kind = SpanKind.INTERNAL)
-    @Timed(value = "pit_save_to_elastic", description = "Time taken to save record to Elasticsearch")
-    private void saveToElastic(@SpanAttribute PIDRecord rec) {
-        this.elastic.ifPresent(
-                database -> database.save(
-                        new PidRecordElasticWrapper(rec, typingService.getOperations())
-                )
-        );
-    }
-
-    @Override
-    @WithSpan(kind = SpanKind.SERVER)
-    @Timed(value = "pit_find_by_pid", description = "Time taken to find a known PID")
-    @Counted(value = "pit_find_by_pid_total", description = "Total number of find by PID requests")
-    public ResponseEntity<KnownPid> findByPid(
-            WebRequest request,
-            HttpServletResponse response,
-            UriComponentsBuilder uriBuilder
-    ) throws IOException {
-        String pid = getContentPathFromRequest("known-pid", request);
-        Optional<KnownPid> known = this.localPidStorage.findByPid(pid);
-        if (known.isPresent()) {
-            return ResponseEntity.ok().body(known.get());
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    @WithSpan(kind = SpanKind.INTERNAL)
-    @Timed(value = "pit_find_all_page", description = "Time taken to find paginated known PIDs")
-    public Page<KnownPid> findAllPage(
-            @SpanAttribute Instant createdAfter,
-            @SpanAttribute Instant createdBefore,
-            @SpanAttribute Instant modifiedAfter,
-            @SpanAttribute Instant modifiedBefore,
-            Pageable pageable
-    ) {
-        final boolean queriesCreated = createdAfter != null || createdBefore != null;
-        final boolean queriesModified = modifiedAfter != null || modifiedBefore != null;
-        if (queriesCreated && createdAfter == null) {
-            createdAfter = Instant.EPOCH;
-        }
-        if (queriesCreated && createdBefore == null) {
-            createdBefore = Instant.now().plus(1, ChronoUnit.DAYS);
-        }
-        if (queriesModified && modifiedAfter == null) {
-            modifiedAfter = Instant.EPOCH;
-        }
-        if (queriesModified && modifiedBefore == null) {
-            modifiedBefore = Instant.now().plus(1, ChronoUnit.DAYS);
-        }
-
-        Page<KnownPid> resultCreatedTimestamp = Page.empty();
-        Page<KnownPid> resultModifiedTimestamp = Page.empty();
-        if (queriesCreated) {
-            resultCreatedTimestamp = this.localPidStorage
-                    .findDistinctPidsByCreatedBetween(createdAfter, createdBefore, pageable);
-        }
-        if (queriesModified) {
-            resultModifiedTimestamp = this.localPidStorage
-                    .findDistinctPidsByModifiedBetween(modifiedAfter, modifiedBefore, pageable);
-        }
-        if (queriesCreated && queriesModified) {
-            final Page<KnownPid> tmp = resultModifiedTimestamp;
-            final List<KnownPid> intersection = resultCreatedTimestamp.filter((x) -> tmp.getContent().contains(x)).toList();
-            return new PageImpl<>(intersection);
-        } else if (queriesCreated) {
-            return resultCreatedTimestamp;
-        } else if (queriesModified) {
-            return resultModifiedTimestamp;
-        }
-        return new PageImpl<>(this.localPidStorage.findAll());
-    }
-
-    @Override
-    @WithSpan(kind = SpanKind.SERVER)
-    @Timed(value = "pit_find_all", description = "Time taken to find all known PIDs")
-    @Counted(value = "pit_find_all_total", description = "Total number of find all PIDs requests")
-    public ResponseEntity<List<KnownPid>> findAll(
-            @SpanAttribute Instant createdAfter,
-            @SpanAttribute Instant createdBefore,
-            @SpanAttribute Instant modifiedAfter,
-            @SpanAttribute Instant modifiedBefore,
-            Pageable pageable,
-            WebRequest request,
-            HttpServletResponse response,
-            UriComponentsBuilder uriBuilder) throws IOException {
-        Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
-        response.addHeader(
-                HeaderConstants.CONTENT_RANGE,
-                ControllerUtils.getContentRangeHeader(
-                        page.getNumber(),
-                        page.getSize(),
-                        page.getTotalElements()));
-        return ResponseEntity.ok().body(page.getContent());
-    }
-
-    @Override
-    @WithSpan(kind = SpanKind.SERVER)
-    @Timed(value = "pit_find_all_tabular", description = "Time taken to find all known PIDs in tabular format")
-    @Counted(value = "pit_find_all_tabular_total", description = "Total number of find all PIDs tabular requests")
-    public ResponseEntity<TabulatorPaginationFormat<KnownPid>> findAllForTabular(
-            @SpanAttribute Instant createdAfter,
-            @SpanAttribute Instant createdBefore,
-            @SpanAttribute Instant modifiedAfter,
-            @SpanAttribute Instant modifiedBefore,
-            Pageable pageable,
-            WebRequest request,
-            HttpServletResponse response,
-            UriComponentsBuilder uriBuilder) throws IOException {
-        Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
-        response.addHeader(
-                HeaderConstants.CONTENT_RANGE,
-                ControllerUtils.getContentRangeHeader(
-                        page.getNumber(),
-                        page.getSize(),
-                        page.getTotalElements()));
-        TabulatorPaginationFormat<KnownPid> tabPage = new TabulatorPaginationFormat<>(page);
-        return ResponseEntity.ok().body(tabPage);
-    }
-
-    @WithSpan(kind = SpanKind.INTERNAL)
-    private String quotedEtag(@SpanAttribute PIDRecord pidRecord) {
-        return String.format("\"%s\"", pidRecord.getEtag());
     }
 
 }

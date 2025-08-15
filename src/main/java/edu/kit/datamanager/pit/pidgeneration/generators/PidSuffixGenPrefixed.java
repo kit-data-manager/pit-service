@@ -18,15 +18,11 @@ package edu.kit.datamanager.pit.pidgeneration.generators;
 
 import edu.kit.datamanager.pit.pidgeneration.PidSuffix;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
-import io.micrometer.observation.annotation.Observed;
-import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.instrumentation.annotations.WithSpan;
 
 /**
  * Generates a PID suffix based on a contained generator and returns the result
  * prefixed with a customizable string.
  */
-@Observed
 public class PidSuffixGenPrefixed implements PidSuffixGenerator {
 
     private final PidSuffixGenerator generator;
@@ -38,7 +34,6 @@ public class PidSuffixGenPrefixed implements PidSuffixGenerator {
     }
 
     @Override
-    @WithSpan(kind = SpanKind.INTERNAL)
     public PidSuffix generate() {
         String suffix = this.generator.generate().get().toUpperCase();
         return new PidSuffix(this.prefix.concat(suffix));

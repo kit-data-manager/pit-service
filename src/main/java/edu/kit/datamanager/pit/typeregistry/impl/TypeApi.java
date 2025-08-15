@@ -212,11 +212,11 @@ public class TypeApi implements ITypeRegistry {
 
         });
 
-        boolean additionalAttributesDtrTestStyle = StreamSupport.stream(typeApiResponse
-                                .path("content")
-                                .path("representationsAndSemantics")
-                                .spliterator(),
-                        true)
+        boolean additionalAttributesDtrTestStyle = StreamSupport
+                .stream(typeApiResponse
+                        .path("content")
+                        .path("representationsAndSemantics")
+                        .spliterator(), true)
                 .filter(JsonNode::isObject)
                 .filter(node -> node.path("expression").asText("").equals("Format"))
                 .map(node -> node.path("subSchemaRelation").asText("").equals("allowAdditionalProperties"))

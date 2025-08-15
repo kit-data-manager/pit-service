@@ -16,9 +16,6 @@
 
 package edu.kit.datamanager.pit.pidgeneration;
 
-import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.instrumentation.annotations.WithSpan;
-
 /**
  * A thin wrapper around a suffix string.
  * <p>
@@ -42,7 +39,6 @@ public class PidSuffix {
      * @param prefix      the prefix to add.
      * @return the string with the prefix added.
      */
-    @WithSpan(kind = SpanKind.INTERNAL)
     public static String asPrefixedChecked(String maybeSuffix, String prefix) {
         if (!maybeSuffix.startsWith(prefix)) {
             return prefix + maybeSuffix;
@@ -56,7 +52,6 @@ public class PidSuffix {
      *
      * @return the suffix without any prefix.
      */
-    @WithSpan(kind = SpanKind.INTERNAL)
     public String get() {
         return suffix;
     }
@@ -67,7 +62,6 @@ public class PidSuffix {
      * @param prefix the prefix to prepend.
      * @return the prefix + suffix.
      */
-    @WithSpan(kind = SpanKind.INTERNAL)
     public String getWithPrefix(String prefix) {
         return prefix + suffix;
     }
