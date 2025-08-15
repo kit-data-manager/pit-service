@@ -89,14 +89,14 @@ dependencies {
     implementation "org.springframework.data:spring-data-elasticsearch"
 
     // More flexibility when (de-)serializing json:
-    implementation(group: 'com.networknt', name: 'json-schema-validator', version: '1.5.7');
-    
+    implementation(group: 'com.networknt', name: 'json-schema-validator', version: '1.5.7')
+
     implementation('org.apache.httpcomponents:httpclient:4.5.14')
     implementation('org.apache.httpcomponents:httpclient-cache:4.5.14')
 
     implementation("net.handle:handle-client:9.3.2")
 
-    /* Observability */
+    /* Observability using OpenTelemetry */
     implementation(platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:${openTelemetryInstrumentationVersion}"))
     implementation "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter"
     implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations"
@@ -106,7 +106,7 @@ dependencies {
     implementation "io.opentelemetry:opentelemetry-exporter-otlp"
 
     testImplementation(platform('org.junit:junit-bom:5.13.1'))
-	  testImplementation('org.junit.jupiter:junit-jupiter')
+    testImplementation('org.junit.jupiter:junit-jupiter')
     testImplementation('org.junit.jupiter:junit-jupiter-params')
 
     testImplementation("org.springframework:spring-test")
@@ -205,12 +205,12 @@ jacocoTestReport {
         //exclude some classes/package from code coverage report
         classDirectories.setFrom(files(classDirectories.files.collect {
             fileTree(dir: it, exclude: [\
-            'edu/kit/datamanager/pit/configuration/**',           \
-                      'edu/kit/datamanager/pit/web/converter/**',           \
-                      'edu/kit/datamanager/pit/web/ExtendedErrorAttributes**',           \
-                      'edu/kit/datamanager/pit/web/UncontrolledExceptionHandler**',           \
-                      'edu/kit/datamanager/pit/common/**',           \
-                      'edu/kit/datamanager/pit/Application*'
+            'edu/kit/datamanager/pit/configuration/**',                \
+                           'edu/kit/datamanager/pit/web/converter/**',                \
+                           'edu/kit/datamanager/pit/web/ExtendedErrorAttributes**',                \
+                           'edu/kit/datamanager/pit/web/UncontrolledExceptionHandler**',                \
+                           'edu/kit/datamanager/pit/common/**',                \
+                           'edu/kit/datamanager/pit/Application*'
             ])
         }))
     }
