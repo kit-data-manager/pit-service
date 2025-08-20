@@ -18,6 +18,7 @@ package edu.kit.datamanager.pit.resolver;
 
 import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
+import edu.kit.datamanager.pit.configuration.PIISpanAttribute;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleBehavior;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
@@ -25,7 +26,6 @@ import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
 import io.micrometer.observation.annotation.Observed;
 import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import net.handle.api.HSAdapter;
 import net.handle.api.HSAdapterFactory;
@@ -77,7 +77,7 @@ public class Resolver {
     @WithSpan(kind = SpanKind.CLIENT)
     @Timed(value = "resolver_resolve_pid", description = "Time taken to resolve PID from any system")
     @Counted(value = "resolver_resolve_pid_total", description = "Total number of PID resolutions")
-    public PIDRecord resolve(@SpanAttribute String pid) throws PidNotFoundException, ExternalServiceException {
+    public PIDRecord resolve(@PIISpanAttribute String pid) throws PidNotFoundException, ExternalServiceException {
         String prefix = Arrays.stream(
                         pid.split("/", 2)
                 )

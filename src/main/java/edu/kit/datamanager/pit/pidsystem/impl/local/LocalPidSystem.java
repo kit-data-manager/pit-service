@@ -18,13 +18,13 @@ package edu.kit.datamanager.pit.pidsystem.impl.local;
 
 import edu.kit.datamanager.pit.common.*;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
+import edu.kit.datamanager.pit.configuration.PIISpanAttribute;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
 import io.micrometer.observation.annotation.Observed;
 import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,7 +98,7 @@ public class LocalPidSystem implements IIdentifierSystem {
     @WithSpan(kind = SpanKind.CLIENT)
     @Timed(value = "local_pidsystem_is_pid_registered", description = "Time taken to check if PID is registered in local system")
     @Counted(value = "local_pidsystem_is_pid_registered_total", description = "Total number of PID registration checks")
-    public boolean isPidRegistered(@SpanAttribute String pid) throws ExternalServiceException {
+    public boolean isPidRegistered(@PIISpanAttribute String pid) throws ExternalServiceException {
         return this.db.existsById(pid);
     }
 
@@ -106,7 +106,7 @@ public class LocalPidSystem implements IIdentifierSystem {
     @WithSpan(kind = SpanKind.CLIENT)
     @Timed(value = "local_pidsystem_query_pid", description = "Time taken to query PID from local system")
     @Counted(value = "local_pidsystem_query_pid_total", description = "Total number of PID queries")
-    public PIDRecord queryPid(@SpanAttribute String pid) throws PidNotFoundException, ExternalServiceException {
+    public PIDRecord queryPid(@PIISpanAttribute String pid) throws PidNotFoundException, ExternalServiceException {
         Optional<PidDatabaseObject> dbo = this.db.findByPid(pid);
         return new PIDRecord(dbo.orElseThrow(() -> new PidNotFoundException(pid)));
     }
@@ -115,7 +115,7 @@ public class LocalPidSystem implements IIdentifierSystem {
     @WithSpan(kind = SpanKind.CLIENT)
     @Timed(value = "local_pidsystem_register_pid", description = "Time taken to register PID in local system")
     @Counted(value = "local_pidsystem_register_pid_total", description = "Total number of PID registrations")
-    public String registerPidUnchecked(@SpanAttribute final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
+    public String registerPidUnchecked(@PIISpanAttribute final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
         if (this.db.existsById(pidRecord.getPid())) {
             throw new PidAlreadyExistsException(pidRecord.getPid());
         }
@@ -128,7 +128,7 @@ public class LocalPidSystem implements IIdentifierSystem {
     @WithSpan(kind = SpanKind.CLIENT)
     @Timed(value = "local_pidsystem_update_pid", description = "Time taken to update PID in local system")
     @Counted(value = "local_pidsystem_update_pid_total", description = "Total number of PID updates")
-    public boolean updatePid(@SpanAttribute PIDRecord rec) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
+    public boolean updatePid(@PIISpanAttribute PIDRecord rec) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
         if (this.db.existsById(rec.getPid())) {
             this.db.save(new PidDatabaseObject(rec));
             return true;
@@ -140,7 +140,7 @@ public class LocalPidSystem implements IIdentifierSystem {
     @WithSpan(kind = SpanKind.CLIENT)
     @Timed(value = "local_pidsystem_delete_pid", description = "Time taken to delete PID from local system")
     @Counted(value = "local_pidsystem_delete_pid_total", description = "Total number of PID deletion attempts")
-    public boolean deletePid(@SpanAttribute String pid) {
+    public boolean deletePid(@PIISpanAttribute String pid) {
         throw new UnsupportedOperationException("Deleting PIDs is against the P in PID.");
     }
 

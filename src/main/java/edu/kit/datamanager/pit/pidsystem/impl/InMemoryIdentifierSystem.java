@@ -18,13 +18,13 @@ package edu.kit.datamanager.pit.pidsystem.impl;
 
 import edu.kit.datamanager.pit.common.*;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
+import edu.kit.datamanager.pit.configuration.PIISpanAttribute;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
 import io.micrometer.observation.annotation.Observed;
 import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +67,7 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
     @WithSpan(kind = SpanKind.CLIENT)
     @Timed(value = "memory_system_is_pid_registered", description = "Time taken to check if PID is registered in memory system")
     @Counted(value = "memory_system_is_pid_registered_total", description = "Total number of PID registration checks")
-    public boolean isPidRegistered(@SpanAttribute String pid) throws ExternalServiceException {
+    public boolean isPidRegistered(@PIISpanAttribute String pid) throws ExternalServiceException {
         return this.records.containsKey(pid);
     }
 
@@ -75,7 +75,7 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
     @WithSpan(kind = SpanKind.CLIENT)
     @Timed(value = "memory_system_query_pid", description = "Time taken to query PID from memory system")
     @Counted(value = "memory_system_query_pid_total", description = "Total number of PID queries")
-    public PIDRecord queryPid(@SpanAttribute String pid) throws PidNotFoundException, ExternalServiceException {
+    public PIDRecord queryPid(@PIISpanAttribute String pid) throws PidNotFoundException, ExternalServiceException {
         PIDRecord pidRecord = this.records.get(pid);
         if (pidRecord == null) {
             throw new PidNotFoundException(pid);
@@ -87,7 +87,7 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
     @WithSpan(kind = SpanKind.CLIENT)
     @Timed(value = "memory_system_register_pid", description = "Time taken to register PID in memory system")
     @Counted(value = "memory_system_register_pid_total", description = "Total number of PID registrations")
-    public String registerPidUnchecked(@SpanAttribute final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
+    public String registerPidUnchecked(@PIISpanAttribute final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
         this.records.put(pidRecord.getPid(), pidRecord);
         LOG.debug("Registered record with PID: {}", pidRecord.getPid());
         return pidRecord.getPid();
@@ -97,7 +97,7 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
     @WithSpan(kind = SpanKind.CLIENT)
     @Timed(value = "memory_system_update_pid", description = "Time taken to update PID in memory system")
     @Counted(value = "memory_system_update_pid_total", description = "Total number of PID updates")
-    public boolean updatePid(@SpanAttribute PIDRecord record) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
+    public boolean updatePid(@PIISpanAttribute PIDRecord record) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
         if (this.records.containsKey(record.getPid())) {
             this.records.put(record.getPid(), record);
             return true;
@@ -109,7 +109,7 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
     @WithSpan(kind = SpanKind.CLIENT)
     @Timed(value = "memory_system_delete_pid", description = "Time taken to delete PID from memory system")
     @Counted(value = "memory_system_delete_pid_total", description = "Total number of PID deletion attempts")
-    public boolean deletePid(@SpanAttribute String pid) {
+    public boolean deletePid(@PIISpanAttribute String pid) {
         throw new UnsupportedOperationException("Deleting PIDs is against the P in PID.");
     }
 

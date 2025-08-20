@@ -19,6 +19,7 @@ package edu.kit.datamanager.pit.pidsystem.impl.handle;
 import edu.kit.datamanager.pit.common.*;
 import edu.kit.datamanager.pit.configuration.HandleCredentials;
 import edu.kit.datamanager.pit.configuration.HandleProtocolProperties;
+import edu.kit.datamanager.pit.configuration.PIISpanAttribute;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import edu.kit.datamanager.pit.recordModifiers.RecordModifier;
@@ -26,7 +27,6 @@ import io.micrometer.core.annotation.Counted;
 import io.micrometer.core.annotation.Timed;
 import io.micrometer.observation.annotation.Observed;
 import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.constraints.NotNull;
@@ -128,7 +128,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     @WithSpan(kind = SpanKind.CLIENT)
     @Timed(value = "handle_system_is_pid_registered", description = "Time taken to check if PID is registered in Handle system")
     @Counted(value = "handle_system_is_pid_registered_total", description = "Total number of PID registration checks")
-    public boolean isPidRegistered(@SpanAttribute final String pid) throws ExternalServiceException {
+    public boolean isPidRegistered(@PIISpanAttribute final String pid) throws ExternalServiceException {
         HandleValue[] recordProperties;
         try {
             recordProperties = this.client.resolveHandle(pid, null, null);
@@ -146,7 +146,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     @WithSpan(kind = SpanKind.CLIENT)
     @Timed(value = "handle_system_query_pid", description = "Time taken to query PID from Handle system")
     @Counted(value = "handle_system_query_pid_total", description = "Total number of PID queries")
-    public PIDRecord queryPid(@SpanAttribute final String pid) throws PidNotFoundException, ExternalServiceException {
+    public PIDRecord queryPid(@PIISpanAttribute final String pid) throws PidNotFoundException, ExternalServiceException {
         Collection<HandleValue> allValues = this.queryAllHandleValues(pid);
         if (allValues.isEmpty()) {
             return null;
@@ -160,7 +160,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     @NotNull
     @WithSpan(kind = SpanKind.INTERNAL)
     @Timed(value = "handle_system_query_all_values", description = "Time taken to query all handle values")
-    protected Collection<HandleValue> queryAllHandleValues(@SpanAttribute final String pid) throws PidNotFoundException, ExternalServiceException {
+    protected Collection<HandleValue> queryAllHandleValues(@PIISpanAttribute final String pid) throws PidNotFoundException, ExternalServiceException {
         try {
             HandleValue[] values = this.client.resolveHandle(pid, null, null);
             return Stream.of(values)
@@ -178,7 +178,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     @WithSpan(kind = SpanKind.CLIENT)
     @Timed(value = "handle_system_register_pid", description = "Time taken to register PID in Handle system")
     @Counted(value = "handle_system_register_pid_total", description = "Total number of PID registrations")
-    public String registerPidUnchecked(@SpanAttribute final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
+    public String registerPidUnchecked(@PIISpanAttribute final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
         // Add admin value for configured user only
         // TODO add options to add additional adminValues e.g. for user lists?
         ArrayList<HandleValue> admin = new ArrayList<>();
@@ -208,7 +208,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     @WithSpan(kind = SpanKind.CLIENT)
     @Timed(value = "handle_system_update_pid", description = "Time taken to update PID in Handle system")
     @Counted(value = "handle_system_update_pid_total", description = "Total number of PID updates")
-    public boolean updatePid(@SpanAttribute final PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
+    public boolean updatePid(@PIISpanAttribute final PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
         if (!this.isValidPID(pidRecord.getPid())) {
             return false;
         }
@@ -277,7 +277,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     @WithSpan(kind = SpanKind.CLIENT)
     @Timed(value = "handle_system_delete_pid", description = "Time taken to delete PID from Handle system")
     @Counted(value = "handle_system_delete_pid_total", description = "Total number of PID deletions")
-    public boolean deletePid(@SpanAttribute final String pid) throws ExternalServiceException {
+    public boolean deletePid(@PIISpanAttribute final String pid) throws ExternalServiceException {
         try {
             this.client.deleteHandle(pid);
         } catch (HandleException e) {
@@ -362,7 +362,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
      */
     @WithSpan(kind = SpanKind.INTERNAL)
     @Timed(value = "handle_system_is_valid_pid", description = "Time taken to validate PID")
-    protected boolean isValidPID(@SpanAttribute final String pid) {
+    protected boolean isValidPID(@PIISpanAttribute final String pid) {
         boolean isAuthMode = this.props.getCredentials() != null;
         if (isAuthMode && !pid.startsWith(this.props.getCredentials().getHandleIdentifierPrefix())) {
             return false;

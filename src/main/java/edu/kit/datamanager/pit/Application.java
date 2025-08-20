@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Karlsruhe Institute of Technology.
+ * Copyright (c) 2025 Karlsruhe Institute of Technology.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import edu.kit.datamanager.pit.cli.CliTaskBootstrap;
 import edu.kit.datamanager.pit.cli.CliTaskWriteFile;
 import edu.kit.datamanager.pit.cli.ICliTask;
@@ -36,19 +35,11 @@ import edu.kit.datamanager.pit.typeregistry.impl.TypeApi;
 import edu.kit.datamanager.pit.typeregistry.schema.SchemaSetGenerator;
 import edu.kit.datamanager.pit.web.converter.SimplePidRecordConverter;
 import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
-
-import java.io.IOException;
-import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.stream.Stream;
-
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.cache.CacheConfig;
 import org.apache.http.impl.client.cache.CachingHttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.factory.InjectionPoint;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -57,69 +48,50 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.io.IOException;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Stream;
+
 @SpringBootApplication
 @EnableScheduling
-@EntityScan({ "edu.kit.datamanager" })
+@EntityScan({"edu.kit.datamanager"})
 // Required for "DAO" objects to work, needed for messaging service and database
 // mappings
 @EnableJpaRepositories("edu.kit.datamanager")
 // Detects services and components in datamanager dependencies (service-base and
 // repo-core)
-@ComponentScan({ "edu.kit.datamanager" })
+@ComponentScan({"edu.kit.datamanager"})
+// Scans for components in the current package and sub-packages
+@EnableAspectJAutoProxy(proxyTargetClass = true, exposeProxy = true)
+// Scans for aspects in the current package and sub-packages (e.g. for PIISpanAttribute)
 public class Application {
-
-    private static final Logger LOG = LoggerFactory.getLogger(Application.class);
-
-    protected static final String CMD_BOOTSTRAP = "bootstrap";
-    protected static final String CMD_WRITE_FILE = "write-file";
-
-    protected static final String SOURCE_FROM_PREFIX = "all-pids-from-prefix";
-    protected static final String SOURCE_KNOWN_PIDS = "known-pids";
-    
-    protected static final String ERROR_COMMUNICATION = "Communication error: {}";
-    protected static final String ERROR_CONFIGURATION = "Configuration error: {}";
 
     /**
      * This is a threshold considered very long for a http request.
      * Usually used in logging context
      */
     public static final long LONG_HTTP_REQUEST_THRESHOLD = 400;
+    protected static final String CMD_BOOTSTRAP = "bootstrap";
+    protected static final String CMD_WRITE_FILE = "write-file";
 
-    @Bean
-    @Scope("prototype")
-    public Logger logger(InjectionPoint injectionPoint) {
-        Class<?> targetClass = injectionPoint.getMember().getDeclaringClass();
-        return LoggerFactory.getLogger(targetClass.getCanonicalName());
-    }
+    protected static final String SOURCE_FROM_PREFIX = "all-pids-from-prefix";
+    protected static final String SOURCE_KNOWN_PIDS = "known-pids";
+
+    protected static final String ERROR_COMMUNICATION = "Communication error: {}";
+    protected static final String ERROR_CONFIGURATION = "Configuration error: {}";
+    private static final Logger LOG = LoggerFactory.getLogger(Application.class);
 
     public static ExecutorService newExecutor() {
         return Executors.newThreadPerTaskExecutor(Executors.defaultThreadFactory());
-    }
-
-    @Bean
-    public SchemaSetGenerator schemaSetGenerator(ApplicationProperties props) {
-        return new SchemaSetGenerator(props);
-    }
-
-    @Bean
-    public ITypeRegistry typeRegistry(ApplicationProperties props, SchemaSetGenerator schemaSetGenerator) {
-        return new TypeApi(props, schemaSetGenerator);
-    }
-
-    @Bean
-    public Resolver resolver(ITypingService identifierSystem) {
-        return new Resolver(identifierSystem);
-    }
-
-    @Bean
-    public ITypingService typingService(IIdentifierSystem identifierSystem, ITypeRegistry typeRegistry) {
-        return new TypingService(identifierSystem, typeRegistry);
     }
 
     @Bean(name = "OBJECT_MAPPER_BEAN")
@@ -131,59 +103,21 @@ public class Application {
                 .build();
     }
 
-    @Bean
-    public HttpClient httpClient() {
-        return CachingHttpClientBuilder
-                .create()
-                .setCacheConfig(cacheConfig())
-                .build();
-    }
-
-    @Bean
-    public CacheConfig cacheConfig() {
-        return CacheConfig 
-                .custom()
-                .setMaxObjectSize(500000) // 500KB
-                .setMaxCacheEntries(2000)
-                // Set this to false and a response with queryString
-                // will be cached when it is explicitly cacheable
-                // .setNeverCacheHTTP10ResponsesWithQueryString(false)
-                .build();
-    }
-
-    @Bean
-    @ConfigurationProperties("pit")
-    public ApplicationProperties applicationProperties() {
-        return new ApplicationProperties();
-    }
-
-    @Bean
-    // Reads keycloak related settings from properties.application.
-    public KeycloakJwtProperties properties() {
-      return new KeycloakJwtProperties();
-    }
-
-    @Bean
-    public HttpMessageConverter<PIDRecord> simplePidRecordConverter() {
-        return new SimplePidRecordConverter();
-    }
-
     public static void main(String[] args) {
         ConfigurableApplicationContext context = SpringApplication.run(Application.class, args);
         System.out.println("Spring is running!");
 
-        final boolean cliArgsAmountValid = args != null && args.length != 0 && args.length >= 2;
-        
+        final boolean cliArgsAmountValid = args != null && args.length >= 2;
+
         if (cliArgsAmountValid) {
             ICliTask task = null;
             Stream<String> pidSource = null;
-            
+
             if (Objects.equals(args[1], SOURCE_FROM_PREFIX)) {
                 try {
                     pidSource = PidSource.fromPrefix(context);
                 } catch (IOException e) {
-                    e.printStackTrace();
-                    LOG.error(ERROR_COMMUNICATION, e.getMessage());
+                    LOG.error(ERROR_COMMUNICATION, e);
                     exitApp(context, 1);
                 }
             } else if (Objects.equals(args[1], SOURCE_KNOWN_PIDS)) {
@@ -207,20 +141,18 @@ public class Application {
                     exitApp(context, 1);
                 }
             } catch (InvalidConfigException e) {
-                e.printStackTrace();
-                LOG.error(ERROR_CONFIGURATION, e.getMessage());
+                LOG.error(ERROR_CONFIGURATION, e);
                 exitApp(context, 1);
             } catch (IOException e) {
-                e.printStackTrace();
-                LOG.error(ERROR_COMMUNICATION, e.getMessage());
+                LOG.error(ERROR_COMMUNICATION, e);
                 exitApp(context, 1);
             }
         }
     }
 
     private static void printUsage(String[] args) {
-        String firstArg = args[0].replaceAll("[\r\n]","");
-        String secondArg = args[1].replaceAll("[\r\n]","");
+        String firstArg = args[0].replaceAll("[\r\n]", "");
+        String secondArg = args[1].replaceAll("[\r\n]", "");
         LOG.error("Got commands: {} and {}", firstArg, secondArg);
         LOG.error("CLI usage incorrect. Usage:");
         LOG.error("java -jar TypedPIDMaker.jar [ACTION] [SOURCE]");
@@ -243,6 +175,70 @@ public class Application {
             LOG.info("Success");
         }
         System.exit(errCode);
+    }
+
+    @Bean
+    @Scope("prototype")
+    public Logger logger(InjectionPoint injectionPoint) {
+        Class<?> targetClass = injectionPoint.getMember().getDeclaringClass();
+        return LoggerFactory.getLogger(targetClass.getCanonicalName());
+    }
+
+    @Bean
+    public SchemaSetGenerator schemaSetGenerator(ApplicationProperties props) {
+        return new SchemaSetGenerator(props);
+    }
+
+    @Bean
+    public ITypeRegistry typeRegistry(ApplicationProperties props, SchemaSetGenerator schemaSetGenerator) {
+        return new TypeApi(props, schemaSetGenerator);
+    }
+
+    @Bean
+    public Resolver resolver(ITypingService identifierSystem) {
+        return new Resolver(identifierSystem);
+    }
+
+    @Bean
+    public ITypingService typingService(IIdentifierSystem identifierSystem, ITypeRegistry typeRegistry) {
+        return new TypingService(identifierSystem, typeRegistry, applicationProperties());
+    }
+
+    @Bean
+    @ConfigurationProperties("pit")
+    public ApplicationProperties applicationProperties() {
+        return new ApplicationProperties();
+    }
+
+    @Bean
+    public HttpClient httpClient() {
+        return CachingHttpClientBuilder
+                .create()
+                .setCacheConfig(cacheConfig())
+                .build();
+    }
+
+    @Bean
+    public CacheConfig cacheConfig() {
+        return CacheConfig
+                .custom()
+                .setMaxObjectSize(500000) // 500KB
+                .setMaxCacheEntries(2000)
+                // Set this to false and a response with queryString
+                // will be cached when it is explicitly cacheable
+                // .setNeverCacheHTTP10ResponsesWithQueryString(false)
+                .build();
+    }
+
+    @Bean
+    // Reads keycloak related settings from properties.application.
+    public KeycloakJwtProperties properties() {
+        return new KeycloakJwtProperties();
+    }
+
+    @Bean
+    public HttpMessageConverter<PIDRecord> simplePidRecordConverter() {
+        return new SimplePidRecordConverter();
     }
 
 }
