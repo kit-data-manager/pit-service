@@ -20,6 +20,7 @@ import edu.kit.datamanager.entities.messaging.PidRecordMessage;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.pit.common.*;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
+import edu.kit.datamanager.pit.configuration.PIISpanAttribute;
 import edu.kit.datamanager.pit.configuration.PidGenerationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticRepository;
@@ -36,6 +37,12 @@ import edu.kit.datamanager.pit.web.TabulatorPaginationFormat;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
+import io.micrometer.observation.annotation.Observed;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.stream.Streams;
 import org.apache.http.client.cache.HeaderConstants;
@@ -59,6 +66,7 @@ import java.util.*;
 import java.util.stream.Stream;
 
 @RestController
+@Observed
 public class TypingRESTResourceImpl implements ITypingRestResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypingRESTResourceImpl.class);
@@ -85,9 +93,12 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_create_pids", description = "Time taken to create multiple PID records")
+    @Counted(value = "pit_create_pids_total", description = "Total number of create PIDs requests")
     public ResponseEntity<BatchRecordResponse> createPIDs(
-            List<PIDRecord> rec,
-            boolean dryrun,
+            @PIISpanAttribute List<PIDRecord> rec,
+            @SpanAttribute boolean dryrun,
             WebRequest request,
             HttpServletResponse response,
             UriComponentsBuilder uriBuilder
@@ -193,74 +204,13 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
     }
 
-    /**
-     * This method generates a mapping between user-provided "fantasy" PIDs and real PIDs.
-     *
-     * @param rec    the list of records produced by the user
-     * @param dryrun whether the operation is a dryrun or not
-     * @return a map between the user-provided PIDs (key) and the real PIDs (values)
-     * @throws RecordValidationException if the same internal PID is used for multiple records
-     * @throws ExternalServiceException  if the PID generation fails
-     */
-    private Map<String, String> generatePIDMapping(List<PIDRecord> rec, boolean dryrun) throws RecordValidationException, ExternalServiceException {
-        Map<String, String> pidMappings = new HashMap<>();
-        for (PIDRecord pidRecord : rec) {
-            String internalPID = pidRecord.getPid(); // the internal PID is the one given by the user
-            if (internalPID == null) {
-                internalPID = ""; // if no PID was given, we set it to an empty string
-            }
-            if (!internalPID.isBlank() && pidMappings.containsKey(internalPID)) { // check if the internal PID was already used
-                // This internal PID was already used by some other record in the same request.
-                throw new RecordValidationException(pidRecord, "The PID " + internalPID + " was used for multiple records in the same request.");
-            }
-
-            pidRecord.setPid(""); // clear the PID field in the record
-            if (dryrun) { // if it is a dryrun, we set the PID to a temporary value
-                pidRecord.setPid("dryrun_" + pidMappings.size());
-            } else {
-                setPid(pidRecord); // otherwise, we generate a real PID
-            }
-            pidMappings.put(internalPID, pidRecord.getPid()); // store the mapping between the internal and real PID
-        }
-        return pidMappings;
-    }
-
-    /**
-     * This method applies the mappings between temporary PIDs and real PIDs to the records and validates them.
-     *
-     * @param rec         the list of records produced by the user
-     * @param pidMappings the map between the user-provided PIDs (key) and the real PIDs (values)
-     * @param prefix      the prefix to be used for the real PIDs
-     * @return the list of validated records
-     * @throws RecordValidationException as a possible validation outcome
-     * @throws ExternalServiceException  as a possible validation outcome
-     */
-    private List<PIDRecord> applyMappingsToRecordsAndValidate(List<PIDRecord> rec, Map<String, String> pidMappings, String prefix) throws RecordValidationException, ExternalServiceException {
-        List<PIDRecord> validatedRecords = new ArrayList<>();
-        for (PIDRecord pidRecord : rec) {
-
-            // use this map to replace all temporary PIDs in the record values with their corresponding real PIDs
-            pidRecord.getEntries().values().stream() // get all values of the record
-                    .flatMap(List::stream) // flatten the list of values
-                    .filter(entry -> entry.getValue() != null) // Filter out null values
-                    .filter(entry -> pidMappings.containsKey(entry.getValue())) // replace only if the value (aka. "fantasy PID") is a key in the map
-                    .peek(entry -> LOG.debug("Found reference. Replacing {} with {}.", entry.getValue(), prefix + pidMappings.get(entry.getValue()))) // log the replacement
-                    .forEach(entry -> entry.setValue(prefix + pidMappings.get(entry.getValue()))); // replace the value with the real PID according to the map
-
-            // validate the record
-            this.typingService.validate(pidRecord);
-
-            // store the record
-            validatedRecords.add(pidRecord);
-            LOG.debug("Record {} is valid.", pidRecord);
-        }
-        return validatedRecords;
-    }
-
     @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_create_pid", description = "Time taken to create a single PID record")
+    @Counted(value = "pit_create_pid_total", description = "Total number of create PID requests")
     public ResponseEntity<PIDRecord> createPID(
-            PIDRecord pidRecord,
-            boolean dryrun,
+            @PIISpanAttribute PIDRecord pidRecord,
+            @SpanAttribute boolean dryrun,
 
             final WebRequest request,
             final HttpServletResponse response,
@@ -301,46 +251,13 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return ResponseEntity.status(HttpStatus.CREATED).eTag(quotedEtag(pidRecord)).body(pidRecord);
     }
 
-    private boolean hasPid(PIDRecord pidRecord) {
-        return pidRecord.getPid() != null && !pidRecord.getPid().isBlank();
-    }
-
-    private void setPid(PIDRecord pidRecord) {
-        boolean hasCustomPid = hasPid(pidRecord);
-        boolean allowsCustomPids = pidGenerationProperties.isCustomClientPidsEnabled();
-
-        if (allowsCustomPids && hasCustomPid) {
-            // in this only case, we do not have to generate a PID
-            // but we have to check if the PID is already registered and return an error if so
-            String prefix = this.typingService.getPrefix()
-                    .orElseThrow(() -> new InvalidConfigException("No prefix configured."));
-            String maybeSuffix = pidRecord.getPid();
-            String pid = PidSuffix.asPrefixedChecked(maybeSuffix, prefix);
-            boolean isRegisteredPid = this.typingService.isPidRegistered(pid);
-            if (isRegisteredPid) {
-                throw new PidAlreadyExistsException(pidRecord.getPid());
-            }
-        } else {
-            // In all other (usual) cases, we have to generate a PID.
-            // We store only the suffix in the pid field.
-            // The registration at the PID service will preprend the prefix.
-
-            Stream<PidSuffix> suffixStream = suffixGenerator.infiniteStream();
-            Optional<PidSuffix> maybeSuffix = Streams.failableStream(suffixStream)
-                    // With failable streams, we can throw exceptions.
-                    .filter(suffix -> !this.typingService.isPidRegistered(suffix))
-                    .stream()  // back to normal java streams
-                    .findFirst();  // as the stream is infinite, we should always find a prefix.
-            PidSuffix suffix = maybeSuffix
-                    .orElseThrow(() -> new ExternalServiceException("Could not generate PID suffix which did not exist yet."));
-            pidRecord.setPid(suffix.get());
-        }
-    }
-
     @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_update_pid", description = "Time taken to update a PID record")
+    @Counted(value = "pit_update_pid_total", description = "Total number of update PID requests")
     public ResponseEntity<PIDRecord> updatePID(
-            PIDRecord pidRecord,
-            boolean dryrun,
+            @PIISpanAttribute PIDRecord pidRecord,
+            @SpanAttribute boolean dryrun,
 
             final WebRequest request,
             final HttpServletResponse response,
@@ -392,6 +309,10 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
     }
 
+    private boolean hasPid(PIDRecord pidRecord) {
+        return pidRecord.getPid() != null && !pidRecord.getPid().isBlank();
+    }
+
     /**
      * Stores the PID in a local database.
      *
@@ -400,6 +321,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
      *               If it does not exist, it will be created with both timestamps
      *               (created and modified) being the same.
      */
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "pit_store_locally", description = "Time taken to store PID locally")
     private void storeLocally(String pid, boolean update) {
         Instant now = Instant.now();
         Optional<KnownPid> oldPid = localPidStorage.findByPid(pid);
@@ -412,6 +335,15 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         }
     }
 
+    /**
+     * Extracts and returns the content path from the incoming web request, based on the specified last path element.
+     *
+     * @param lastPathElement the last path element used to determine the content path
+     * @param request         the incoming web request containing the requested URI and attributes
+     * @return the extracted content path from the request
+     * @throws CustomInternalServerError if the requested URI cannot be obtained from the web request
+     */
+    @WithSpan(kind = SpanKind.INTERNAL)
     private String getContentPathFromRequest(String lastPathElement, WebRequest request) {
         String requestedUri = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE,
                 RequestAttributes.SCOPE_REQUEST);
@@ -422,8 +354,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_get_record", description = "Time taken to get a PID record")
+    @Counted(value = "pit_get_record_total", description = "Total number of get PID record requests")
     public ResponseEntity<PIDRecord> getRecord(
-            boolean validation,
+            @SpanAttribute boolean validation,
 
             final WebRequest request,
             final HttpServletResponse response,
@@ -441,15 +376,10 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return ResponseEntity.ok().eTag(quotedEtag(pidRecord)).body(pidRecord);
     }
 
-    private void saveToElastic(PIDRecord rec) {
-        this.elastic.ifPresent(
-                database -> database.save(
-                        new PidRecordElasticWrapper(rec, typingService.getOperations())
-                )
-        );
-    }
-
     @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_find_by_pid", description = "Time taken to find a known PID")
+    @Counted(value = "pit_find_by_pid_total", description = "Total number of find by PID requests")
     public ResponseEntity<KnownPid> findByPid(
             WebRequest request,
             HttpServletResponse response,
@@ -462,11 +392,37 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    public Page<KnownPid> findAllPage(
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "pit_find_all", description = "Time taken to find  known PIDs")
+    @Counted(value = "pit_find_all_total", description = "Total number of find all PIDs requests")
+    @Override
+    public ResponseEntity<List<KnownPid>> findAll(
             Instant createdAfter,
             Instant createdBefore,
             Instant modifiedAfter,
             Instant modifiedBefore,
+            Pageable pageable,
+            WebRequest request,
+            HttpServletResponse response,
+            UriComponentsBuilder uriBuilder) {
+        Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
+        response.addHeader(
+                HeaderConstants.CONTENT_RANGE,
+                ControllerUtils.getContentRangeHeader(
+                        page.getNumber(),
+                        page.getSize(),
+                        page.getTotalElements()));
+        return ResponseEntity.ok().body(page.getContent());
+    }
+
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "pit_find_all_page", description = "Time taken to find paginated known PIDs")
+    @Counted(value = "pit_find_all_page_total", description = "Total number of paginated find all PIDs requests")
+    public Page<KnownPid> findAllPage(
+            @SpanAttribute Instant createdAfter,
+            @SpanAttribute Instant createdBefore,
+            @SpanAttribute Instant modifiedAfter,
+            @SpanAttribute Instant modifiedBefore,
             Pageable pageable
     ) {
         final boolean queriesCreated = createdAfter != null || createdBefore != null;
@@ -507,26 +463,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
-    public ResponseEntity<List<KnownPid>> findAll(
-            Instant createdAfter,
-            Instant createdBefore,
-            Instant modifiedAfter,
-            Instant modifiedBefore,
-            Pageable pageable,
-            WebRequest request,
-            HttpServletResponse response,
-            UriComponentsBuilder uriBuilder) {
-        Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
-        response.addHeader(
-                HeaderConstants.CONTENT_RANGE,
-                ControllerUtils.getContentRangeHeader(
-                        page.getNumber(),
-                        page.getSize(),
-                        page.getTotalElements()));
-        return ResponseEntity.ok().body(page.getContent());
-    }
-
-    @Override
+    @WithSpan(kind = SpanKind.SERVER)
+    @Timed(value = "pit_find_all_tabular", description = "Time taken to find all known PIDs in tabular format")
+    @Counted(value = "pit_find_all_tabular_total", description = "Total number of find all PIDs tabular requests")
     public ResponseEntity<TabulatorPaginationFormat<KnownPid>> findAllForTabular(
             Instant createdAfter,
             Instant createdBefore,
@@ -547,8 +486,124 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return ResponseEntity.ok().body(tabPage);
     }
 
-    private String quotedEtag(PIDRecord pidRecord) {
+    /**
+     * Saves a PIDRecord to Elasticsearch if the Elasticsearch database is available.
+     *
+     * @param rec the PIDRecord object to be saved to Elasticsearch
+     */
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "pit_save_to_elastic", description = "Time taken to save record to Elasticsearch")
+    private void saveToElastic(PIDRecord rec) {
+        this.elastic.ifPresent(
+                database -> database.save(
+                        new PidRecordElasticWrapper(rec, typingService.getOperations())
+                )
+        );
+    }
+
+    @WithSpan(kind = SpanKind.INTERNAL)
+    private String quotedEtag(@PIISpanAttribute PIDRecord pidRecord) {
         return String.format("\"%s\"", pidRecord.getEtag());
+    }
+
+    /**
+     * This method generates a mapping between user-provided "fantasy" PIDs and real PIDs.
+     *
+     * @param rec    the list of records produced by the user
+     * @param dryrun whether the operation is a dryrun or not
+     * @return a map between the user-provided PIDs (key) and the real PIDs (values)
+     * @throws RecordValidationException if the same internal PID is used for multiple records
+     * @throws ExternalServiceException  if the PID generation fails
+     */
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "pit_generate_pid_mapping", description = "Time taken to generate PID mappings")
+    private Map<String, String> generatePIDMapping(@PIISpanAttribute List<PIDRecord> rec, @SpanAttribute boolean dryrun) throws RecordValidationException, ExternalServiceException {
+        Map<String, String> pidMappings = new HashMap<>();
+        for (PIDRecord pidRecord : rec) {
+            String internalPID = pidRecord.getPid(); // the internal PID is the one given by the user
+            if (internalPID == null) {
+                internalPID = ""; // if no PID was given, we set it to an empty string
+            }
+            if (!internalPID.isBlank() && pidMappings.containsKey(internalPID)) { // check if the internal PID was already used
+                // This internal PID was already used by some other record in the same request.
+                throw new RecordValidationException(pidRecord, "The PID " + internalPID + " was used for multiple records in the same request.");
+            }
+
+            pidRecord.setPid(""); // clear the PID field in the record
+            if (dryrun) { // if it is a dryrun, we set the PID to a temporary value
+                pidRecord.setPid("dryrun_" + pidMappings.size());
+            } else {
+                setPid(pidRecord); // otherwise, we generate a real PID
+            }
+            pidMappings.put(internalPID, pidRecord.getPid()); // store the mapping between the internal and real PID
+        }
+        return pidMappings;
+    }
+
+    /**
+     * This method applies the mappings between temporary PIDs and real PIDs to the records and validates them.
+     *
+     * @param rec         the list of records produced by the user
+     * @param pidMappings the map between the user-provided PIDs (key) and the real PIDs (values)
+     * @param prefix      the prefix to be used for the real PIDs
+     * @return the list of validated records
+     * @throws RecordValidationException as a possible validation outcome
+     * @throws ExternalServiceException  as a possible validation outcome
+     */
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "pit_apply_mappings_and_validate", description = "Time taken to apply mappings and validate records")
+    private List<PIDRecord> applyMappingsToRecordsAndValidate(@PIISpanAttribute List<PIDRecord> rec, Map<String, String> pidMappings, String prefix) throws RecordValidationException, ExternalServiceException {
+        List<PIDRecord> validatedRecords = new ArrayList<>();
+        for (PIDRecord pidRecord : rec) {
+
+            // use this map to replace all temporary PIDs in the record values with their corresponding real PIDs
+            pidRecord.getEntries().values().stream() // get all values of the record
+                    .flatMap(List::stream) // flatten the list of values
+                    .filter(entry -> entry.getValue() != null) // Filter out null values
+                    .filter(entry -> pidMappings.containsKey(entry.getValue())) // replace only if the value (aka. "fantasy PID") is a key in the map
+                    .peek(entry -> LOG.debug("Found reference. Replacing {} with {}.", entry.getValue(), prefix + pidMappings.get(entry.getValue()))) // log the replacement
+                    .forEach(entry -> entry.setValue(prefix + pidMappings.get(entry.getValue()))); // replace the value with the real PID according to the map
+
+            // validate the record
+            this.typingService.validate(pidRecord);
+
+            // store the record
+            validatedRecords.add(pidRecord);
+            LOG.debug("Record {} is valid.", pidRecord);
+        }
+        return validatedRecords;
+    }
+
+    private void setPid(PIDRecord pidRecord) {
+        boolean hasCustomPid = hasPid(pidRecord);
+        boolean allowsCustomPids = pidGenerationProperties.isCustomClientPidsEnabled();
+
+        if (allowsCustomPids && hasCustomPid) {
+            // in this only case, we do not have to generate a PID
+            // but we have to check if the PID is already registered and return an error if so
+            String prefix = this.typingService.getPrefix()
+                    .orElseThrow(() -> new InvalidConfigException("No prefix configured."));
+            String maybeSuffix = pidRecord.getPid();
+            String pid = PidSuffix.asPrefixedChecked(maybeSuffix, prefix);
+            boolean isRegisteredPid = this.typingService.isPidRegistered(pid);
+            if (isRegisteredPid) {
+                throw new PidAlreadyExistsException(pidRecord.getPid());
+            }
+        } else {
+            // In all other (usual) cases, we have to generate a PID.
+            // We store only the suffix in the pid field.
+            // The registration at the PID service will preprend the prefix.
+
+            Stream<PidSuffix> suffixStream = suffixGenerator.infiniteStream();
+            Optional<PidSuffix> maybeSuffix = Streams.failableStream(suffixStream)
+                    // With failable streams, we can throw exceptions.
+                    .filter(suffix -> !this.typingService.isPidRegistered(suffix))
+                    .stream()  // back to normal java streams
+                    .findFirst();  // as the stream is infinite, we should always find a prefix.
+            PidSuffix suffix = maybeSuffix
+                    .orElseThrow(() -> new ExternalServiceException("Could not generate PID suffix which did not exist yet."));
+            pidRecord.setPid(suffix.get());
+        }
     }
 
 }

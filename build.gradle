@@ -1,7 +1,8 @@
 plugins {
     // Spring boot & dependency management:
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
-    id 'org.springframework.boot' version '3.5.0'
+
+    id 'org.springframework.boot' version '3.5.4'
     // https://docs.spring.io/dependency-management-plugin/docs/current-SNAPSHOT/reference/html/
     id "io.spring.dependency-management" version "1.1.7"
     // Lombok generates getter and setter and more. https://projectlombok.org/
@@ -49,6 +50,13 @@ repositories {
 
 ext {
     springDocVersion = '2.8.9'
+    openTelemetryInstrumentationVersion = "2.18.1"
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:${openTelemetryInstrumentationVersion}")
+    }
 }
 
 dependencies {
@@ -81,15 +89,24 @@ dependencies {
     implementation "org.springframework.data:spring-data-elasticsearch"
 
     // More flexibility when (de-)serializing json:
-    implementation(group: 'com.networknt', name: 'json-schema-validator', version: '1.5.7');
-    
+    implementation(group: 'com.networknt', name: 'json-schema-validator', version: '1.5.7')
+
     implementation('org.apache.httpcomponents:httpclient:4.5.14')
     implementation('org.apache.httpcomponents:httpclient-cache:4.5.14')
 
     implementation("net.handle:handle-client:9.3.2")
 
+    /* Observability using OpenTelemetry */
+    implementation(platform("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:${openTelemetryInstrumentationVersion}"))
+    implementation "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter"
+    implementation "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations"
+    implementation "io.opentelemetry.contrib:opentelemetry-samplers:1.48.0-alpha"
+    implementation "org.springframework.boot:spring-boot-starter-aop"
+    implementation "io.micrometer:micrometer-tracing-bridge-otel"
+    implementation "io.opentelemetry:opentelemetry-exporter-otlp"
+
     testImplementation(platform('org.junit:junit-bom:5.13.1'))
-	testImplementation('org.junit.jupiter:junit-jupiter')
+    testImplementation('org.junit.jupiter:junit-jupiter')
     testImplementation('org.junit.jupiter:junit-jupiter-params')
 
     testImplementation("org.springframework:spring-test")
@@ -187,15 +204,15 @@ jacocoTestReport {
     afterEvaluate {
         //exclude some classes/package from code coverage report
         classDirectories.setFrom(files(classDirectories.files.collect {
-                    fileTree(dir: it, exclude: [\
-            'edu/kit/datamanager/pit/configuration/**', \
-            'edu/kit/datamanager/pit/web/converter/**', \
-            'edu/kit/datamanager/pit/web/ExtendedErrorAttributes**', \
-            'edu/kit/datamanager/pit/web/UncontrolledExceptionHandler**', \
-            'edu/kit/datamanager/pit/common/**', \
-            'edu/kit/datamanager/pit/Application*'
-                        ])
-                }))
+            fileTree(dir: it, exclude: [\
+            'edu/kit/datamanager/pit/configuration/**',                \
+                           'edu/kit/datamanager/pit/web/converter/**',                \
+                           'edu/kit/datamanager/pit/web/ExtendedErrorAttributes**',                \
+                           'edu/kit/datamanager/pit/web/UncontrolledExceptionHandler**',                \
+                           'edu/kit/datamanager/pit/common/**',                \
+                           'edu/kit/datamanager/pit/Application*'
+            ])
+        }))
     }
 }
 

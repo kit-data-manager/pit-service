@@ -1,8 +1,30 @@
+/*
+ * Copyright (c) 2025 Karlsruhe Institute of Technology.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package edu.kit.datamanager.pit.typeregistry;
 
 import edu.kit.datamanager.pit.common.RecordValidationException;
+import edu.kit.datamanager.pit.configuration.PIISpanAttribute;
 import edu.kit.datamanager.pit.domain.ImmutableList;
 import edu.kit.datamanager.pit.domain.PIDRecord;
+import io.micrometer.core.annotation.Timed;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 
 import java.util.Objects;
 import java.util.Set;
@@ -13,11 +35,17 @@ public record RegisteredProfile(
         boolean allowAdditionalAttributes,
         ImmutableList<RegisteredProfileAttribute> attributes
 ) {
+    @WithSpan(kind = SpanKind.INTERNAL)
+    @Timed(value = "validation_registered_profile", description = "Time taken for validation of a PID record against a registered profile")
     public void validateAttributes(
-            PIDRecord pidRecord,
-            boolean alwaysAllowAdditionalAttributes
-    ) throws RecordValidationException
-    {
+            @PIISpanAttribute PIDRecord pidRecord,
+            @SpanAttribute boolean alwaysAllowAdditionalAttributes
+    ) throws RecordValidationException {
+        Span.current()
+                .setAttribute("profile.pid", this.pid)
+                .setAttribute("profile.allowAdditionalAttributes", this.allowAdditionalAttributes)
+                .setAttribute("profile.alwaysAllowAdditionalAttributes", alwaysAllowAdditionalAttributes);
+
         Set<String> attributesNotDefinedInProfile = pidRecord.getPropertyIdentifiers().stream()
                 .filter(recordKey -> attributes.items().stream().noneMatch(
                         profileAttribute -> Objects.equals(profileAttribute.pid(), recordKey)))

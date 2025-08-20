@@ -1,6 +1,24 @@
+/*
+ * Copyright (c) 2025 Karlsruhe Institute of Technology.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package edu.kit.datamanager.pit.pidsystem.impl.handle;
 
 import edu.kit.datamanager.pit.common.PidUpdateException;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import net.handle.hdllib.HandleValue;
 
 import java.util.ArrayList;
@@ -18,6 +36,7 @@ class HandleDiff {
     private final Collection<HandleValue> toUpdate = new ArrayList<>();
     private final Collection<HandleValue> toRemove = new ArrayList<>();
 
+    @WithSpan(kind = SpanKind.INTERNAL)
     HandleDiff(
             final Map<Integer, HandleValue> recordOld,
             final Map<Integer, HandleValue> recordNew
@@ -69,14 +88,14 @@ class HandleDiff {
     }
 
     public HandleValue[] added() {
-        return this.toAdd.toArray(new HandleValue[] {});
+        return this.toAdd.toArray(new HandleValue[]{});
     }
 
     public HandleValue[] updated() {
-        return this.toUpdate.toArray(new HandleValue[] {});
+        return this.toUpdate.toArray(new HandleValue[]{});
     }
 
     public HandleValue[] removed() {
-        return this.toRemove.toArray(new HandleValue[] {});
+        return this.toRemove.toArray(new HandleValue[]{});
     }
 }
