@@ -43,7 +43,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up openJDK version
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: ${{ env.jdk }}
           distribution: ${{ env.distro }}
@@ -135,7 +135,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up openJDK version
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: ${{ env.jdk }}
           distribution: ${{ env.distro }}
