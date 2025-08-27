@@ -4,10 +4,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import jakarta.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpInputMessage;
@@ -24,21 +24,21 @@ import edu.kit.datamanager.pit.domain.SimplePidRecord;
 /**
  * Converts to-and-from PIDRecord format when SimplePidRecord format is actually
  * expected.
- * 
+ * <p>
  * Do not use explicitly. Spring will use it, as explained below.
- * 
+ * <p>
  * The idea is that all handlers in the REST API simply expect a serialized
  * (marshalled) version of a PID record. This is not always true, though. The
  * PIDRecord representation is pretty complex. To offer a simpler format,
  * `SimplePidRecord` was introduced. To avoid larger modifications within the
  * code, and to not break the API, the simple format comes into play only when
  * its content type is being used.
- * 
+ * <p>
  * If the client wants to send in the simple format, it needs to set the
  * content-type header accordingly. Spring will then use this converter to
  * convert it directly into a PIDRecord instance, as the handler expects. This
  * way only one handler must be used for multiple formats.
- * 
+ * <p>
  * For accepting formats, it is the same. With the accept header, a client may
  * control which format it would like to receive. If it prefers to receive the
  * simple format and sets the header accordingly, instead of directly
@@ -54,8 +54,8 @@ public class SimplePidRecordConverter implements HttpMessageConverter<PIDRecord>
     }
 
     @Override
-    public boolean canRead(Class<?> arg0, MediaType arg1) {
-        if (arg0 == null || arg1 == null) {
+    public boolean canRead(@Nonnull Class<?> arg0, MediaType arg1) {
+        if (arg1 == null) {
             return false;
         }
         LOGGER.trace("canRead: Checking applicability for class {} and mediatype {}.", arg0, arg1);
@@ -63,20 +63,20 @@ public class SimplePidRecordConverter implements HttpMessageConverter<PIDRecord>
     }
 
     @Override
-    public boolean canWrite(Class<?> arg0, MediaType arg1) {
+    public boolean canWrite(@Nonnull Class<?> arg0, MediaType arg1) {
         LOGGER.trace("canWrite: Checking applicability for class {} and mediatype {}.", arg0, arg1);
         return PIDRecord.class.equals(arg0) && isValidMediaType(arg1);
     }
 
     @Override
-    public List<MediaType> getSupportedMediaTypes() {
-        return Arrays.asList(
+    public @Nonnull List<MediaType> getSupportedMediaTypes() {
+        return List.of(
                 MediaType.valueOf(SimplePidRecord.CONTENT_TYPE)
         );
     }
 
     @Override
-    public PIDRecord read(Class<? extends PIDRecord> arg0, HttpInputMessage arg1)
+    public @Nonnull PIDRecord read(@Nonnull Class<? extends PIDRecord> arg0, @Nonnull HttpInputMessage arg1)
             throws IOException, HttpMessageNotReadableException {
         LOGGER.trace("Read simple message from client and convert to PIDRecord.");
         try (InputStreamReader reader = new InputStreamReader(arg1.getBody(), StandardCharsets.UTF_8)) {
@@ -86,7 +86,7 @@ public class SimplePidRecordConverter implements HttpMessageConverter<PIDRecord>
     }
 
     @Override
-    public void write(PIDRecord arg0, MediaType arg1, HttpOutputMessage arg2)
+    public void write(@Nonnull PIDRecord arg0, MediaType arg1, HttpOutputMessage arg2)
             throws IOException, HttpMessageNotWritableException {
         LOGGER.trace("Write PIDRecord to simple format for client.");
         SimplePidRecord sim = new SimplePidRecord(arg0);

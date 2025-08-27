@@ -2,21 +2,21 @@ package edu.kit.datamanager.pit.web;
 
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
 import org.springframework.boot.web.servlet.error.DefaultErrorAttributes;
-import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.WebRequest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import edu.kit.datamanager.pit.common.RecordValidationException;
 
-@Component
 public class ExtendedErrorAttributes extends DefaultErrorAttributes {
 
-    @Autowired(required = true)
     ObjectMapper objectMapperBean;
+
+    public ExtendedErrorAttributes(ObjectMapper objectMapperBean) {
+        this.objectMapperBean = objectMapperBean;
+    }
 
     @Override
     public Map<String, Object> getErrorAttributes(WebRequest webRequest, ErrorAttributeOptions options) {
@@ -24,8 +24,7 @@ public class ExtendedErrorAttributes extends DefaultErrorAttributes {
             super.getErrorAttributes(webRequest, options);
 
         final Throwable error = super.getError(webRequest);
-        if (error instanceof RecordValidationException) {
-            final RecordValidationException validationError = (RecordValidationException) error;
+        if (error instanceof RecordValidationException validationError) {
             try {
                 errorAttributes.put("pid-record", objectMapperBean.writeValueAsString(validationError.getPidRecord()));
             } catch (Exception e) {
