@@ -1,12 +1,12 @@
 plugins {
     // Spring boot & dependency management:
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
-    id 'org.springframework.boot' version '3.5.0'
+    id 'org.springframework.boot' version '3.5.5'
     // https://docs.spring.io/dependency-management-plugin/docs/current-SNAPSHOT/reference/html/
     id "io.spring.dependency-management" version "1.1.7"
     // Lombok generates getter and setter and more. https://projectlombok.org/
     // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
-    id "io.freefair.lombok" version "8.13.1"
+    id "io.freefair.lombok" version "8.14.2"
     // Release tagging with `./gradlew release`
     // Check for new versions here: https://plugins.gradle.org/plugin/net.researchgate.release
     // Usage: https://github.com/researchgate/gradle-release
@@ -19,14 +19,14 @@ plugins {
     id 'jacoco'
     // Adds coveralls task for CI to send results to the coveralls service.
     id "com.github.kt3k.coveralls" version "2.12.2"
-    id "org.owasp.dependencycheck" version "12.1.2"
+    id "org.owasp.dependencycheck" version "12.1.3"
     // include build and git information via Spring Actuator
-    id "com.gorylenko.gradle-git-properties" version "2.5.0"
+    id "com.gorylenko.gradle-git-properties" version "2.5.3"
 }
 
 lombok {
     // check here for new versions: https://projectlombok.org/download
-    version = '1.18.38'
+    version = '1.18.40'
 }
 
 jacoco {
@@ -48,7 +48,7 @@ repositories {
 }
 
 ext {
-    springDocVersion  = '2.8.8'
+    springDocVersion  = '2.8.13'
 }
 
 dependencies {
@@ -89,7 +89,7 @@ dependencies {
 
     implementation("net.handle:handle-client:9.3.2")
 
-    testImplementation(platform('org.junit:junit-bom:5.13.1'))
+    testImplementation(platform('org.junit:junit-bom:5.13.4'))
 	testImplementation('org.junit.jupiter:junit-jupiter')
     testImplementation('org.junit.jupiter:junit-jupiter-params')
 
