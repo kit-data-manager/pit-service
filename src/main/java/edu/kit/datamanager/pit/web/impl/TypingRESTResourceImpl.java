@@ -122,6 +122,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             LOG.info("-- Time taken for mapping: {} ms", ChronoUnit.MILLIS.between(startTime, mappingTime));
             LOG.info("-- Time taken for validation: {} ms", ChronoUnit.MILLIS.between(mappingTime, validationTime));
             LOG.info("Dryrun finished. Returning validated records for {} records.", validatedRecords.size());
+            addPrefixToMapping(pidMappings, prefix);
             return ResponseEntity.status(HttpStatus.OK).body(new BatchRecordResponse(validatedRecords, pidMappings));
         }
 
@@ -186,11 +187,17 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             }
 
             LOG.info("Creation finished. Returning validated records for {} records. {} records failed to be created.", validatedRecords.size(), failedRecords.size());
+            addPrefixToMapping(pidMappings, prefix);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new BatchRecordResponse(failedRecords, pidMappings));
         } else {
             LOG.info("Creation finished. Returning successfully validated and created records for {} records of {}.", successfulRecords.size(), validatedRecords.size());
+            addPrefixToMapping(pidMappings, prefix);
             return ResponseEntity.status(HttpStatus.CREATED).body(new BatchRecordResponse(successfulRecords, pidMappings));
         }
+    }
+
+    private static void addPrefixToMapping(Map<String, String> pidMappings, String prefix) {
+        pidMappings.replaceAll((placeholder, realSuffix) -> prefix + realSuffix);
     }
 
     /**

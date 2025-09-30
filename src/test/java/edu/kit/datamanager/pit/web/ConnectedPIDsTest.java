@@ -20,6 +20,7 @@ package edu.kit.datamanager.pit.web;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
+import edu.kit.datamanager.pit.pitservice.ITypingService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,7 +35,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.web.context.WebApplicationContext;
+import org.hamcrest.Matchers;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,6 +67,8 @@ class ConnectedPIDsTest {
     private ObjectMapper mapper;
     @Autowired
     private KnownPidsDao knownPidsDao;
+    @Autowired
+    private ITypingService typingService;
 
     @BeforeEach
     void setup() {
@@ -341,6 +346,9 @@ class ConnectedPIDsTest {
         // Submit to API
         String jsonContent = mapper.writeValueAsString(records);
 
+        String prefix = this.typingService.getPrefix()
+                .orElseThrow(() -> new IOException("No prefix configured."));
+
         this.mockMvc
                 .perform(post("/api/v1/pit/pids")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -351,7 +359,12 @@ class ConnectedPIDsTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords").isArray())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.pidRecords.length()").value(records.size()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.mapping").exists())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.mapping").isMap());
+                .andExpect(MockMvcResultMatchers.jsonPath("$.mapping").isMap())
+                // The mapping values must contain a full PID, not only the suffix,
+                // to prevent client-side errors with partial PIDs.
+                .andExpect(MockMvcResultMatchers.jsonPath("$.mapping")
+                        .value(Matchers.hasValue(Matchers.startsWith(prefix)))
+                );
 
         assertEquals(records.size(), knownPidsDao.count(), "Number of stored records should match the number of records submitted");
     }
