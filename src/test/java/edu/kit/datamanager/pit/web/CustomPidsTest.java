@@ -20,7 +20,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import edu.kit.datamanager.pit.configuration.PidGenerationProperties;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 
 @AutoConfigureMockMvc
 // JUnit5 + Spring
@@ -53,10 +53,10 @@ class CustomPidsTest {
      */
     @Test
     void testCreateExistingPid() throws Exception {
-        PIDRecord first = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord first = ApiMockUtils.registerSomeRecord(this.mockMvc);
         assertNotNull(first);
 
-        PIDRecord second = ApiMockUtils.getSomePidRecordInstance();
+        PidRecord second = ApiMockUtils.getSomePidRecordInstance();
         second.setPid(first.getPid());
         String body = ApiMockUtils.getJsonMapper().writeValueAsString(second);
         
@@ -75,7 +75,7 @@ class CustomPidsTest {
      */
     @Test
     void testCreateCustomPid() throws Exception {
-        PIDRecord record = ApiMockUtils.getSomePidRecordInstance();
+        PidRecord record = ApiMockUtils.getSomePidRecordInstance();
         record.setPid("my-custom-pid");
         String body = ApiMockUtils.getJsonMapper().writeValueAsString(record);
         
@@ -98,7 +98,7 @@ class CustomPidsTest {
         this.props.setCustomClientPidsEnabled(false);
         String customPid = "my-custom-pid";
 
-        PIDRecord record = ApiMockUtils.getSomePidRecordInstance();
+        PidRecord record = ApiMockUtils.getSomePidRecordInstance();
         record.setPid(customPid);
         String body = ApiMockUtils.getJsonMapper().writeValueAsString(record);
         
@@ -124,7 +124,7 @@ class CustomPidsTest {
         this.props.setBrandingPrefix(Optional.of(branding));
         String customPid = "unbranded-pid";
 
-        PIDRecord record = ApiMockUtils.getSomePidRecordInstance();
+        PidRecord record = ApiMockUtils.getSomePidRecordInstance();
         record.setPid(customPid);
         String body = ApiMockUtils.getJsonMapper().writeValueAsString(record);
         

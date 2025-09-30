@@ -21,7 +21,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import edu.kit.datamanager.pit.common.InvalidConfigException;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystemQueryTest;
 
 /**
@@ -60,7 +60,7 @@ class LocalPidSystemTest {
     @Test
     @Transactional
     void testAllSystemTests() throws Exception {
-        PIDRecord rec = new PIDRecord();
+        PidRecord rec = new PidRecord();
         rec.setPid("my-custom-pid");
         rec.addEntry(
             // this is actually a registered type, but not in a data type registry, but inline in the PID system.
@@ -72,7 +72,7 @@ class LocalPidSystemTest {
         //rec.addEntry("10320/loc", "", "value");
         String pid = localPidSystem.registerPid(rec);
         assertEquals(rec.getPid(), pid);
-        PIDRecord newRec = localPidSystem.queryPid(pid);
+        PidRecord newRec = localPidSystem.queryPid(pid);
         assertEquals(rec, newRec);
         
         Set<Method> publicMethods = new HashSet<>(Arrays.asList(IIdentifierSystemQueryTest.class.getMethods()));
@@ -101,7 +101,7 @@ class LocalPidSystemTest {
 
     @Test
     void testDeletePid() throws IOException {
-        PIDRecord p = new PIDRecord().withPID("test/pid");
+        PidRecord p = new PidRecord().withPID("test/pid");
         this.localPidSystem.registerPid(p);
         String pid = p.getPid();
         assertThrows(
@@ -120,11 +120,11 @@ class LocalPidSystemTest {
     void testResolveAll() throws InvalidConfigException, IOException {
         assertEquals(0, this.localPidSystem.resolveAllPidsOfPrefix().size());
 
-        PIDRecord p1 = new PIDRecord().withPID("p1");
+        PidRecord p1 = new PidRecord().withPID("p1");
         this.localPidSystem.registerPid(p1);
         assertEquals(1, this.localPidSystem.resolveAllPidsOfPrefix().size());
 
-        PIDRecord p2 = new PIDRecord().withPID("p2");
+        PidRecord p2 = new PidRecord().withPID("p2");
         this.localPidSystem.registerPid(p2);
         assertEquals(2, this.localPidSystem.resolveAllPidsOfPrefix().size());
     }

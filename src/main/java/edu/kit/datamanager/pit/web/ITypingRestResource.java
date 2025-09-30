@@ -15,7 +15,7 @@
  */
 package edu.kit.datamanager.pit.web;
 
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.domain.SimplePidRecord;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import io.swagger.v3.oas.annotations.Operation;
@@ -64,7 +64,7 @@ public interface ITypingRestResource {
             description = "The body containing a list of all PID record values as they should be in the new PID records. To connect records, the PID fields must be specified. This placeholder PID value may then be used in the value fields of other PID Record entries. During creation, these placeholder PIDs whose sole purpose is to connect records will be overwritten with actual, resolvable PIDs as defined by the PID generator strategy.",
             required = true,
             content = {
-                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, array = @ArraySchema(schema = @Schema(implementation = PIDRecord.class)))
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, array = @ArraySchema(schema = @Schema(implementation = PidRecord.class)))
             }
     )
     @ApiResponses(value = {
@@ -82,7 +82,7 @@ public interface ITypingRestResource {
             @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
     ResponseEntity<BatchRecordResponse> createPIDs(
-            @RequestBody final List<PIDRecord> rec,
+            @RequestBody final List<PidRecord> rec,
 
             @Parameter(description = "If true, only validation will be done and no PIDs will be created. No data will be changed and no services will be notified.")
             @RequestParam(name = "dryrun", required = false, defaultValue = "false")
@@ -114,7 +114,7 @@ public interface ITypingRestResource {
             description = "The body containing all PID record values as they should be in the new PIDs record.",
             required = true,
             content = {
-                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PidRecord.class)),
                     @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
             }
     )
@@ -123,7 +123,7 @@ public interface ITypingRestResource {
                     responseCode = "201",
                     description = "Created",
                     content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PidRecord.class)),
                             @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
                     }),
             @ApiResponse(responseCode = "400", description = "Validation failed. See body for details. Contains also the validated record.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
@@ -133,8 +133,8 @@ public interface ITypingRestResource {
             @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
             @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
-    ResponseEntity<PIDRecord> createPID(
-            @RequestBody final PIDRecord rec,
+    ResponseEntity<PidRecord> createPID(
+            @RequestBody final PidRecord rec,
 
             @Parameter(
                     description = "If true, only validation will be done" +
@@ -166,7 +166,7 @@ public interface ITypingRestResource {
             description = "The body containing all PID record values as they should be after the update.",
             required = true,
             content = {
-                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PidRecord.class)),
                     @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
             }
     )
@@ -175,7 +175,7 @@ public interface ITypingRestResource {
                     responseCode = "200",
                     description = "Success.",
                     content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PidRecord.class)),
                             @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
                     }),
             @ApiResponse(responseCode = "400", description = "Validation failed. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
@@ -186,8 +186,8 @@ public interface ITypingRestResource {
             @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
             @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
-    ResponseEntity<PIDRecord> updatePID(
-            @RequestBody final PIDRecord rec,
+    ResponseEntity<PidRecord> updatePID(
+            @RequestBody final PidRecord rec,
 
             @Parameter(
                     description = "If true, no PID will be updated. Only" +
@@ -218,7 +218,7 @@ public interface ITypingRestResource {
                     responseCode = "200",
                     description = "Found",
                     content = {
-                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PIDRecord.class)),
+                            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PidRecord.class)),
                             @Content(mediaType = SimplePidRecord.CONTENT_TYPE, schema = @Schema(implementation = SimplePidRecord.class))
                     }
             ),
@@ -227,7 +227,7 @@ public interface ITypingRestResource {
             @ApiResponse(responseCode = "503", description = "Communication to required external service failed.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)),
             @ApiResponse(responseCode = "500", description = "Server error. See body for details.", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
     })
-    ResponseEntity<PIDRecord> getRecord(
+    ResponseEntity<PidRecord> getRecord(
             @Parameter(
                     description = "If true, validation will be run on the" +
                             " resolved PID. On failure, an error will be" +

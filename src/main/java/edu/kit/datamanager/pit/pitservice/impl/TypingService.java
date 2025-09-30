@@ -15,7 +15,7 @@ import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.IValidationStrategy;
 import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.domain.Operations;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
@@ -65,7 +65,7 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public void validate(PIDRecord pidRecord)
+    public void validate(PidRecord pidRecord)
             throws RecordValidationException, ExternalServiceException {
         this.defaultStrategy.validate(pidRecord);
     }
@@ -77,7 +77,7 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public String registerPidUnchecked(final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
+    public String registerPidUnchecked(final PidRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
         LOG.trace("Performing registerPID({}).", pidRecord);
         return identifierSystem.registerPidUnchecked(pidRecord);
     }
@@ -89,14 +89,14 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public PIDRecord queryPid(String pid) throws PidNotFoundException, ExternalServiceException {
+    public PidRecord queryPid(String pid) throws PidNotFoundException, ExternalServiceException {
         return queryPid(pid, false);
     }
 
-    public PIDRecord queryPid(String pid, boolean includePropertyNames)
+    public PidRecord queryPid(String pid, boolean includePropertyNames)
             throws PidNotFoundException, ExternalServiceException {
         LOG.trace("Performing queryAllProperties({}, {}).", pid, includePropertyNames);
-        PIDRecord pidInfo = identifierSystem.queryPid(pid);
+        PidRecord pidInfo = identifierSystem.queryPid(pid);
 
         if (includePropertyNames) {
             enrichPIDInformationRecord(pidInfo);
@@ -104,7 +104,7 @@ public class TypingService implements ITypingService {
         return pidInfo;
     }
 
-    private void enrichPIDInformationRecord(PIDRecord pidInfo) {
+    private void enrichPIDInformationRecord(PidRecord pidInfo) {
         // enrich record by querying type registry for all property definitions
         // to get the property names
         for (String typeIdentifier : pidInfo.getPropertyIdentifiers()) {
@@ -125,7 +125,7 @@ public class TypingService implements ITypingService {
     }
 
     @Override
-    public boolean updatePid(PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
+    public boolean updatePid(PidRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
         return this.identifierSystem.updatePid(pidRecord);
     }
 

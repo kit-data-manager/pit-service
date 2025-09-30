@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.JacksonException;
 
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.web.ApiMockUtils;
 
@@ -49,7 +49,7 @@ class PidRecordElasticRepositoryTest {
     @Test
     @Transactional
     void testStorage() throws JacksonException {
-        PIDRecord r = ApiMockUtils.getSomePidRecordInstance();
+        PidRecord r = ApiMockUtils.getSomePidRecordInstance();
         PidRecordElasticWrapper w = new PidRecordElasticWrapper(r, typingService.getOperations());
         assertEquals(0, dao.count());
         dao.save(w);
@@ -59,7 +59,7 @@ class PidRecordElasticRepositoryTest {
     @Test
     @Transactional
     void testMultipleValues() throws JacksonException {
-        PIDRecord r = ApiMockUtils.getSomePidRecordInstance();
+        PidRecord r = ApiMockUtils.getSomePidRecordInstance();
         r.addEntry(
             r.getPropertyIdentifiers().stream().findFirst().get(), 
             "", 
@@ -73,7 +73,7 @@ class PidRecordElasticRepositoryTest {
     @Test
     @Transactional
     void testStorageWithDateNull() throws JacksonException {
-        PIDRecord r = new PIDRecord();
+        PidRecord r = new PidRecord();
         r.setPid("not-a-pid");
         r.addEntry("21.T11148/076759916209e5d62bd5", "", "21.T11148/b9b76f887845e32d29f7");
         PidRecordElasticWrapper w = new PidRecordElasticWrapper(r, typingService.getOperations());

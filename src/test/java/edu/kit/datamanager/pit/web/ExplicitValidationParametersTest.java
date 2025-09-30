@@ -17,7 +17,7 @@ import org.springframework.web.context.WebApplicationContext;
 import edu.kit.datamanager.pit.RecordTestHelper;
 import edu.kit.datamanager.pit.SpringTestHelper;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.domain.SimplePidRecord;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
@@ -141,7 +141,7 @@ class ExplicitValidationParametersTest {
         // as we use an in-memory data structure, lets not make it too large.
         int numAttributes = 100;
         int numValues = 100;
-        PIDRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
+        PidRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
         
         String rJson = ApiMockUtils.serialize(r);
         this.mockMvc
@@ -168,7 +168,7 @@ class ExplicitValidationParametersTest {
         // as we use an in-memory data structure, lets not make it too large.
         int numAttributes = 100;
         int numValues = 100;
-        PIDRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
+        PidRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
         
         String rJson = ApiMockUtils.serialize(r);
         this.mockMvc
@@ -189,7 +189,7 @@ class ExplicitValidationParametersTest {
 
     @Test
     void testNontypeRecord() throws Exception {
-        PIDRecord r = new PIDRecord();
+        PidRecord r = new PidRecord();
         r.addEntry("unregisteredType", "for Testing", "hello");
         this.mockMvc
             .perform(
@@ -209,7 +209,7 @@ class ExplicitValidationParametersTest {
 
     @Test
     void testRecordWithInvalidValue() throws Exception {
-        PIDRecord r = new PIDRecord();
+        PidRecord r = new PidRecord();
         // valid attribute key, but wrong attribute value:
         String urlType = "21.T11969/e0efc41346cda4ba84ca";
         r.addEntry(urlType, "", "not a url");
@@ -234,7 +234,7 @@ class ExplicitValidationParametersTest {
 
     @Test
     void testRecordWithAdditionalAttribute() throws Exception {
-        PIDRecord r = ApiMockUtils.getSomePidRecordInstance();
+        PidRecord r = ApiMockUtils.getSomePidRecordInstance();
         r.addEntry(
                 "21.T11969/86963861a2b249a83b93",
                 "additional attribute",

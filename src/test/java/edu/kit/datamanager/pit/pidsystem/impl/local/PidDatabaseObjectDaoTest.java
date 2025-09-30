@@ -16,7 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 
 @SpringBootTest
 @TestPropertySource("/test/application-test.properties")
@@ -57,7 +57,7 @@ class PidDatabaseObjectDaoTest {
     @Transactional
     void testModifyRecord() {
         Optional<PidDatabaseObject> dbo = dao.findById("first");
-        PIDRecord rec = new PIDRecord(dbo.get());
+        PidRecord rec = new PidRecord(dbo.get());
         assertEquals(
             rec.getPropertyIdentifiers().iterator().next(),
             dbo.get().getEntries().keySet().iterator().next()

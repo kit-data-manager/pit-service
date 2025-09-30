@@ -27,7 +27,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 
 @AutoConfigureMockMvc
 // JUnit5 + Spring
@@ -48,7 +48,7 @@ class EtagTest {
 
     private MockMvc mockMvc;
 
-    private PIDRecord existingRecord;
+    private PidRecord existingRecord;
 
     /*
      * Pre-test to make sure there is at least one PID available.

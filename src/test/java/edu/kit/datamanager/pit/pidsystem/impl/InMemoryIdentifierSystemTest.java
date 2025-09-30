@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import edu.kit.datamanager.pit.common.InvalidConfigException;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 
 class InMemoryIdentifierSystemTest {
 
@@ -23,7 +23,7 @@ class InMemoryIdentifierSystemTest {
 
     @Test
     void testDeletePid() throws IOException {
-        PIDRecord p = new PIDRecord().withPID("test/pid");
+        PidRecord p = new PidRecord().withPID("test/pid");
         sys.registerPid(p);
         String pid = p.getPid();
         assertThrows(
@@ -42,11 +42,11 @@ class InMemoryIdentifierSystemTest {
     void testResolveAll() throws InvalidConfigException, IOException {
         assertEquals(0, sys.resolveAllPidsOfPrefix().size());
 
-        PIDRecord p1 = new PIDRecord().withPID("p1");
+        PidRecord p1 = new PidRecord().withPID("p1");
         sys.registerPid(p1);
         assertEquals(1, sys.resolveAllPidsOfPrefix().size());
 
-        PIDRecord p2 = new PIDRecord().withPID("p2");
+        PidRecord p2 = new PidRecord().withPID("p2");
         sys.registerPid(p2);
         assertEquals(2, sys.resolveAllPidsOfPrefix().size());
     }

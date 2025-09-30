@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.stream.IntStream;
 
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 
 public class RecordTestHelper {
@@ -18,13 +18,13 @@ public class RecordTestHelper {
      *                      above)
      * @return a PID record as configured.
      */
-    public static PIDRecord getFakePidRecord(
+    public static PidRecord getFakePidRecord(
             final int numAttributes,
             final int numValues,
             final String prefix,
             final PidSuffixGenerator generator)
     {
-        PIDRecord r = new PIDRecord();
+        PidRecord r = new PidRecord();
         r.setPid(generator.generate().get());
         IntStream.range(0, numAttributes)
                 .mapToObj(i -> generator.generate().getWithPrefix(prefix))

@@ -15,7 +15,7 @@ import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticRepository;
 import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticWrapper;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
@@ -77,7 +77,7 @@ public class CliTaskBootstrap implements ICliTask {
                 // store in Elasticsearch
                 elastic.ifPresent(elastic -> {
                     try {
-                        PIDRecord rec = typingService.queryPid(known.getPid());
+                        PidRecord rec = typingService.queryPid(known.getPid());
                         LOG.info("Store PID {} in Elasticsearch.", known.getPid());
                         PidRecordElasticWrapper wrapper = new PidRecordElasticWrapper(rec, typingService.getOperations());
                         elastic.save(wrapper);

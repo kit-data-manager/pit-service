@@ -14,7 +14,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.configuration.HandleProtocolProperties;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 import net.handle.hdllib.HandleException;
@@ -39,7 +39,7 @@ public class IIdentifierSystemQueryTest {
         handleProtocolInstance.init();
         IIdentifierSystem handleProtocol = handleProtocolInstance;
 
-        PIDRecord rec = new PIDRecord();
+        PidRecord rec = new PidRecord();
         rec.setPid("my-custom-suffix");
         rec.addEntry(
             // this is actually a registered type, but not in a data type registry, but inline in the PID system.
@@ -76,7 +76,7 @@ public class IIdentifierSystemQueryTest {
     @ParameterizedTest
     @MethodSource("implProvider")
     public void queryPidExample(IIdentifierSystem impl, String pid) throws IOException {
-        PIDRecord result = impl.queryPid(pid);
+        PidRecord result = impl.queryPid(pid);
         assertEquals(result.getPid(), pid);
         assertTrue(result.getPropertyIdentifiers().contains("10320/loc"));
         assertFalse(result.getPropertyIdentifiers().contains("HS_ADMIN"));
@@ -93,7 +93,7 @@ public class IIdentifierSystemQueryTest {
     @ParameterizedTest
     @MethodSource("implProvider")
     public void querySingleProperty(IIdentifierSystem impl, String pid) throws IOException {
-        PIDRecord record = impl.queryPid(pid);
+        PidRecord record = impl.queryPid(pid);
         String attributeKey = "10320/loc";
         assertTrue(record.getPropertyIdentifiers().contains(attributeKey));
         String value = record.getPropertyValue(attributeKey);
@@ -104,7 +104,7 @@ public class IIdentifierSystemQueryTest {
     @ParameterizedTest
     @MethodSource("implProvider")
     public void queryNonexistentProperty(IIdentifierSystem impl, String pid) throws IOException {
-        PIDRecord record = impl.queryPid(pid);
+        PidRecord record = impl.queryPid(pid);
         assertFalse(record.getPropertyIdentifiers().contains("Nonexistent_Attribute"));
     }
 }

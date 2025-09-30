@@ -10,7 +10,7 @@ import org.springframework.test.context.TestPropertySource;
 
 import com.fasterxml.jackson.core.JacksonException;
 
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.web.ApiMockUtils;
 
@@ -26,14 +26,14 @@ class PidRecordElasticWrapperTest {
 
     @Test
     void testCreateEmpty() {
-        PIDRecord pidRecord = new PIDRecord();
+        PidRecord pidRecord = new PidRecord();
         PidRecordElasticWrapper wrapper = new PidRecordElasticWrapper(pidRecord, typingService.getOperations());
         assertNotNull(wrapper);
     }
 
     @Test
     void testCreateValid() throws JacksonException {
-        PIDRecord pidRecord = ApiMockUtils.getSomePidRecordInstance();
+        PidRecord pidRecord = ApiMockUtils.getSomePidRecordInstance();
         PidRecordElasticWrapper wrapper = new PidRecordElasticWrapper(pidRecord, typingService.getOperations());
         assertNotNull(wrapper);
     }

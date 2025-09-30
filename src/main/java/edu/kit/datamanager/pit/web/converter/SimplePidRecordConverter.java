@@ -18,7 +18,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 
 import edu.kit.datamanager.pit.Application;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.domain.SimplePidRecord;
 
 /**
@@ -45,7 +45,7 @@ import edu.kit.datamanager.pit.domain.SimplePidRecord;
  * serializing the PIDRecord, this class will be used. It first converts the
  * record into the simple class representation before serializing into JSON.
  */
-public class SimplePidRecordConverter implements HttpMessageConverter<PIDRecord> {
+public class SimplePidRecordConverter implements HttpMessageConverter<PidRecord> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SimplePidRecordConverter.class);
 
@@ -59,13 +59,13 @@ public class SimplePidRecordConverter implements HttpMessageConverter<PIDRecord>
             return false;
         }
         LOGGER.trace("canRead: Checking applicability for class {} and mediatype {}.", arg0, arg1);
-        return PIDRecord.class.equals(arg0) && isValidMediaType(arg1);
+        return PidRecord.class.equals(arg0) && isValidMediaType(arg1);
     }
 
     @Override
     public boolean canWrite(Class<?> arg0, MediaType arg1) {
         LOGGER.trace("canWrite: Checking applicability for class {} and mediatype {}.", arg0, arg1);
-        return PIDRecord.class.equals(arg0) && isValidMediaType(arg1);
+        return PidRecord.class.equals(arg0) && isValidMediaType(arg1);
     }
 
     @Override
@@ -76,17 +76,17 @@ public class SimplePidRecordConverter implements HttpMessageConverter<PIDRecord>
     }
 
     @Override
-    public PIDRecord read(Class<? extends PIDRecord> arg0, HttpInputMessage arg1)
+    public PidRecord read(Class<? extends PidRecord> arg0, HttpInputMessage arg1)
             throws IOException, HttpMessageNotReadableException {
         LOGGER.trace("Read simple message from client and convert to PIDRecord.");
         try (InputStreamReader reader = new InputStreamReader(arg1.getBody(), StandardCharsets.UTF_8)) {
             String data = new BufferedReader(reader).lines().collect(Collectors.joining("\n"));
-            return new PIDRecord(Application.jsonObjectMapper().readValue(data, SimplePidRecord.class));
+            return new PidRecord(Application.jsonObjectMapper().readValue(data, SimplePidRecord.class));
         }
     }
 
     @Override
-    public void write(PIDRecord arg0, MediaType arg1, HttpOutputMessage arg2)
+    public void write(PidRecord arg0, MediaType arg1, HttpOutputMessage arg2)
             throws IOException, HttpMessageNotWritableException {
         LOGGER.trace("Write PIDRecord to simple format for client.");
         SimplePidRecord sim = new SimplePidRecord(arg0);

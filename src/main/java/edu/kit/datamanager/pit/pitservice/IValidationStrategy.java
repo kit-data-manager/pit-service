@@ -2,7 +2,7 @@ package edu.kit.datamanager.pit.pitservice;
 
 import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 
 public interface IValidationStrategy {
     /**
@@ -12,5 +12,5 @@ public interface IValidationStrategy {
      * 
      * @param pidRecord the PID record to validate.
      */
-    void validate(PIDRecord pidRecord) throws RecordValidationException, ExternalServiceException;
+    void validate(PidRecord pidRecord) throws RecordValidationException, ExternalServiceException;
 }

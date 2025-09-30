@@ -16,18 +16,18 @@ import org.junit.jupiter.api.Test;
  * Test Ensure the Entry of Insertion And Extraction of the class
  */
 
-class PIDRecordTest {
+class PidRecordTest {
     private static final String PID = "fake/pid/42";
 
     @Test
     void assignPIDTest() {
-        PIDRecord r = new PIDRecord().withPID(PID);
+        PidRecord r = new PidRecord().withPID(PID);
         assertEquals(PID, r.getPid());
     }
 
     @Test
     void testCorrectEntryInsertionAndExtraction() {
-        PIDRecord rec = new PIDRecord();
+        PidRecord rec = new PidRecord();
         String identifier = "propertyIdentifier";
         String name = "propertyName";
         String value = "propertyValue";
@@ -45,13 +45,13 @@ class PIDRecordTest {
     @Test
     void assignPID() {
 
-        PIDRecord r = new PIDRecord().withPID(PID);
+        PidRecord r = new PidRecord().withPID(PID);
         assertEquals(PID, r.getPid());
     }
 
     @Test
     void testAddEntryWithEmptyIdentifier() {
-        PIDRecord rec = new PIDRecord();
+        PidRecord rec = new PidRecord();
         String identifier = "";
         String name = "propertyName";
         String value = "propertyValue";
@@ -63,7 +63,7 @@ class PIDRecordTest {
     @Test
     void testAddEntry_IdIsSpace() {
         // TODO Discuss, is this a good thing? should we change it?
-        PIDRecord rec = new PIDRecord();
+        PidRecord rec = new PidRecord();
         String identifier = " ";
         String name = "propertyName";
         String value = "propertyValue";
@@ -80,7 +80,7 @@ class PIDRecordTest {
 
     @Test
     void testAddEntry_IdIsNull() {
-        PIDRecord rec = new PIDRecord();
+        PidRecord rec = new PidRecord();
         String identifier = null;
         String name = "propertyName";
         String value = "propertyValue";
@@ -92,7 +92,7 @@ class PIDRecordTest {
 
     @Test
     void testGetPropertyValuesWithSameIdentifier() {
-        PIDRecord rec = new PIDRecord();
+        PidRecord rec = new PidRecord();
         String identifier = "propertyIdentifier";
         String name = "propertyName";
         String value = "propertyValue";
@@ -120,7 +120,7 @@ class PIDRecordTest {
 
     @Test
     void testHasProperty() {
-        PIDRecord rec = new PIDRecord();
+        PidRecord rec = new PidRecord();
         String identifier = "propertyIdentifier";
         String name = "propertyName";
         String value = "propertyValue";
@@ -130,7 +130,7 @@ class PIDRecordTest {
 
     @Test
     void testRemovePropertiesNotListed() {
-        PIDRecord rec = new PIDRecord();
+        PidRecord rec = new PidRecord();
         String id1 = "propertyIdentifier";
         String id2 = "otherIdentifier";
         String name = "propertyName";
@@ -154,38 +154,38 @@ class PIDRecordTest {
 
     @Test
     void testEqualityOfEmpty() {
-        PIDRecord first = new PIDRecord();
-        PIDRecord second = new PIDRecord();
+        PidRecord first = new PidRecord();
+        PidRecord second = new PidRecord();
         this.equals(first, second);
 
-        PIDRecord third = new PIDRecord().withPID(null);
-        PIDRecord fourth = new PIDRecord().withPID("");
+        PidRecord third = new PidRecord().withPID(null);
+        PidRecord fourth = new PidRecord().withPID("");
         this.equals(third, fourth);
     }
 
     @Test
     void testEqualityViaPid() {
-        PIDRecord first = new PIDRecord().withPID("pid");
-        PIDRecord second = new PIDRecord().withPID("pid");
+        PidRecord first = new PidRecord().withPID("pid");
+        PidRecord second = new PidRecord().withPID("pid");
         this.equals(first, second);
     }
 
     @Test
     void testInequalityViaPid() {
-        PIDRecord first = new PIDRecord();
-        PIDRecord second = new PIDRecord().withPID("first");
+        PidRecord first = new PidRecord();
+        PidRecord second = new PidRecord().withPID("first");
         this.notEquals(first, second);
 
-        PIDRecord third = new PIDRecord().withPID("other");
+        PidRecord third = new PidRecord().withPID("other");
         this.notEquals(first, third);
         this.notEquals(second, third);
     }
 
     @Test
     void testEqualityAlthoughNamedAttribute() {
-        PIDRecord first = new PIDRecord();
-        PIDRecord second = new PIDRecord();
-        PIDRecord third = new PIDRecord();
+        PidRecord first = new PidRecord();
+        PidRecord second = new PidRecord();
+        PidRecord third = new PidRecord();
 
         first.addEntry("key", "name", "value");
         second.addEntry("key", null, "value");
@@ -197,8 +197,8 @@ class PIDRecordTest {
 
     @Test
     void testEqualityAlthoughDifferentOrder() {
-        PIDRecord first = new PIDRecord();
-        PIDRecord second = new PIDRecord();
+        PidRecord first = new PidRecord();
+        PidRecord second = new PidRecord();
 
         first.addEntry("key", "name", "value1");
         first.addEntry("key", "name", "value2");
@@ -208,14 +208,14 @@ class PIDRecordTest {
         this.equals(first, second);
     }
 
-    private void equals(PIDRecord first, PIDRecord second) {
+    private void equals(PidRecord first, PidRecord second) {
         assertEquals(first, second);
         assertEquals(second, first);
         assertEquals(first.hashCode(), second.hashCode());
         assertEquals(first.getEtag(), second.getEtag());
     }
 
-    private void notEquals(PIDRecord first, PIDRecord second) {
+    private void notEquals(PidRecord first, PidRecord second) {
         assertNotEquals(first, second);
         assertNotEquals(second, first);
         assertNotEquals(first.hashCode(), second.hashCode());

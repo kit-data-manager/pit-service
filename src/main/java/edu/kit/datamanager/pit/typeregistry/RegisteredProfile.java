@@ -2,7 +2,7 @@ package edu.kit.datamanager.pit.typeregistry;
 
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.ImmutableList;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 
 import java.util.Objects;
 import java.util.Set;
@@ -14,7 +14,7 @@ public record RegisteredProfile(
         ImmutableList<RegisteredProfileAttribute> attributes
 ) {
     public void validateAttributes(
-            PIDRecord pidRecord,
+            PidRecord pidRecord,
             boolean alwaysAllowAdditionalAttributes
     ) throws RecordValidationException
     {

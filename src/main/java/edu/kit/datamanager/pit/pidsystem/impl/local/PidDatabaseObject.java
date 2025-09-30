@@ -11,7 +11,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.domain.PIDRecordEntry;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -70,7 +70,7 @@ public class PidDatabaseObject {
         this.entries.put(hiddenIndentifier, values);
     }
 
-    public PidDatabaseObject(PIDRecord other) {
+    public PidDatabaseObject(PidRecord other) {
         this.pid = other.getPid();
 
         other

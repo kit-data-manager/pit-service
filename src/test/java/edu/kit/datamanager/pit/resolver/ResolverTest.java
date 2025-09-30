@@ -1,7 +1,7 @@
 package edu.kit.datamanager.pit.resolver;
 
 import edu.kit.datamanager.pit.common.PidNotFoundException;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,16 +39,16 @@ class ResolverTest {
 
     @Test
     void resolveHandleReadOnly() {
-        PIDRecord result = resolver.resolve("10.5281/zenodo.8014937");
+        PidRecord result = resolver.resolve("10.5281/zenodo.8014937");
         assertNotNull(result);
     }
 
     @Test
     void resolveInMemory() {
-        PIDRecord record = new PIDRecord().withPID("suffix");
+        PidRecord record = new PidRecord().withPID("suffix");
         record.addEntry("key", "value");
         String pid = this.identifierSystem.registerPid(record);
-        PIDRecord result = resolver.resolve(pid);
+        PidRecord result = resolver.resolve(pid);
         assertNotNull(result);
         assertEquals("value", result.getEntries().get("key").getFirst().getValue());
     }

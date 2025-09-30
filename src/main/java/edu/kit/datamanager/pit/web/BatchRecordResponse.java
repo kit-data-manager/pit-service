@@ -16,7 +16,7 @@
 
 package edu.kit.datamanager.pit.web;
 
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 
 import java.util.List;
 import java.util.Map;
@@ -29,9 +29,9 @@ import java.util.Map;
  *
  * @param pidRecords List of PIDRecord objects representing the processed records. (List<PIDRecord>)
  * @param mapping    Map where keys are user-provided identifiers (fictionary) and values are the corresponding real record Handle PIDs. (Map<String, String>)
- * @see PIDRecord
+ * @see PidRecord
  */
 public record BatchRecordResponse(
-        List<PIDRecord> pidRecords,
+        List<PidRecord> pidRecords,
         Map<String, String> mapping) {
 }

@@ -28,7 +28,7 @@ import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.configuration.HandleCredentials;
 import edu.kit.datamanager.pit.configuration.HandleProtocolProperties;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import net.handle.api.HSAdapter;
 import net.handle.api.HSAdapterFactory;
@@ -131,7 +131,7 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public PIDRecord queryPid(final String pid) throws PidNotFoundException, ExternalServiceException {
+    public PidRecord queryPid(final String pid) throws PidNotFoundException, ExternalServiceException {
         Collection<HandleValue> allValues = this.queryAllHandleValues(pid);
         if (allValues.isEmpty()) {
             return null;
@@ -158,12 +158,12 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public String registerPidUnchecked(final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
+    public String registerPidUnchecked(final PidRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
         // Add admin value for configured user only
         // TODO add options to add additional adminValues e.g. for user lists?
         ArrayList<HandleValue> admin = new ArrayList<>();
         admin.add(this.adminValue);
-        PIDRecord preparedRecord = pidRecord;
+        PidRecord preparedRecord = pidRecord;
         for (RecordModifier modifier : this.props.getConfiguredModifiers()) {
             preparedRecord = modifier.apply(preparedRecord);
         }
@@ -185,11 +185,11 @@ public class HandleProtocolAdapter implements IIdentifierSystem {
     }
 
     @Override
-    public boolean updatePid(final PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
+    public boolean updatePid(final PidRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
         if (!this.isValidPID(pidRecord.getPid())) {
             return false;
         }
-        PIDRecord preparedRecord = pidRecord;
+        PidRecord preparedRecord = pidRecord;
         for (RecordModifier modifier : this.props.getConfiguredModifiers()) {
             preparedRecord = modifier.apply(preparedRecord);
         }

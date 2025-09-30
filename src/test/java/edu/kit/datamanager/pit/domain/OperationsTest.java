@@ -37,14 +37,14 @@ class OperationsTest {
 
     @Test
     void testFindDateCreated() throws IOException {
-        PIDRecord pidRecord = ApiMockUtils.getSomePidRecordInstance();
+        PidRecord pidRecord = ApiMockUtils.getSomePidRecordInstance();
         Optional<Date> date = typingService.getOperations().findDateCreated(pidRecord);
         assertTrue(date.isPresent());
     }
 
     @Test
     void testFindDateCreatedFailUnregistered() throws IOException {
-        PIDRecord pidRecord = new PIDRecord();
+        PidRecord pidRecord = new PidRecord();
         // should fail because the type is not semantically recognizable as a date
         // (because it is not a registered type)
         pidRecord.addEntry("non-registered-creation-date", "", VALID_DATE);
@@ -54,7 +54,7 @@ class OperationsTest {
 
     @Test
     void testFindDateCreatedFailRegistered() throws IOException {
-        PIDRecord pidRecord = new PIDRecord();
+        PidRecord pidRecord = new PidRecord();
         // should fail because the type is not semantically recognizable as a date
         // (although it is a resolveable type)
         pidRecord.addEntry(TYPE_PROFILE, "", "21.T11148/b9b76f887845e32d29f7");
@@ -64,14 +64,14 @@ class OperationsTest {
 
     @Test
     void testFindDateModified() throws IOException {
-        PIDRecord pidRecord = ApiMockUtils.getSomePidRecordInstance();
+        PidRecord pidRecord = ApiMockUtils.getSomePidRecordInstance();
         Optional<Date> date = typingService.getOperations().findDateModified(pidRecord);
         assertTrue(date.isPresent());
     }
 
     @Test
     void testFindDateModifiedFailUnregistered() throws IOException {
-        PIDRecord pidRecord = new PIDRecord();
+        PidRecord pidRecord = new PidRecord();
         // should fail because the type is not semantically recognizable as a date
         // (because it is not a registered type)
         pidRecord.addEntry("non-registered-creation-date", "", VALID_DATE);
@@ -81,7 +81,7 @@ class OperationsTest {
 
     @Test
     void testFindDateModifiedFailRegistered() throws IOException {
-        PIDRecord pidRecord = new PIDRecord();
+        PidRecord pidRecord = new PidRecord();
         // should fail because the type is not semantically recognizable as a date
         // (although it is a resolveable type)
         pidRecord.addEntry(TYPE_PROFILE, "", "21.T11148/b9b76f887845e32d29f7");

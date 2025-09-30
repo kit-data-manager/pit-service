@@ -25,7 +25,7 @@ import org.springframework.web.context.WebApplicationContext;
 import edu.kit.datamanager.pit.RecordTestHelper;
 import edu.kit.datamanager.pit.SpringTestHelper;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
@@ -152,7 +152,7 @@ class RestWithInMemoryTest {
     @Test
     @DisplayName("Test record with only a profile, no entries.")
     void testRecordWithOnlyProfile() throws Exception {
-        PIDRecord incompleteRecord = new PIDRecord();
+        PidRecord incompleteRecord = new PidRecord();
         incompleteRecord.addEntry(
                 "21.T11148/076759916209e5d62bd5",
                 "kernelInformationProfile",
@@ -178,7 +178,7 @@ class RestWithInMemoryTest {
         int numAttributes = 100;
         int numValues = 100;
         assertTrue(numAttributes * numValues > 256);
-        PIDRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
+        PidRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
         
         String rJson = ApiMockUtils.serialize(r);
         ApiMockUtils.registerRecord(
@@ -192,7 +192,7 @@ class RestWithInMemoryTest {
 
     @Test
     void testNontypeRecord() throws Exception {
-        PIDRecord r = new PIDRecord();
+        PidRecord r = new PidRecord();
         r.addEntry("unregisteredType", "for Testing", "hello");
         this.mockMvc
             .perform(
@@ -211,7 +211,7 @@ class RestWithInMemoryTest {
 
     @Test
     void testRecordWithAdditionalAttribute() throws Exception {
-        PIDRecord r = new PIDRecord();
+        PidRecord r = new PidRecord();
         r.addEntry(
                 "21.T11969/86963861a2b249a83b93",
                 "additional attribute",
@@ -237,14 +237,14 @@ class RestWithInMemoryTest {
     @Test
     void testCreateValidRecord() throws Exception {
         // test create
-        PIDRecord createdRecord = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord createdRecord = ApiMockUtils.registerSomeRecord(this.mockMvc);
         String createdPid = createdRecord.getPid();
 
         // We store created PIDs
         assertEquals(1, this.knownPidsDao.count());
 
         // test resolve
-        PIDRecord resolvedRecord = ApiMockUtils.resolveRecord(this.mockMvc, createdPid);
+        PidRecord resolvedRecord = ApiMockUtils.resolveRecord(this.mockMvc, createdPid);
         assertEquals(createdRecord, resolvedRecord);
 
         // Resolving the PID will override the available entry.
@@ -258,18 +258,18 @@ class RestWithInMemoryTest {
 
     @Test
     void testUpdateRecord() throws Exception {
-        PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
-        PIDRecord modified = ApiMockUtils.clone(original);
+        PidRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord modified = ApiMockUtils.clone(original);
         modified.getEntries().get("21.T11148/b8457812905b83046284").get(0).setValue("https://example.com/anotherUrlAsBefore");
         assertNotEquals(original, modified);
-        PIDRecord updatedRecord = ApiMockUtils.updateRecord(this.mockMvc, original, modified);
+        PidRecord updatedRecord = ApiMockUtils.updateRecord(this.mockMvc, original, modified);
         assertEquals(modified, updatedRecord);
     }
 
     @Test
     void testIdPidRegisteredFails() throws Exception {
         // Nothing is registered, our local storags contains no PIDs
-        PIDRecord nonRegistered = mapper.readValue(RECORD, PIDRecord.class);
+        PidRecord nonRegistered = mapper.readValue(RECORD, PidRecord.class);
         boolean isRegistered = isPidRegistered(nonRegistered.getPid());
         assertFalse(isRegistered);
         assertEquals(0, this.knownPidsDao.count());
@@ -277,7 +277,7 @@ class RestWithInMemoryTest {
 
     @Test
     void testIsPidRecordRegisteredSucceeds() throws Exception {
-        PIDRecord existing = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord existing = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // We know a PID after we create one.
         assertEquals(1, this.knownPidsDao.count());
         // If we clear the locally stored PIDs and then ask if it is registered, it should appear again.
@@ -310,7 +310,7 @@ class RestWithInMemoryTest {
 
     @Test
     void testKnownPidSuccess() throws Exception {
-        PIDRecord r = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord r = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // we know it is in the local database:
         assertEquals(1, this.knownPidsDao.count());
         // so we should be able to retrieve it via the REST api:
@@ -344,8 +344,8 @@ class RestWithInMemoryTest {
      */
     @Test
     void testKnownPidIntervalSuccessWithCreatedInterval() throws Exception {
-        PIDRecord r = ApiMockUtils.registerSomeRecord(this.mockMvc);
-        PIDRecord r2 = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord r = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord r2 = ApiMockUtils.registerSomeRecord(this.mockMvc);
         assertEquals(2, this.knownPidsDao.count());
         assertNotEquals(r.getPid(), r2.getPid());
         
@@ -385,14 +385,14 @@ class RestWithInMemoryTest {
 
     @Test
     void testKnownPidIntervalSuccessIntervallMadness() throws Exception {
-        PIDRecord r1 = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord r1 = ApiMockUtils.registerSomeRecord(this.mockMvc);
         
         // do some simple assertions for a little more delay between the creation times of the records.
         // unfortunately we do not seem to be able to wait() within tests.
         assertEquals(r1.getPid(), this.knownPidsDao.findById(r1.getPid()).get().getPid());
         assertEquals(1, this.knownPidsDao.count());
 
-        PIDRecord r2 = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord r2 = ApiMockUtils.registerSomeRecord(this.mockMvc);
         assertEquals(2, this.knownPidsDao.count());
         assertNotEquals(r1.getPid(), r2.getPid());
         
@@ -427,8 +427,8 @@ class RestWithInMemoryTest {
     @Test
     void testKnownPidIntervalWithPaging() throws Exception {
         // see also https://www.baeldung.com/rest-api-pagination-in-spring
-        PIDRecord r = ApiMockUtils.registerSomeRecord(this.mockMvc);
-        PIDRecord r2 = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord r = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord r2 = ApiMockUtils.registerSomeRecord(this.mockMvc);
         assertEquals(2, this.knownPidsDao.count());
         assertNotEquals(r.getPid(), r2.getPid());
         List<KnownPid> pidinfos = ApiMockUtils.queryKnownPIDs(this.mockMvc, YESTERDAY, TOMORROW, null, null, Optional.empty());
@@ -447,8 +447,8 @@ class RestWithInMemoryTest {
 
     @Test
     void testTabulatorFormat() throws Exception {
-        PIDRecord r = ApiMockUtils.registerSomeRecord(this.mockMvc);
-        PIDRecord r2 = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord r = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord r2 = ApiMockUtils.registerSomeRecord(this.mockMvc);
         assertEquals(2, this.knownPidsDao.count());
         assertNotEquals(r.getPid(), r2.getPid());
         JsonNode pidinfos = ApiMockUtils.queryKnownPIDsInTabulatorFormat(this.mockMvc, YESTERDAY, TOMORROW, null, null, Optional.empty());

@@ -21,7 +21,7 @@ import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.pit.common.*;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.configuration.PidGenerationProperties;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticRepository;
 import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticWrapper;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffix;
@@ -86,7 +86,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
     @Override
     public ResponseEntity<BatchRecordResponse> createPIDs(
-            List<PIDRecord> rec,
+            List<PidRecord> rec,
             boolean dryrun,
             WebRequest request,
             HttpServletResponse response,
@@ -113,7 +113,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         Instant mappingTime = Instant.now();
 
         // Apply the mappings to the records and validate them
-        List<PIDRecord> validatedRecords = applyMappingsToRecordsAndValidate(rec, pidMappings, prefix);
+        List<PidRecord> validatedRecords = applyMappingsToRecordsAndValidate(rec, pidMappings, prefix);
         Instant validationTime = Instant.now();
 
         if (dryrun) {
@@ -126,8 +126,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             return ResponseEntity.status(HttpStatus.OK).body(new BatchRecordResponse(validatedRecords, pidMappings));
         }
 
-        List<PIDRecord> failedRecords = new ArrayList<>();
-        List<PIDRecord> successfulRecords = new ArrayList<>();
+        List<PidRecord> failedRecords = new ArrayList<>();
+        List<PidRecord> successfulRecords = new ArrayList<>();
         // register the records
         validatedRecords.forEach(pidRecord -> {
             try {
@@ -172,7 +172,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
         if (!failedRecords.isEmpty()) {
             List<String> rollbackFailures = new ArrayList<>();
-            for (PIDRecord successfulRecord : successfulRecords) { // rollback the successful records
+            for (PidRecord successfulRecord : successfulRecords) { // rollback the successful records
                 try {
                     LOG.debug("Rolling back PID creation for record with PID {}.", successfulRecord.getPid());
                     this.typingService.deletePid(successfulRecord.getPid());
@@ -209,9 +209,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
      * @throws RecordValidationException if the same internal PID is used for multiple records
      * @throws ExternalServiceException  if the PID generation fails
      */
-    private Map<String, String> generatePIDMapping(List<PIDRecord> rec, boolean dryrun) throws RecordValidationException, ExternalServiceException {
+    private Map<String, String> generatePIDMapping(List<PidRecord> rec, boolean dryrun) throws RecordValidationException, ExternalServiceException {
         Map<String, String> pidMappings = new HashMap<>();
-        for (PIDRecord pidRecord : rec) {
+        for (PidRecord pidRecord : rec) {
             String internalPID = pidRecord.getPid(); // the internal PID is the one given by the user
             if (internalPID == null) {
                 internalPID = ""; // if no PID was given, we set it to an empty string
@@ -242,9 +242,9 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
      * @throws RecordValidationException as a possible validation outcome
      * @throws ExternalServiceException  as a possible validation outcome
      */
-    private List<PIDRecord> applyMappingsToRecordsAndValidate(List<PIDRecord> rec, Map<String, String> pidMappings, String prefix) throws RecordValidationException, ExternalServiceException {
-        List<PIDRecord> validatedRecords = new ArrayList<>();
-        for (PIDRecord pidRecord : rec) {
+    private List<PidRecord> applyMappingsToRecordsAndValidate(List<PidRecord> rec, Map<String, String> pidMappings, String prefix) throws RecordValidationException, ExternalServiceException {
+        List<PidRecord> validatedRecords = new ArrayList<>();
+        for (PidRecord pidRecord : rec) {
 
             // use this map to replace all temporary PIDs in the record values with their corresponding real PIDs
             pidRecord.getEntries().values().stream() // get all values of the record
@@ -265,8 +265,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
-    public ResponseEntity<PIDRecord> createPID(
-            PIDRecord pidRecord,
+    public ResponseEntity<PidRecord> createPID(
+            PidRecord pidRecord,
             boolean dryrun,
 
             final WebRequest request,
@@ -308,11 +308,11 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return ResponseEntity.status(HttpStatus.CREATED).eTag(quotedEtag(pidRecord)).body(pidRecord);
     }
 
-    private boolean hasPid(PIDRecord pidRecord) {
+    private boolean hasPid(PidRecord pidRecord) {
         return pidRecord.getPid() != null && !pidRecord.getPid().isBlank();
     }
 
-    private void setPid(PIDRecord pidRecord) {
+    private void setPid(PidRecord pidRecord) {
         boolean hasCustomPid = hasPid(pidRecord);
         boolean allowsCustomPids = pidGenerationProperties.isCustomClientPidsEnabled();
 
@@ -345,8 +345,8 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
-    public ResponseEntity<PIDRecord> updatePID(
-            PIDRecord pidRecord,
+    public ResponseEntity<PidRecord> updatePID(
+            PidRecord pidRecord,
             boolean dryrun,
 
             final WebRequest request,
@@ -362,7 +362,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
                     "Optional PID in record is given (%s), but it was not the same as the PID in the URL (%s). Ignore request, assuming this was not intended.".formatted(pidInternal, pid));
         }
 
-        PIDRecord existingRecord = this.resolver.resolve(pid);
+        PidRecord existingRecord = this.resolver.resolve(pid);
         if (existingRecord == null) {
             throw new PidNotFoundException(pid);
         }
@@ -429,7 +429,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     @Override
-    public ResponseEntity<PIDRecord> getRecord(
+    public ResponseEntity<PidRecord> getRecord(
             boolean validation,
 
             final WebRequest request,
@@ -437,7 +437,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final UriComponentsBuilder uriBuilder
     ) {
         String pid = getContentPathFromRequest("pid", request);
-        PIDRecord pidRecord = this.resolver.resolve(pid);
+        PidRecord pidRecord = this.resolver.resolve(pid);
         if (applicationProps.getStorageStrategy().storesResolved()) {
             storeLocally(pid, false);
         }
@@ -448,7 +448,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return ResponseEntity.ok().eTag(quotedEtag(pidRecord)).body(pidRecord);
     }
 
-    private void saveToElastic(PIDRecord rec) {
+    private void saveToElastic(PidRecord rec) {
         this.elastic.ifPresent(
                 database -> database.save(
                         new PidRecordElasticWrapper(rec, typingService.getOperations())
@@ -554,7 +554,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return ResponseEntity.ok().body(tabPage);
     }
 
-    private String quotedEtag(PIDRecord pidRecord) {
+    private String quotedEtag(PidRecord pidRecord) {
         return String.format("\"%s\"", pidRecord.getEtag());
     }
 

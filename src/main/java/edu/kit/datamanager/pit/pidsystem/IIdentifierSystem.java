@@ -5,7 +5,7 @@ import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffix;
 
 import java.util.Collection;
@@ -88,14 +88,14 @@ public interface IIdentifierSystem {
      * @throws ExternalServiceException on commonication errors or errors on other
      *         services.
      */
-    public PIDRecord queryPid(String pid) throws PidNotFoundException, ExternalServiceException;
+    public PidRecord queryPid(String pid) throws PidNotFoundException, ExternalServiceException;
 
     /**
      * Registers a new PID with given property values. The method takes the PID from
      * the record and treats it as a suffix.
      * 
      * The method must process the given PID using the
-     * {@link #registerPid(PIDRecord)} method.
+     * {@link #registerPid(PidRecord)} method.
      *
      * @param pidRecord contains the initial PID record.
      * @return the PID that was assigned to the record.
@@ -104,7 +104,7 @@ public interface IIdentifierSystem {
      *         other services.
      * @throws RecordValidationException if record validation errors occurred.
      */
-    public default String registerPid(final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException, RecordValidationException {
+    public default String registerPid(final PidRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException, RecordValidationException {
         if (pidRecord.getPid() == null) {
             throw new RecordValidationException(pidRecord, "PID must not be null.");
         }
@@ -119,7 +119,7 @@ public interface IIdentifierSystem {
 
     /**
      * Registers the given record with its given PID, without applying any checks.
-     * Recommended to use {@link #registerPid(PIDRecord)} instead.
+     * Recommended to use {@link #registerPid(PidRecord)} instead.
      * 
      * As an implementor, you can assume the PID to be not null, valid,
      * non-registered, and prefixed.
@@ -130,7 +130,7 @@ public interface IIdentifierSystem {
      * @throws ExternalServiceException if an error occured in communication with
      *         other services.
      */
-    public String registerPidUnchecked(final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException;
+    public String registerPidUnchecked(final PidRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException;
 
     /**
      * Updates an existing record with the new given values. If the PID in the given
@@ -143,7 +143,7 @@ public interface IIdentifierSystem {
      *         other services.
      * @throws RecordValidationException if record validation errors occurred.
      */
-    public boolean updatePid(PIDRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException;
+    public boolean updatePid(PidRecord pidRecord) throws PidNotFoundException, ExternalServiceException, RecordValidationException;
 
     /**
      * Remove the given PID.

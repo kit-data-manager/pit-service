@@ -18,7 +18,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 
@@ -85,7 +85,7 @@ class RestWithHandleProtocolTest {
             .andReturn();
 
         String resolvedBody = resolved.getResponse().getContentAsString();
-        PIDRecord resolvedRecord = mapper.readValue(resolvedBody, PIDRecord.class);
+        PidRecord resolvedRecord = mapper.readValue(resolvedBody, PidRecord.class);
         assertEquals(pid, resolvedRecord.getPid());
     }
 
@@ -103,7 +103,7 @@ class RestWithHandleProtocolTest {
         String etag = response.getHeader("ETag");
 
         // Parse so we can edit the record easily
-        PIDRecord record = mapper.readValue(response.getContentAsString(), PIDRecord.class);
+        PidRecord record = mapper.readValue(response.getContentAsString(), PidRecord.class);
 
         // fix record, it is actually invalid...
         record.removeAllValuesOf("URL");

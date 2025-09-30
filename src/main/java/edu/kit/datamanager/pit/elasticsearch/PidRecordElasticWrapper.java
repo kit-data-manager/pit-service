@@ -16,7 +16,7 @@
 package edu.kit.datamanager.pit.elasticsearch;
 
 import edu.kit.datamanager.pit.domain.Operations;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pidsystem.impl.local.PidDatabaseObject;
 
 import java.io.IOException;
@@ -57,7 +57,7 @@ public class PidRecordElasticWrapper {
     @Field(type = FieldType.Text)
     private List<String> read = new ArrayList<>();
 
-    public PidRecordElasticWrapper(PIDRecord pidRecord, Operations dateOperations) {
+    public PidRecordElasticWrapper(PidRecord pidRecord, Operations dateOperations) {
         pid = pidRecord.getPid();
         PidDatabaseObject simple = new PidDatabaseObject(pidRecord);
         this.attributes = simple.getEntries();

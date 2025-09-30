@@ -2,7 +2,7 @@ package edu.kit.datamanager.pit.resolver;
 
 import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleBehavior;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import net.handle.api.HSAdapter;
@@ -51,7 +51,7 @@ public class Resolver {
      * @throws PidNotFoundException if the PID could not be found in any system.
      * @throws ExternalServiceException if there was an error with the communication to an external system.
      */
-    public PIDRecord resolve(String pid) throws PidNotFoundException, ExternalServiceException {
+    public PidRecord resolve(String pid) throws PidNotFoundException, ExternalServiceException {
         String prefix = Arrays.stream(
                 pid.split("/", 2)
         )

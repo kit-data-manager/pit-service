@@ -2,7 +2,6 @@ package edu.kit.datamanager.pit.pidsystem.impl.local;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
@@ -10,7 +9,7 @@ import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 
 import org.slf4j.Logger;
@@ -84,13 +83,13 @@ public class LocalPidSystem implements IIdentifierSystem {
     }
 
     @Override
-    public PIDRecord queryPid(String pid) throws PidNotFoundException, ExternalServiceException {
+    public PidRecord queryPid(String pid) throws PidNotFoundException, ExternalServiceException {
         Optional<PidDatabaseObject> dbo = this.db.findByPid(pid);
-        return new PIDRecord(dbo.orElseThrow(() -> new PidNotFoundException(pid)));
+        return new PidRecord(dbo.orElseThrow(() -> new PidNotFoundException(pid)));
     }
     
     @Override
-    public String registerPidUnchecked(final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
+    public String registerPidUnchecked(final PidRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
         if (this.db.existsById(pidRecord.getPid())) {
             throw new PidAlreadyExistsException(pidRecord.getPid());
         }
@@ -100,7 +99,7 @@ public class LocalPidSystem implements IIdentifierSystem {
     }
 
     @Override
-    public boolean updatePid(PIDRecord rec) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
+    public boolean updatePid(PidRecord rec) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
         if (this.db.existsById(rec.getPid())) {
             this.db.save(new PidDatabaseObject(rec));
             return true;

@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.Application;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.domain.SimplePidRecord;
 
 /**
@@ -57,8 +57,8 @@ public class ApiMockUtils {
      * @return a valid PIDRecord instance.
      * @throws JacksonException on error.
      */
-    public static PIDRecord getSomePidRecordInstance() throws JacksonException {
-        return getJsonMapper().readValue(JSON_RECORD, PIDRecord.class);
+    public static PidRecord getSomePidRecordInstance() throws JacksonException {
+        return getJsonMapper().readValue(JSON_RECORD, PidRecord.class);
     }
 
     /**
@@ -153,7 +153,7 @@ public class ApiMockUtils {
      * @return the record as it is after the update.
      * @throws Exception if any assumption breaks.
      */
-    public static PIDRecord updateRecord(MockMvc mockMvc, PIDRecord oldRecord, PIDRecord newRecord) throws Exception {
+    public static PidRecord updateRecord(MockMvc mockMvc, PidRecord oldRecord, PidRecord newRecord) throws Exception {
         String body = updateRecord(
             mockMvc,
             oldRecord,
@@ -166,8 +166,8 @@ public class ApiMockUtils {
 
     public static MvcResult updateRecordAndReturnMvcResult(
         MockMvc mockMvc,
-        PIDRecord oldRecord,
-        PIDRecord newRecord) throws Exception
+        PidRecord oldRecord,
+        PidRecord newRecord) throws Exception
     {
         String pid = oldRecord.getPid();
         String etag = oldRecord.getEtag();
@@ -189,8 +189,8 @@ public class ApiMockUtils {
      */
     public static String updateRecord(
             MockMvc mockMvc,
-            PIDRecord oldRecord,
-            PIDRecord newRecord,
+            PidRecord oldRecord,
+            PidRecord newRecord,
             String bodyContentType,
             String acceptContentType) throws Exception
     {
@@ -251,9 +251,9 @@ public class ApiMockUtils {
      * @return the resolved record of the given PID.
      * @throws Exception if any assumption breaks.
      */
-    public static PIDRecord resolveRecord(MockMvc mockMvc, String pid) throws Exception {
+    public static PidRecord resolveRecord(MockMvc mockMvc, String pid) throws Exception {
         String resolvedBody = ApiMockUtils.resolveRecord(mockMvc, pid, null);
-        PIDRecord resolvedRecord = getJsonMapper().readValue(resolvedBody, PIDRecord.class);
+        PidRecord resolvedRecord = getJsonMapper().readValue(resolvedBody, PidRecord.class);
         return resolvedRecord;
     }
 
@@ -307,9 +307,9 @@ public class ApiMockUtils {
      * @return The created PID record.
      * @throws Exception if any assumption breaks.
      */
-    public static PIDRecord registerSomeRecord(MockMvc mockMvc) throws Exception {
+    public static PidRecord registerSomeRecord(MockMvc mockMvc) throws Exception {
         MvcResult result = ApiMockUtils.registerRecordAndGetMvcResult(mockMvc, ApiMockUtils.JSON_RECORD, MediaType.APPLICATION_JSON_VALUE, MediaType.ALL_VALUE);
-        PIDRecord createdRecord = ApiMockUtils.deserializeRecord(result);
+        PidRecord createdRecord = ApiMockUtils.deserializeRecord(result);
         String createdPid = createdRecord.getPid();
         assertFalse(createdPid.isEmpty());
         return createdRecord;
@@ -414,26 +414,26 @@ public class ApiMockUtils {
             .andReturn();
     }
 
-    public static PIDRecord clone(PIDRecord original) throws JsonMappingException, JsonProcessingException {
+    public static PidRecord clone(PidRecord original) throws JsonMappingException, JsonProcessingException {
         String body = serialize(original);
         return deserializeRecord(body);
     }
 
-    public static String serialize(PIDRecord pidRecord) throws JsonProcessingException {
+    public static String serialize(PidRecord pidRecord) throws JsonProcessingException {
         return getJsonMapper().writeValueAsString(pidRecord);
     }
 
-    public static PIDRecord deserializeRecord(MvcResult result) throws Exception {
+    public static PidRecord deserializeRecord(MvcResult result) throws Exception {
         return deserializeRecord(result.getResponse());
     }
 
-    public static PIDRecord deserializeRecord(MockHttpServletResponse response) throws Exception {
+    public static PidRecord deserializeRecord(MockHttpServletResponse response) throws Exception {
         String body = response.getContentAsString();
         return deserializeRecord(body);
     }
 
-    public static PIDRecord deserializeRecord(String body) throws JsonMappingException, JsonProcessingException {
-        return getJsonMapper().readValue(body, PIDRecord.class);
+    public static PidRecord deserializeRecord(String body) throws JsonMappingException, JsonProcessingException {
+        return getJsonMapper().readValue(body, PidRecord.class);
     }
 
     public static String quoted(String etag) {
