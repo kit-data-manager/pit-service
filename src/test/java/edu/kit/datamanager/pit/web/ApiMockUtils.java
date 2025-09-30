@@ -275,7 +275,7 @@ public class ApiMockUtils {
      * Resolves a record using the REST API and MockMvc.
      * 
      * @param mockMvc instance that mocks the REST API.
-     * @param createdPid the PID to resolve.
+     * @param pid the PID to resolve.
      * @param contentType the content type for the request.
      * @return the resolved record of the given PID.
      * @throws Exception if any assumption breaks.

@@ -10,7 +10,7 @@ import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 public class RecordTestHelper {
     /**
      * Generates a PID record with N attibutes, each having M values. All attributes
-     * and values are PIDs of {@link pidGenerator} prefixed with {@link PID_PREFIX}.
+     * and values are PIDs of {@link PidSuffixGenerator} prefixed with the given prefix.
      * 
      * @param numAttributes the number of attibutes (called N in the description
      *                      above)
