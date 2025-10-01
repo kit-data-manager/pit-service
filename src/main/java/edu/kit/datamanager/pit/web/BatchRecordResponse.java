@@ -23,12 +23,12 @@ import java.util.Map;
 
 /**
  * Response object for batch record operations.
- * Contains a list of the processed PID records and a mapping of the user-provided "fictionary" identifiers to their corresponding real record Handle PIDs.
- * This mapping was used to link the user-provided identifiers with the actual records in the system.
  * <p>
+ * Supports returning a list of processed records along with a mapping
+ * from user-provided identifiers (pseudo-PIDs) to actual record Handle PIDs.
  *
- * @param pidRecords List of PIDRecord objects representing the processed records. (List<PIDRecord>)
- * @param mapping    Map where keys are user-provided identifiers (fictionary) and values are the corresponding real record Handle PIDs. (Map<String, String>)
+ * @param pidRecords List of PIDRecord objects representing the processed records.
+ * @param mapping    Map where keys are user-provided identifiers (pseudo-PIDs) and values are the corresponding real record Handle PIDs.
  * @see PidRecord
  */
 public record BatchRecordResponse(

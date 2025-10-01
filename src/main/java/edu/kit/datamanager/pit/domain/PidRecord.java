@@ -19,6 +19,9 @@ package edu.kit.datamanager.pit.domain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import edu.kit.datamanager.entities.EtagSupport;
 import edu.kit.datamanager.pit.pidsystem.impl.local.PidDatabaseObject;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -31,17 +34,14 @@ import java.util.stream.Collectors;
  * communication or representation for the outside. In contrast, this is the
  * internal representation offering methods for manipulation.
  */
+@Getter
+@Setter
+@RequiredArgsConstructor
 public class PidRecord implements EtagSupport, Cloneable {
 
     private String pid = "";
 
     private Map<String, List<PIDRecordEntry>> entries = new HashMap<>();
-
-    /**
-     * Creates an empty record without PID.
-     */
-    public PidRecord() {
-    }
 
     /**
      * Creates a record with the same content as the given representation.
@@ -71,27 +71,6 @@ public class PidRecord implements EtagSupport, Cloneable {
     public PidRecord withPID(String pid) {
         this.setPid(pid);
         return this;
-    }
-
-    public String getPid() {
-        return pid;
-    }
-
-    public void setPid(String pid) {
-        this.pid = pid;
-    }
-
-    public Map<String, List<PIDRecordEntry>> getEntries() {
-        return entries;
-    }
-
-    /**
-     * Sets the entries of this record.
-     *
-     * @param entries the entries to set.
-     */
-    public void setEntries(Map<String, List<PIDRecordEntry>> entries) {
-        this.entries = entries;
     }
 
     @JsonIgnore

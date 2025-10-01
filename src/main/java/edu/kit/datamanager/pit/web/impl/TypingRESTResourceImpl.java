@@ -21,6 +21,7 @@ import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.pit.common.*;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.configuration.PidGenerationProperties;
+import edu.kit.datamanager.pit.domain.PidNode;
 import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticRepository;
 import edu.kit.datamanager.pit.elasticsearch.PidRecordElasticWrapper;
@@ -72,7 +73,16 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     private final PidSuffixGenerator suffixGenerator;
     private final PidGenerationProperties pidGenerationProperties;
 
-    public TypingRESTResourceImpl(ITypingService typingService, Resolver resolver, ApplicationProperties applicationProps, IMessagingService messagingService, KnownPidsDao localPidStorage, Optional<PidRecordElasticRepository> elastic, PidSuffixGenerator suffixGenerator, PidGenerationProperties pidGenerationProperties) {
+    public TypingRESTResourceImpl(
+            ITypingService typingService,
+            Resolver resolver,
+            ApplicationProperties applicationProps,
+            IMessagingService messagingService,
+            KnownPidsDao localPidStorage,
+            Optional<PidRecordElasticRepository> elastic,
+            PidSuffixGenerator suffixGenerator,
+            PidGenerationProperties pidGenerationProperties
+    ) {
         super();
         this.typingService = typingService;
         this.resolver = resolver;
@@ -86,34 +96,51 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
 
     @Override
     public ResponseEntity<BatchRecordResponse> createPIDs(
-            List<PidRecord> rec,
+            List<PidNode> graph,
             boolean dryrun,
             WebRequest request,
             HttpServletResponse response,
             UriComponentsBuilder uriBuilder
     ) throws IOException, RecordValidationException, ExternalServiceException {
-        if (rec == null || rec.isEmpty()) {
+        if (graph == null || graph.isEmpty()) {
             LOG.warn("No records provided for PID creation.");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new BatchRecordResponse(Collections.emptyList(), Collections.emptyMap()));
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new BatchRecordResponse(Collections.emptyList(), Collections.emptyMap()));
         }
-        if (rec.size() == 1) {
+        if (graph.size() == 1) {
             // If only one record is provided, we can use the single record creation method.
+            // TODO but why should we? It would be more consistent to always use the batch method.
             LOG.info("Only one record provided. Using single record creation method.");
-            var result = createPID(rec.getFirst(), dryrun, request, response, uriBuilder);
+            PidNode singleNode = graph.getFirst();
+            ResponseEntity<PidRecord> result;
+            boolean exists = hasPid(singleNode) && this.typingService.isPidRegistered(singleNode.getPid());
+            if (exists) {
+                result = updatePID(singleNode, dryrun, request, response, uriBuilder);
+            } else {
+                result = createPID(singleNode, dryrun, request, response, uriBuilder);
+            }
             // Return the single record in a list
             assert result.getBody() != null;
-            return ResponseEntity.status(result.getStatusCode()).headers(result.getHeaders()).body(new BatchRecordResponse(Collections.singletonList(result.getBody()), Collections.singletonMap(rec.getFirst().getPid(), result.getBody().getPid())));
+            return ResponseEntity
+                    .status(result.getStatusCode())
+                    .headers(result.getHeaders())
+                    .body(new BatchRecordResponse(
+                            Collections.singletonList(result.getBody()),
+                            Collections.singletonMap(singleNode.getPlaceholderPid(), result.getBody().getPid())
+                    ));
         }
+
         Instant startTime = Instant.now();
-        LOG.info("Creating PIDs for {} records.", rec.size());
+        LOG.info("Creating PIDs for {} records.", graph.size());
         String prefix = this.typingService.getPrefix().orElseThrow(() -> new IOException("No prefix configured."));
 
-        // Generate a map between temporary (user-defined) PIDs and final PIDs (generated)
-        Map<String, String> pidMappings = generatePIDMapping(rec, dryrun);
+        // Generate a map between pseudo-PIDs and generated suffixes that will actually be used.
+        Map<String, String> pidMappings = generatePIDMapping(graph, dryrun);
         Instant mappingTime = Instant.now();
 
         // Apply the mappings to the records and validate them
-        List<PidRecord> validatedRecords = applyMappingsToRecordsAndValidate(rec, pidMappings, prefix);
+        List<PidRecord> validatedRecords = applyMappingsToRecordsAndValidate(graph, pidMappings, prefix);
         Instant validationTime = Instant.now();
 
         if (dryrun) {
@@ -123,12 +150,15 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             LOG.info("-- Time taken for validation: {} ms", ChronoUnit.MILLIS.between(mappingTime, validationTime));
             LOG.info("Dryrun finished. Returning validated records for {} records.", validatedRecords.size());
             addPrefixToMapping(pidMappings, prefix);
-            return ResponseEntity.status(HttpStatus.OK).body(new BatchRecordResponse(validatedRecords, pidMappings));
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new BatchRecordResponse(validatedRecords, pidMappings));
         }
 
         List<PidRecord> failedRecords = new ArrayList<>();
         List<PidRecord> successfulRecords = new ArrayList<>();
         // register the records
+        boolean isNew(PidNode n) { !hasPid(n) || !this.typingService.isPidRegistered(n.getPid()); }
         validatedRecords.forEach(pidRecord -> {
             try {
                 // register the PID
@@ -201,33 +231,34 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     }
 
     /**
-     * This method generates a mapping between user-provided "fantasy" PIDs and real PIDs.
+     * This method generates a mapping between user-provided pseudo-PIDs and real PIDs.
      *
-     * @param rec    the list of records produced by the user
+     * @param graph    the list of records produced by the user
      * @param dryrun whether the operation is a dryrun or not
      * @return a map between the user-provided PIDs (key) and the real PIDs (values)
      * @throws RecordValidationException if the same internal PID is used for multiple records
      * @throws ExternalServiceException  if the PID generation fails
      */
-    private Map<String, String> generatePIDMapping(List<PidRecord> rec, boolean dryrun) throws RecordValidationException, ExternalServiceException {
+    private Map<String, String> generatePIDMapping(List<PidNode> graph, boolean dryrun) throws RecordValidationException, ExternalServiceException {
         Map<String, String> pidMappings = new HashMap<>();
-        for (PidRecord pidRecord : rec) {
-            String internalPID = pidRecord.getPid(); // the internal PID is the one given by the user
-            if (internalPID == null) {
-                internalPID = ""; // if no PID was given, we set it to an empty string
+        for (PidNode record : graph) {
+            String placeholderPid = record.getPlaceholderPid();
+            if (placeholderPid == null) {
+                placeholderPid = "";
             }
-            if (!internalPID.isBlank() && pidMappings.containsKey(internalPID)) { // check if the internal PID was already used
-                // This internal PID was already used by some other record in the same request.
-                throw new RecordValidationException(pidRecord, "The PID " + internalPID + " was used for multiple records in the same request.");
+            boolean isUniquePlaceholder = placeholderPid.isBlank() || !pidMappings.containsKey(placeholderPid);
+            if (!isUniquePlaceholder) {
+                throw new RecordValidationException(record, "The PID " + placeholderPid + " was used for multiple records in the same request.");
             }
 
-            pidRecord.setPid(""); // clear the PID field in the record
-            if (dryrun) { // if it is a dryrun, we set the PID to a temporary value
-                pidRecord.setPid("dryrun_" + pidMappings.size());
+            // We ignore any user-provided PID and always generate a new one in the batch API.
+            record.setPid("");
+            if (dryrun) {
+                record.setPid("dryrun_" + pidMappings.size());
             } else {
-                setPid(pidRecord); // otherwise, we generate a real PID
+                setPid(record);
             }
-            pidMappings.put(internalPID, pidRecord.getPid()); // store the mapping between the internal and real PID
+            pidMappings.put(placeholderPid, record.getPid());
         }
         return pidMappings;
     }
@@ -235,22 +266,29 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     /**
      * This method applies the mappings between temporary PIDs and real PIDs to the records and validates them.
      *
-     * @param rec         the list of records produced by the user
+     * @param graph         the list of records produced by the user
      * @param pidMappings the map between the user-provided PIDs (key) and the real PIDs (values)
      * @param prefix      the prefix to be used for the real PIDs
      * @return the list of validated records
      * @throws RecordValidationException as a possible validation outcome
      * @throws ExternalServiceException  as a possible validation outcome
      */
-    private List<PidRecord> applyMappingsToRecordsAndValidate(List<PidRecord> rec, Map<String, String> pidMappings, String prefix) throws RecordValidationException, ExternalServiceException {
+    private List<PidRecord> applyMappingsToRecordsAndValidate(
+            List<PidNode> graph,
+            Map<String, String> pidMappings,
+            String prefix
+    ) throws
+            RecordValidationException,
+            ExternalServiceException
+    {
         List<PidRecord> validatedRecords = new ArrayList<>();
-        for (PidRecord pidRecord : rec) {
+        for (PidRecord pidRecord : graph) {
 
             // use this map to replace all temporary PIDs in the record values with their corresponding real PIDs
             pidRecord.getEntries().values().stream() // get all values of the record
                     .flatMap(List::stream) // flatten the list of values
                     .filter(entry -> entry.getValue() != null) // Filter out null values
-                    .filter(entry -> pidMappings.containsKey(entry.getValue())) // replace only if the value (aka. "fantasy PID") is a key in the map
+                    .filter(entry -> pidMappings.containsKey(entry.getValue())) // replace only if the value is a placeholder PID in the mapping
                     .peek(entry -> LOG.debug("Found reference. Replacing {} with {}.", entry.getValue(), prefix + pidMappings.get(entry.getValue()))) // log the replacement
                     .forEach(entry -> entry.setValue(prefix + pidMappings.get(entry.getValue()))); // replace the value with the real PID according to the map
 
@@ -312,7 +350,24 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
         return pidRecord.getPid() != null && !pidRecord.getPid().isBlank();
     }
 
-    private void setPid(PidRecord pidRecord) {
+    /**
+     * Sets a PID for the given record.
+     * <p>
+     * In the usual case, this method generates a new PID suffix and sets it in the record.
+     * In the special case that custom PIDs are allowed and a PID is already set in the record,
+     * this method checks if the PID is already registered and throws an exception if so.
+     * @param pidRecord the record to set the PID for
+     * @throws PidAlreadyExistsException if the PID is already registered and custom PIDs are allowed
+     * @throws InvalidConfigException if no prefix is configured but custom PIDs are allowed
+     * @throws ExternalServiceException if PID generation fails
+     */
+    private void setPid(
+            PidRecord pidRecord
+    ) throws
+            PidAlreadyExistsException,
+            InvalidConfigException,
+            ExternalServiceException
+    {
         boolean hasCustomPid = hasPid(pidRecord);
         boolean allowsCustomPids = pidGenerationProperties.isCustomClientPidsEnabled();
 
