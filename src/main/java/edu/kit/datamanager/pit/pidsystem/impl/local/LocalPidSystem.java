@@ -109,7 +109,12 @@ public class LocalPidSystem implements IIdentifierSystem {
 
     @Override
     public boolean deletePid(String pid) {
-        throw new UnsupportedOperationException("Deleting PIDs is against the P in PID.");
+        try {
+            this.db.deleteById(pid);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+        return true;
     }
 
     @Override

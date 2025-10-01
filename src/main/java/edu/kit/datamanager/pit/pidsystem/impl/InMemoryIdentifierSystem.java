@@ -74,7 +74,7 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
 
     @Override
     public boolean deletePid(String pid) {
-        throw new UnsupportedOperationException("Deleting PIDs is against the P in PID.");
+        return this.records.remove(pid) != null;
     }
 
     @Override

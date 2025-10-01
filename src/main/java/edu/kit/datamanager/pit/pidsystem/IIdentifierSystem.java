@@ -147,8 +147,8 @@ public interface IIdentifierSystem {
 
     /**
      * Remove the given PID.
-     * 
-     * Obviously, this method is only for testing purposes, since we should not
+     * <p>
+     * This method is only for testing or rollback purposes, since we should not
      * delete persistent identifiers.
      *
      * @param pid the PID to delete.
