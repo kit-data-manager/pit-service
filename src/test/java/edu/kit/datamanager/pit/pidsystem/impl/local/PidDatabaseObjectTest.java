@@ -7,15 +7,15 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JacksonException;
 
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.web.ApiMockUtils;
 
 class PidDatabaseObjectTest {
     @Test
     void testConversion() throws JacksonException {
-        PIDRecord original = ApiMockUtils.getSomePidRecordInstance();
+        PidRecord original = ApiMockUtils.getSomePidRecordInstance();
         PidDatabaseObject dbo = new PidDatabaseObject(original);
-        PIDRecord equivalent = new PIDRecord(dbo);
+        PidRecord equivalent = new PidRecord(dbo);
 
         assertEquals(original, equivalent);
         original.addEntry("test", "", "test");

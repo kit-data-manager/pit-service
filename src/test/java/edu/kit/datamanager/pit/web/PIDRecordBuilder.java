@@ -16,7 +16,7 @@
 
 package edu.kit.datamanager.pit.web;
 
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -124,7 +124,7 @@ public class PIDRecordBuilder implements Cloneable {
      * The PID record being built by this builder.
      * All operations performed on this builder modify this record instance.
      */
-    private PIDRecord record;
+    private PidRecord record;
 
     /**
      * Creates a new PIDRecordBuilder with default settings.
@@ -162,7 +162,7 @@ public class PIDRecordBuilder implements Cloneable {
     public PIDRecordBuilder(PIDBuilder pidBuilder, Long seed) {
         this.seed = seed != null ? seed : new Random().nextLong();
         this.random = new Random(this.seed);
-        this.record = new PIDRecord();
+        this.record = new PidRecord();
 
         if (pidBuilder == null) {
             pidBuilder = new PIDBuilder(this.seed).validPrefix().validSuffix();
@@ -226,7 +226,7 @@ public class PIDRecordBuilder implements Cloneable {
      *
      * @return A new clone of the built PID record
      */
-    public PIDRecord build() {
+    public PidRecord build() {
         return this.record.clone();
     }
 
@@ -300,7 +300,7 @@ public class PIDRecordBuilder implements Cloneable {
      * @param record The PIDRecord to use as the basis for further building
      * @return This builder instance for method chaining
      */
-    public PIDRecordBuilder withPIDRecord(PIDRecord record) {
+    public PIDRecordBuilder withPIDRecord(PidRecord record) {
         this.record = record;
         return this;
     }
@@ -441,7 +441,7 @@ public class PIDRecordBuilder implements Cloneable {
      */
     public PIDRecordBuilder emptyRecord() {
         String pid = this.record.getPid();
-        this.record = new PIDRecord().withPID(pid);
+        this.record = new PidRecord().withPID(pid);
         return this;
     }
 

@@ -1,6 +1,6 @@
 package edu.kit.datamanager.pit.recordModifiers;
 
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +17,7 @@ class CopyAttributeTest {
     public static final String URL_VALUE_2 = URL_VALUE + "2";
     public static final String TARGET = "URL";
 
-    private final PIDRecord RECORD = new PIDRecord();
+    private final PidRecord RECORD = new PidRecord();
 
     @BeforeEach()
     void setupRecord() {
@@ -31,7 +31,7 @@ class CopyAttributeTest {
         assertTrue(RECORD.hasProperty(SOURCE));
         assertFalse(RECORD.hasProperty(TARGET));
 
-        PIDRecord result = modifier.apply(RECORD);
+        PidRecord result = modifier.apply(RECORD);
         // Currently, we do unfortunately modify the record because making a proper copy in java for it is difficult.
         assertEquals(RECORD, result);
         assertTrue(result.hasProperty(TARGET));
@@ -45,7 +45,7 @@ class CopyAttributeTest {
         assertTrue(RECORD.hasProperty(SOURCE_2));
         assertFalse(RECORD.hasProperty(TARGET));
 
-        PIDRecord result = modifier.apply(RECORD);
+        PidRecord result = modifier.apply(RECORD);
 
         assertTrue(result.hasProperty(TARGET));
         assertEquals(URL_VALUE_2, result.getPropertyValue(TARGET));
@@ -59,7 +59,7 @@ class CopyAttributeTest {
         assertTrue(RECORD.hasProperty(TARGET));
 
         RecordModifier modifier = new CopyAttribute(Set.of(SOURCE), TARGET);
-        PIDRecord result = modifier.apply(RECORD);
+        PidRecord result = modifier.apply(RECORD);
 
         assertEquals(URL_VALUE, result.getPropertyValue(SOURCE));
         assertTrue(Arrays.asList(result.getPropertyValues(TARGET)).contains(URL_VALUE));
@@ -67,13 +67,13 @@ class CopyAttributeTest {
 
     @Test
     void noSourceNoTarget() {
-        PIDRecord record = new PIDRecord();
+        PidRecord record = new PidRecord();
         assertFalse(record.hasProperty(SOURCE));
         assertFalse(record.hasProperty(TARGET));
 
         RecordModifier modifier = new CopyAttribute(Set.of(SOURCE), TARGET);
-        PIDRecord result = modifier.apply(record);
+        PidRecord result = modifier.apply(record);
         // Shall not modify record
-        assertEquals(result, new PIDRecord());
+        assertEquals(result, new PidRecord());
     }
 }

@@ -4,7 +4,7 @@ import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.common.TypeNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pitservice.IValidationStrategy;
 import edu.kit.datamanager.pit.typeregistry.AttributeInfo;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
@@ -42,7 +42,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
     }
 
     @Override
-    public void validate(PIDRecord pidRecord)
+    public void validate(PidRecord pidRecord)
             throws RecordValidationException, ExternalServiceException
     {
         if (pidRecord.getPropertyIdentifiers().isEmpty()) {
@@ -107,7 +107,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
      * Usually used to avoid exposing exceptions related to futures.
      * @param e the exception to unwrap.
      */
-    private static void unpackAsyncExceptions(PIDRecord pidRecord, Throwable e) {
+    private static void unpackAsyncExceptions(PidRecord pidRecord, Throwable e) {
         final int MAX_LEVEL = 10;
         Throwable cause = e;
 

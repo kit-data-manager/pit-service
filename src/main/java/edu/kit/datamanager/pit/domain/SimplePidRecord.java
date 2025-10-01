@@ -30,7 +30,7 @@ public class SimplePidRecord {
      * 
      * @param rec a given PID record to convert.
      */
-    public SimplePidRecord(PIDRecord rec) {
+    public SimplePidRecord(PidRecord rec) {
         this.pid = rec.getPid();
         this.pairs = new ArrayList<>();
         for (Entry<String, List<PIDRecordEntry>> entry : rec.getEntries().entrySet()) {

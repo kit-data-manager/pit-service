@@ -55,7 +55,7 @@ public class Operations {
      * @return the date, if it could have been extracted.
      * @throws IOException on IO errors regarding resolving types.
      */
-    public Optional<Date> findDateCreated(PIDRecord pidRecord) throws IOException {
+    public Optional<Date> findDateCreated(PidRecord pidRecord) throws IOException {
         /* try known types */
         List<String> knownDateTypes = Arrays.asList(Operations.KNOWN_DATE_CREATED);
         Optional<Date> date = knownDateTypes
@@ -117,7 +117,7 @@ public class Operations {
      * @return the date, if it could have been extracted.
      * @throws IOException on IO errors regarding resolving types.
      */
-    public Optional<Date> findDateModified(PIDRecord pidRecord) throws IOException {
+    public Optional<Date> findDateModified(PidRecord pidRecord) throws IOException {
         /* try known types */
         List<String> knownDateTypes = Arrays.asList(Operations.KNOWN_DATE_MODIFIED);
         Optional<Date> date = knownDateTypes

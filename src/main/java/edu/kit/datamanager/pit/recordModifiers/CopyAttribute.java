@@ -1,6 +1,6 @@
 package edu.kit.datamanager.pit.recordModifiers;
 
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.Collection;
@@ -30,7 +30,7 @@ public record CopyAttribute(
     }
 
     @Override
-    public PIDRecord apply(PIDRecord record) {
+    public PidRecord apply(PidRecord record) {
         this.sources.stream()
                 .filter(record::hasProperty)
                 .findFirst()

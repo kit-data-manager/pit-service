@@ -15,7 +15,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
 import edu.kit.datamanager.pit.RecordTestHelper;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 import edu.kit.datamanager.pit.pidsystem.impl.local.LocalPidSystem;
 
@@ -56,7 +56,7 @@ class IIdentifierSystemWriteTest {
         assertNotNull(localPidSystem);
         
         // Register just a small record for the database to initialize maybe or so.
-        PIDRecord r = new PIDRecord();
+        PidRecord r = new PidRecord();
         r.setPid(pidGenerator.generate().get());
         String attribute = pidGenerator.generate().getWithPrefix(PID_PREFIX);
         String value = pidGenerator.generate().getWithPrefix(PID_PREFIX);
@@ -72,7 +72,7 @@ class IIdentifierSystemWriteTest {
         int numAttributes = 100;
         int numValues = 100;
 
-        PIDRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, PID_PREFIX, pidGenerator);
+        PidRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, PID_PREFIX, pidGenerator);
         assertEquals(numAttributes, r.getPropertyIdentifiers().size());
         assertEquals(numValues, r.getPropertyValues(r.getPropertyIdentifiers().iterator().next()).length);
 

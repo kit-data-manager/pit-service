@@ -11,7 +11,7 @@ import edu.kit.datamanager.pit.common.PidAlreadyExistsException;
 import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 
 import org.slf4j.Logger;
@@ -33,7 +33,7 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
 
     private static final Logger LOG = LoggerFactory.getLogger(InMemoryIdentifierSystem.class);
     private static final String PREFIX = "sandboxed/";
-    private Map<String, PIDRecord> records = new HashMap<>();
+    private Map<String, PidRecord> records = new HashMap<>();
 
     public InMemoryIdentifierSystem() {
         LOG.warn("Using in-memory identifier system. REGISTERED PIDs ARE NOT STORED PERMANENTLY.");
@@ -50,21 +50,21 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
     }
 
     @Override
-    public PIDRecord queryPid(String pid) throws PidNotFoundException, ExternalServiceException {
-        PIDRecord pidRecord = this.records.get(pid);
+    public PidRecord queryPid(String pid) throws PidNotFoundException, ExternalServiceException {
+        PidRecord pidRecord = this.records.get(pid);
         if (pidRecord == null) { throw new PidNotFoundException(pid); }
         return pidRecord;
     }
     
     @Override
-    public String registerPidUnchecked(final PIDRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
+    public String registerPidUnchecked(final PidRecord pidRecord) throws PidAlreadyExistsException, ExternalServiceException {
         this.records.put(pidRecord.getPid(), pidRecord);
         LOG.debug("Registered record with PID: {}", pidRecord.getPid());
         return pidRecord.getPid();
     }
 
     @Override
-    public boolean updatePid(PIDRecord record) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
+    public boolean updatePid(PidRecord record) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
         if (this.records.containsKey(record.getPid())) {
             this.records.put(record.getPid(), record);
             return true;
@@ -74,7 +74,7 @@ public class InMemoryIdentifierSystem implements IIdentifierSystem {
 
     @Override
     public boolean deletePid(String pid) {
-        throw new UnsupportedOperationException("Deleting PIDs is against the P in PID.");
+        return this.records.remove(pid) != null;
     }
 
     @Override

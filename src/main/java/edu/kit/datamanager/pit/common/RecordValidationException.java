@@ -16,7 +16,7 @@
 
 package edu.kit.datamanager.pit.common;
 
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -31,24 +31,24 @@ public class RecordValidationException extends ResponseStatusException {
     private static final HttpStatus HTTP_STATUS = HttpStatus.BAD_REQUEST;
 
     // For cases in which the PID record should be appended to the error response.
-    private final transient PIDRecord pidRecord;
+    private final transient PidRecord pidRecord;
 
-    public RecordValidationException(PIDRecord pidRecord) {
+    public RecordValidationException(PidRecord pidRecord) {
         super(HTTP_STATUS, VALIDATION_OF_RECORD + pidRecord.getPid() + " failed.");
         this.pidRecord = pidRecord;
     }
 
-    public RecordValidationException(PIDRecord pidRecord, String reason) {
+    public RecordValidationException(PidRecord pidRecord, String reason) {
       super(HTTP_STATUS, VALIDATION_OF_RECORD + pidRecord.getPid() + " failed. Reason: " + reason);
       this.pidRecord = pidRecord;
     }
 
-    public RecordValidationException(PIDRecord pidRecord, String reason, Exception e) {
+    public RecordValidationException(PidRecord pidRecord, String reason, Exception e) {
       super(HTTP_STATUS, VALIDATION_OF_RECORD + pidRecord.getPid() + " failed. Reason: " + reason, e);
       this.pidRecord = pidRecord;
     }
 
-    public PIDRecord getPidRecord() {
+    public PidRecord getPidRecord() {
         return pidRecord;
     }
 }

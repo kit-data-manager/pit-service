@@ -26,7 +26,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import edu.kit.datamanager.pit.RecordTestHelper;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
@@ -158,14 +158,14 @@ class RestWithLocalPidSystemTest {
     @Test
     void testCreateValidRecord() throws Exception {
         // test create
-        PIDRecord createdRecord = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord createdRecord = ApiMockUtils.registerSomeRecord(this.mockMvc);
         String createdPid = createdRecord.getPid();
 
         // We store created PIDs
         assertEquals(1, this.knownPidsDao.count());
 
         // test resolve
-        PIDRecord resolvedRecord = ApiMockUtils.resolveRecord(this.mockMvc, createdPid);
+        PidRecord resolvedRecord = ApiMockUtils.resolveRecord(this.mockMvc, createdPid);
         assertEquals(createdRecord, resolvedRecord);
 
         // Resolving the PID will override the available entry.
@@ -186,7 +186,7 @@ class RestWithLocalPidSystemTest {
         int numAttributes = 100;
         int numValues = 100;
         assertTrue(numAttributes * numValues > 256);
-        PIDRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
+        PidRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
         
         String rJson = ApiMockUtils.serialize(r);
         ApiMockUtils.registerRecord(
@@ -200,18 +200,18 @@ class RestWithLocalPidSystemTest {
 
     @Test
     void testUpdateRecord() throws Exception {
-        PIDRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
-        PIDRecord modified = ApiMockUtils.clone(original);
+        PidRecord original = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord modified = ApiMockUtils.clone(original);
         modified.getEntries().get("21.T11148/b8457812905b83046284").get(0).setValue("https://example.com/anotherUrlAsBefore");
         assertNotEquals(original, modified);
-        PIDRecord updatedRecord = ApiMockUtils.updateRecord(this.mockMvc, original, modified);
+        PidRecord updatedRecord = ApiMockUtils.updateRecord(this.mockMvc, original, modified);
         assertEquals(modified, updatedRecord);
     }
 
     @Test
     void testIdPidRegisteredFails() throws Exception {
         // Nothing is registered, our local storags contains no PIDs
-        PIDRecord nonRegistered = mapper.readValue(RECORD, PIDRecord.class);
+        PidRecord nonRegistered = mapper.readValue(RECORD, PidRecord.class);
         boolean isRegistered = isPidRegistered(nonRegistered.getPid());
         assertFalse(isRegistered);
         assertEquals(0, this.knownPidsDao.count());
@@ -219,7 +219,7 @@ class RestWithLocalPidSystemTest {
 
     @Test
     void testIsPidRecordRegisteredSucceeds() throws Exception {
-        PIDRecord existing = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord existing = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // We know a PID after we create one.
         assertEquals(1, this.knownPidsDao.count());
         // If we clear the locally stored PIDs and then ask if it is registered, it should appear again.
@@ -252,7 +252,7 @@ class RestWithLocalPidSystemTest {
 
     @Test
     void testKnownPidSuccess() throws Exception {
-        PIDRecord r = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord r = ApiMockUtils.registerSomeRecord(this.mockMvc);
         // we know it is in the local database:
         assertEquals(1, this.knownPidsDao.count());
         // so we should be able to retrieve it via the REST api:
@@ -276,8 +276,8 @@ class RestWithLocalPidSystemTest {
      */
     @Test
     void testKnownPidIntervalSuccessWithCreatedInterval() throws Exception {
-        PIDRecord r = ApiMockUtils.registerSomeRecord(this.mockMvc);
-        PIDRecord r2 = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord r = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord r2 = ApiMockUtils.registerSomeRecord(this.mockMvc);
         assertEquals(2, this.knownPidsDao.count());
         assertNotEquals(r.getPid(), r2.getPid());
         
@@ -324,8 +324,8 @@ class RestWithLocalPidSystemTest {
     @Test
     void testKnownPidIntervalWithPaging() throws Exception {
         // see also https://www.baeldung.com/rest-api-pagination-in-spring
-        PIDRecord r = ApiMockUtils.registerSomeRecord(this.mockMvc);
-        PIDRecord r2 = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord r = ApiMockUtils.registerSomeRecord(this.mockMvc);
+        PidRecord r2 = ApiMockUtils.registerSomeRecord(this.mockMvc);
         assertEquals(2, this.knownPidsDao.count());
         assertNotEquals(r.getPid(), r2.getPid());
         List<KnownPid> pidinfos = ApiMockUtils.queryKnownPIDs(this.mockMvc, YESTERDAY, TOMORROW, null, null, Optional.empty());

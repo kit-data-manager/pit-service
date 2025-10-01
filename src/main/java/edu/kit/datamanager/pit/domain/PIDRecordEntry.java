@@ -17,10 +17,12 @@
 package edu.kit.datamanager.pit.domain;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
 public class PIDRecordEntry implements Cloneable {
     private String key;
+    @EqualsAndHashCode.Exclude
     private String name;
     private String value;
 

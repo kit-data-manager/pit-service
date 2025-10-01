@@ -1,6 +1,6 @@
 package edu.kit.datamanager.pit.pidsystem.impl.handle;
 
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.domain.PIDRecordEntry;
 import net.handle.hdllib.Common;
 import net.handle.hdllib.HandleValue;
@@ -82,7 +82,7 @@ public class HandleBehavior {
      *         but e.g. without the name.
      */
     public static ArrayList<HandleValue> handleValuesFrom(
-            final PIDRecord pidRecord,
+            final PidRecord pidRecord,
             final Optional<List<HandleValue>> toMerge)
     {
         ArrayList<Integer> skippingIndices = new ArrayList<>();
@@ -111,8 +111,8 @@ public class HandleBehavior {
         return result;
     }
 
-    public static PIDRecord recordFrom(final Collection<HandleValue> values) {
-        PIDRecord record = new PIDRecord();
+    public static PidRecord recordFrom(final Collection<HandleValue> values) {
+        PidRecord record = new PidRecord();
         values.forEach(v -> record.addEntry(
                 v.getTypeAsString(),
                 v.getDataAsString())

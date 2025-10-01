@@ -18,7 +18,7 @@
 package edu.kit.datamanager.pit.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import lombok.extern.slf4j.Slf4j;
@@ -198,37 +198,37 @@ class ConnectedPIDsTest {
 
         // Test the completeProfile method
         PIDRecordBuilder profileBuilder = new PIDRecordBuilder().completeProfile();
-        PIDRecord profileRecord = profileBuilder.build();
+        PidRecord profileRecord = profileBuilder.build();
         assertNotNull(profileRecord, "completeProfile should produce a non-null record");
         assertFalse(profileRecord.getEntries().isEmpty(), "completeProfile should generate record entries");
 
         // Test incompleteProfile method
         PIDRecordBuilder incompleteBuilder = new PIDRecordBuilder().incompleteProfile();
-        PIDRecord incompleteRecord = incompleteBuilder.build();
+        PidRecord incompleteRecord = incompleteBuilder.build();
         assertNotNull(incompleteRecord, "incompleteProfile should produce a non-null record");
 
         // Test invalidValues method with different parameters
         PIDRecordBuilder invalidValuesBuilder1 = new PIDRecordBuilder().invalidValues(3);
-        PIDRecord invalidRecord1 = invalidValuesBuilder1.build();
+        PidRecord invalidRecord1 = invalidValuesBuilder1.build();
         assertNotNull(invalidRecord1, "invalidValues(3) should produce a non-null record");
 
         PIDRecordBuilder invalidValuesBuilder2 = new PIDRecordBuilder().invalidValues(2, "21.T11148/397d831aa3a9d18eb52c");
-        PIDRecord invalidRecord2 = invalidValuesBuilder2.build();
+        PidRecord invalidRecord2 = invalidValuesBuilder2.build();
         assertNotNull(invalidRecord2, "invalidValues with specific key should produce a non-null record");
 
         PIDRecordBuilder invalidValuesBuilder3 = new PIDRecordBuilder().invalidValues(0);
-        PIDRecord invalidRecord3 = invalidValuesBuilder3.build();
+        PidRecord invalidRecord3 = invalidValuesBuilder3.build();
         assertNotNull(invalidRecord3, "invalidValues(0) should produce a non-null record");
 
         // Test invalidKeys method
         PIDRecordBuilder invalidKeysBuilder = new PIDRecordBuilder().invalidKeys(3);
-        PIDRecord invalidKeysRecord = invalidKeysBuilder.build();
+        PidRecord invalidKeysRecord = invalidKeysBuilder.build();
         assertNotNull(invalidKeysRecord, "invalidKeys should produce a non-null record");
         assertTrue(invalidKeysRecord.getEntries().size() >= 3, "invalidKeys(3) should generate at least 3 entries");
 
         // Test emptyRecord method
         PIDRecordBuilder emptyBuilder = new PIDRecordBuilder().completeProfile().emptyRecord();
-        PIDRecord emptyRecord = emptyBuilder.build();
+        PidRecord emptyRecord = emptyBuilder.build();
         assertNotNull(emptyRecord, "emptyRecord should produce a non-null record");
         assertEquals(0, emptyRecord.getEntries().size(), "emptyRecord should have no entries");
 
@@ -237,7 +237,7 @@ class ConnectedPIDsTest {
         assertThrows(Exception.class, nullBuilder::build, "nullRecord should throw exception when built");
 
         // Test withPIDRecord method
-        PIDRecord existingRecord = new PIDRecord().withPID("test/existing");
+        PidRecord existingRecord = new PidRecord().withPID("test/existing");
         existingRecord.addEntry("test.key", "test.value");
         PIDRecordBuilder recordBuilder = new PIDRecordBuilder().withPIDRecord(existingRecord);
         assertEquals(existingRecord.getPid(), recordBuilder.build().getPid(), "withPIDRecord should use PID from existing record");
@@ -274,12 +274,12 @@ class ConnectedPIDsTest {
         String connectionKey = "21.T11148/d0773859091aeb451528";
         builder1.addConnection(connectionKey, false, builder2, builder3);
 
-        PIDRecord connectedRecord = builder1.build();
+        PidRecord connectedRecord = builder1.build();
         assertTrue(connectedRecord.hasProperty(connectionKey), "Record should have the connection property after addConnection");
 
         // Test addConnection with replacement
         builder1.addConnection(connectionKey, true, builder2);
-        PIDRecord replacedRecord = builder1.build();
+        PidRecord replacedRecord = builder1.build();
         assertTrue(replacedRecord.hasProperty(connectionKey), "Record should have connection property after replace");
 
         // Test addConnection error case
@@ -294,7 +294,7 @@ class ConnectedPIDsTest {
 
         // Verify connections were established
         for (PIDRecordBuilder builder : connectedBuilders) {
-            PIDRecord record = builder.build();
+            PidRecord record = builder.build();
             assertTrue(record.hasProperty("21.T11148/d0773859091aeb451528") ||
                     record.hasProperty("21.T11148/4fe7cde52629b61e3b82"), "Connected records should have forward or backward connection property");
         }
@@ -319,7 +319,7 @@ class ConnectedPIDsTest {
         // Create connected records using all builder functionality
         long baseSeed = 12345L;
 
-        List<PIDRecord> records = new ArrayList<>();
+        List<PidRecord> records = new ArrayList<>();
 
         // Use different PIDBuilder configurations
         PIDBuilder[] pidBuilders = {
@@ -379,12 +379,12 @@ class ConnectedPIDsTest {
                 .validPrefix()
                 .validSuffix();
 
-        PIDRecord record = new PIDRecordBuilder(pidBuilder)
+        PidRecord record = new PIDRecordBuilder(pidBuilder)
                 .withSeed(999L)
                 .completeProfile()
                 .build();
 
-        List<PIDRecord> records = List.of(record);
+        List<PidRecord> records = List.of(record);
         String jsonContent = mapper.writeValueAsString(records);
 
         this.mockMvc
@@ -405,7 +405,7 @@ class ConnectedPIDsTest {
     @Test
     @DisplayName("Test empty list")
     void testCreateEmptyList() throws Exception {
-        List<PIDRecord> emptyRecords = new ArrayList<>();
+        List<PidRecord> emptyRecords = new ArrayList<>();
         String jsonContent = mapper.writeValueAsString(emptyRecords);
 
         this.mockMvc
@@ -421,11 +421,11 @@ class ConnectedPIDsTest {
     @Test
     @DisplayName("Test dryrun functionality")
     void testDryRun() throws Exception {
-        PIDRecord record = new PIDRecordBuilder()
+        PidRecord record = new PIDRecordBuilder()
                 .completeProfile()
                 .build();
 
-        List<PIDRecord> records = List.of(record);
+        List<PidRecord> records = List.of(record);
         String jsonContent = mapper.writeValueAsString(records);
 
         this.mockMvc
@@ -458,8 +458,8 @@ class ConnectedPIDsTest {
     @Test
     @DisplayName("Test unsupported media type")
     void testUnsupportedMediaType() throws Exception {
-        PIDRecord record = new PIDRecordBuilder().completeProfile().build();
-        List<PIDRecord> records = List.of(record);
+        PidRecord record = new PIDRecordBuilder().completeProfile().build();
+        List<PidRecord> records = List.of(record);
         String content = mapper.writeValueAsString(records);
 
         this.mockMvc
@@ -481,7 +481,7 @@ class ConnectedPIDsTest {
         builder1.addConnection("21.T11148/d0773859091aeb451528", false, builder2);
         builder2.addConnection("21.T11148/4fe7cde52629b61e3b82", false, builder1);
 
-        List<PIDRecord> records = List.of(builder1.build(), builder2.build());
+        List<PidRecord> records = List.of(builder1.build(), builder2.build());
         String jsonContent = mapper.writeValueAsString(records);
 
         this.mockMvc
@@ -505,10 +505,10 @@ class ConnectedPIDsTest {
         Long sameSeed = 555L;
         PIDBuilder sameBuilder = new PIDBuilder(sameSeed).validPrefix().validSuffix();
 
-        PIDRecord record1 = new PIDRecordBuilder(sameBuilder.clone(), sameSeed).completeProfile().build();
-        PIDRecord record2 = new PIDRecordBuilder(sameBuilder.clone(), sameSeed).completeProfile().build();
+        PidRecord record1 = new PIDRecordBuilder(sameBuilder.clone(), sameSeed).completeProfile().build();
+        PidRecord record2 = new PIDRecordBuilder(sameBuilder.clone(), sameSeed).completeProfile().build();
 
-        List<PIDRecord> records = List.of(record1, record2);
+        List<PidRecord> records = List.of(record1, record2);
         String jsonContent = mapper.writeValueAsString(records);
 
         this.mockMvc
@@ -523,11 +523,11 @@ class ConnectedPIDsTest {
     @DisplayName("Test records with missing entries")
     void testRecordsWithMissingEntries() throws Exception {
         // Create an incomplete record
-        PIDRecord incompleteRecord = new PIDRecordBuilder()
+        PidRecord incompleteRecord = new PIDRecordBuilder()
                 .incompleteProfile()
                 .build();
 
-        List<PIDRecord> records = List.of(incompleteRecord);
+        List<PidRecord> records = List.of(incompleteRecord);
         String jsonContent = mapper.writeValueAsString(records);
 
         this.mockMvc
@@ -552,7 +552,7 @@ class ConnectedPIDsTest {
         PIDRecordBuilder.connectRecordBuilders(null, null, false,
                 builders.toArray(new PIDRecordBuilder[0]));
 
-        List<PIDRecord> records = new ArrayList<>();
+        List<PidRecord> records = new ArrayList<>();
         for (PIDRecordBuilder builder : builders) {
             records.add(builder.build());
         }
@@ -576,14 +576,14 @@ class ConnectedPIDsTest {
     @Test
     @DisplayName("Test records with external references")
     void testRecordsWithExternalReferences() throws Exception {
-        PIDRecord record = new PIDRecordBuilder()
+        PidRecord record = new PIDRecordBuilder()
                 .completeProfile()
                 .build();
 
         // Add external reference
         record.addEntry("21.T11148/d0773859091aeb451528", "externalRef", "external/pid/reference");
 
-        List<PIDRecord> records = List.of(record);
+        List<PidRecord> records = List.of(record);
         String jsonContent = mapper.writeValueAsString(records);
 
         this.mockMvc
@@ -613,7 +613,7 @@ class ConnectedPIDsTest {
         builder2.addConnection("21.T11148/4fe7cde52629b61e3b82", false, builder3);
         builder3.addConnection(VALID_CONNECTION_KEYS[0], false, builder1);
 
-        List<PIDRecord> records = List.of(builder1.build(), builder2.build(), builder3.build());
+        List<PidRecord> records = List.of(builder1.build(), builder2.build(), builder3.build());
         String jsonContent = mapper.writeValueAsString(records);
 
         this.mockMvc
@@ -633,12 +633,12 @@ class ConnectedPIDsTest {
     @Test
     @DisplayName("Test records with null PIDs")
     void testRecordsWithNullPids() throws Exception {
-        PIDRecord record = new PIDRecordBuilder()
+        PidRecord record = new PIDRecordBuilder()
                 .completeProfile()
                 .withPid(null)
                 .build();
 
-        List<PIDRecord> records = List.of(record);
+        List<PidRecord> records = List.of(record);
         String jsonContent = mapper.writeValueAsString(records);
 
         this.mockMvc
@@ -656,11 +656,11 @@ class ConnectedPIDsTest {
     @Test
     @DisplayName("Test PID mapping persistence")
     void testPidMappingPersistence() throws Exception {
-        PIDRecord record = new PIDRecordBuilder()
+        PidRecord record = new PIDRecordBuilder()
                 .completeProfile()
                 .build();
 
-        List<PIDRecord> records = List.of(record);
+        List<PidRecord> records = List.of(record);
         String jsonContent = mapper.writeValueAsString(records);
 
         this.mockMvc
@@ -718,14 +718,14 @@ class ConnectedPIDsTest {
     @DisplayName("Test PIDRecordBuilder with various invalid configurations")
     void testPIDRecordBuilderInvalidConfigurations() throws Exception {
         // Test record with invalid keys
-        PIDRecord invalidKeysRecord = new PIDRecordBuilder()
+        PidRecord invalidKeysRecord = new PIDRecordBuilder()
                 .invalidKeys(5)
                 .build();
 
         assertTrue(invalidKeysRecord.getEntries().size() >= 5, "invalidKeys(5) should generate at least 5 entries");
 
         // Test record with invalid values for specific keys
-        PIDRecord invalidSpecificRecord = new PIDRecordBuilder()
+        PidRecord invalidSpecificRecord = new PIDRecordBuilder()
                 .completeProfile()
                 .invalidValues(2, "21.T11148/397d831aa3a9d18eb52c", "21.T11148/8074aed799118ac263ad")
                 .build();
@@ -733,14 +733,14 @@ class ConnectedPIDsTest {
         assertNotNull(invalidSpecificRecord, "Invalid values for specific keys should produce non-null record");
 
         // Test empty record
-        PIDRecord emptyRecord = new PIDRecordBuilder()
+        PidRecord emptyRecord = new PIDRecordBuilder()
                 .emptyRecord()
                 .build();
 
         assertEquals(0, emptyRecord.getEntries().size(), "emptyRecord should have no entries");
 
         // Submit invalid records to test API response
-        List<PIDRecord> invalidRecords = List.of(invalidKeysRecord);
+        List<PidRecord> invalidRecords = List.of(invalidKeysRecord);
         String jsonContent = mapper.writeValueAsString(invalidRecords);
 
         this.mockMvc
@@ -775,7 +775,7 @@ class ConnectedPIDsTest {
                 .invalidValues(1, "21.T11148/397d831aa3a9d18eb52c")
                 .invalidKeys(1);
 
-        PIDRecord complexRecord = complexRecordBuilder.build();
+        PidRecord complexRecord = complexRecordBuilder.build();
         assertEquals("custom/pid", complexRecord.getPid(), "Chained record builder should use the custom PID");
         assertFalse(complexRecord.getEntries().isEmpty(), "Chained record builder should generate entries");
 
@@ -789,12 +789,12 @@ class ConnectedPIDsTest {
     @Test
     @DisplayName("Test multiple record creation with using RECORD_COUNT constant")
     void testMultipleRecordCreationWithRecordCount() throws Exception {
-        List<PIDRecord> records = new ArrayList<>();
+        List<PidRecord> records = new ArrayList<>();
 
         // Create multiple records using RECORD_COUNT constant
         for (int i = 0; i < RECORD_COUNT; i++) {
             PIDBuilder pidBuilder = new PIDBuilder((long) i).validPrefix().validSuffix();
-            PIDRecord record = new PIDRecordBuilder(pidBuilder, (long) i)
+            PidRecord record = new PIDRecordBuilder(pidBuilder, (long) i)
                     .completeProfile()
                     .build();
             records.add(record);
@@ -831,7 +831,7 @@ class ConnectedPIDsTest {
         PIDRecordBuilder.connectRecordBuilders(null, null, false,
                 builders.toArray(new PIDRecordBuilder[0]));
 
-        List<PIDRecord> records = new ArrayList<>();
+        List<PidRecord> records = new ArrayList<>();
         for (PIDRecordBuilder builder : builders) {
             records.add(builder.build());
         }
@@ -855,11 +855,11 @@ class ConnectedPIDsTest {
     @Test
     @DisplayName("Test partial failure and rollback scenario")
     void testPartialFailureAndRollback() throws Exception {
-        List<PIDRecord> records = new ArrayList<>();
+        List<PidRecord> records = new ArrayList<>();
 
         // Create some valid records
         for (int i = 0; i < 3; i++) {
-            PIDRecord validRecord = new PIDRecordBuilder()
+            PidRecord validRecord = new PIDRecordBuilder()
                     .completeProfile()
                     .build();
             records.add(validRecord);
@@ -867,19 +867,19 @@ class ConnectedPIDsTest {
 
         // Add records that should cause validation or creation failures
         // Record with incomplete profile (missing required entries)
-        PIDRecord incompleteRecord = new PIDRecordBuilder()
+        PidRecord incompleteRecord = new PIDRecordBuilder()
                 .incompleteProfile()
                 .build();
         records.add(incompleteRecord);
 
         // Record with invalid keys
-        PIDRecord invalidKeysRecord = new PIDRecordBuilder()
+        PidRecord invalidKeysRecord = new PIDRecordBuilder()
                 .invalidKeys(3)
                 .build();
         records.add(invalidKeysRecord);
 
         // Record with invalid values for specific keys
-        PIDRecord invalidValuesRecord = new PIDRecordBuilder()
+        PidRecord invalidValuesRecord = new PIDRecordBuilder()
                 .completeProfile()
                 .invalidValues(2, "21.T11148/397d831aa3a9d18eb52c")
                 .build();
@@ -903,11 +903,11 @@ class ConnectedPIDsTest {
     @Test
     @DisplayName("Test batch with mixed valid and invalid records for rollback coverage")
     void testBatchWithMixedRecordsForRollbackCoverage() throws Exception {
-        List<PIDRecord> records = new ArrayList<>();
+        List<PidRecord> records = new ArrayList<>();
 
         // Create valid records that would initially succeed
         for (int i = 0; i < RECORD_COUNT / 2; i++) {
-            PIDRecord record = new PIDRecordBuilder()
+            PidRecord record = new PIDRecordBuilder()
                     .withSeed((long) i)
                     .completeProfile()
                     .build();
@@ -917,27 +917,27 @@ class ConnectedPIDsTest {
         // Add records with various failure scenarios to trigger rollback
 
         // Empty record (no entries)
-        PIDRecord emptyRecord = new PIDRecordBuilder()
+        PidRecord emptyRecord = new PIDRecordBuilder()
                 .emptyRecord()
                 .build();
         records.add(emptyRecord);
 
         // Record with null PID and incomplete profile
-        PIDRecord nullPidRecord = new PIDRecordBuilder()
+        PidRecord nullPidRecord = new PIDRecordBuilder()
                 .withPid(null)
                 .incompleteProfile()
                 .build();
         records.add(nullPidRecord);
 
         // Record with completely invalid data
-        PIDRecord invalidRecord = new PIDRecordBuilder()
+        PidRecord invalidRecord = new PIDRecordBuilder()
                 .invalidKeys(5)
                 .invalidValues(3)
                 .build();
         records.add(invalidRecord);
 
         // Incomplete record with missing required entries
-        PIDRecord incompleteRecord = new PIDRecordBuilder()
+        PidRecord incompleteRecord = new PIDRecordBuilder()
                 .incompleteProfile()
                 .build();
         records.add(incompleteRecord);
@@ -959,11 +959,11 @@ class ConnectedPIDsTest {
     @Test
     @DisplayName("Test record creation failure scenarios with duplicate PIDs in batch")
     void testRecordCreationFailureWithDuplicatePids() throws Exception {
-        List<PIDRecord> records = new ArrayList<>();
+        List<PidRecord> records = new ArrayList<>();
 
         // Create multiple valid records first
         for (int i = 0; i < RECORD_COUNT / 4; i++) {
-            PIDRecord record = new PIDRecordBuilder()
+            PidRecord record = new PIDRecordBuilder()
                     .withSeed((long) i)
                     .completeProfile()
                     .build();
@@ -973,13 +973,13 @@ class ConnectedPIDsTest {
         // Add duplicate PIDs to trigger failure
         String duplicatePid = "sandboxed/duplicate-test-pid";
 
-        PIDRecord record1 = new PIDRecordBuilder()
+        PidRecord record1 = new PIDRecordBuilder()
                 .completeProfile()
                 .withPid(duplicatePid)
                 .build();
         records.add(record1);
 
-        PIDRecord record2 = new PIDRecordBuilder()
+        PidRecord record2 = new PIDRecordBuilder()
                 .completeProfile()
                 .withPid(duplicatePid)
                 .build();

@@ -26,7 +26,7 @@ import edu.kit.datamanager.pit.cli.ICliTask;
 import edu.kit.datamanager.pit.cli.PidSource;
 import edu.kit.datamanager.pit.common.InvalidConfigException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.TypingService;
@@ -164,7 +164,7 @@ public class Application {
     }
 
     @Bean
-    public HttpMessageConverter<PIDRecord> simplePidRecordConverter() {
+    public HttpMessageConverter<PidRecord> simplePidRecordConverter() {
         return new SimplePidRecordConverter();
     }
 

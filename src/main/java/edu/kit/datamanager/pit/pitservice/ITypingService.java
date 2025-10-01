@@ -3,7 +3,7 @@ package edu.kit.datamanager.pit.pitservice;
 import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.domain.Operations;
-import edu.kit.datamanager.pit.domain.PIDRecord;
+import edu.kit.datamanager.pit.domain.PidRecord;
 
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 
@@ -16,7 +16,7 @@ public interface ITypingService extends IIdentifierSystem {
 
     public void setValidationStrategy(IValidationStrategy strategy);
 
-    public void validate(PIDRecord pidRecord)
+    public void validate(PidRecord pidRecord)
             throws RecordValidationException, ExternalServiceException;
 
     /**
