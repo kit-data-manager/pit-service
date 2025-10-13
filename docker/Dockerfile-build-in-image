@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21 AS build-typid
+FROM eclipse-temurin:25 AS build-typid
 LABEL maintainer="webmaster@datamanager.kit.edu"
 LABEL stage=build
 RUN mkdir -p /app/
@@ -9,7 +9,7 @@ RUN ./gradlew build -x test --stacktrace && \
 
 
 # Create a clean, minimal image
-FROM eclipse-temurin:21 AS typed-pid-maker
+FROM eclipse-temurin:25 AS typed-pid-maker
 LABEL maintainer="webmaster@datamanager.kit.edu"
 LABEL stage=run
 
