@@ -1,4 +1,13 @@
 {
+  "extends": [
+    "config:recommended",
+    "docker:pinDigests",
+    "helpers:pinGitHubActionDigests",
+    ":configMigration",
+    ":pinDevDependencies",
+    "abandonments:recommended",
+    "security:minimumReleaseAgeNpm"
+  ],
   "labels": ["dependencies"],
   "baseBranches": ["development"],
   "minimumReleaseAge": "3 days"
