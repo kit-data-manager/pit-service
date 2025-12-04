@@ -31,7 +31,7 @@ jobs:
       uses: actions/checkout@v5
 
     - name: Initialize CodeQL tools for scanning
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@fe4161a26a8629af62121b670040955b330f9af2 # v4
       with:
         languages: ${{ matrix.language }}
         # If you wish to specify custom queries, you can do so here or in a config file.
@@ -55,4 +55,4 @@ jobs:
       run: ./gradlew -Dprofile=verbose clean build -x test
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@fe4161a26a8629af62121b670040955b330f9af2 # v4
