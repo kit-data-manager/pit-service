@@ -2,23 +2,24 @@ package edu.kit.datamanager.pit.pitservice.impl;
 
 import edu.kit.datamanager.pit.common.ExternalServiceException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
+import edu.kit.datamanager.pit.common.TypeNotFoundException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
-import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pitservice.IValidationStrategy;
-import edu.kit.datamanager.pit.util.TypeValidationUtils;
+import edu.kit.datamanager.pit.typeregistry.AttributeInfo;
+import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 
-import java.util.concurrent.ExecutionException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import com.google.common.cache.LoadingCache;
 
 /**
  * Validates a PID record using embedded profile(s).
- * 
+ * <p>
  * - checks if all mandatory attributes are present
  * - validates all available attributes
  * - fails if an attribute is not defined within the profile
@@ -27,118 +28,97 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedStrictValidatorStrategy.class);
 
-    @Autowired
-    public LoadingCache<String, TypeDefinition> typeLoader;
+    protected final ITypeRegistry typeRegistry;
+    protected final boolean alwaysAcceptAdditionalAttributes;
+    protected final Set<String> profileKeys;
 
-    @Autowired
-    ApplicationProperties applicationProps;
+    public EmbeddedStrictValidatorStrategy(
+            ITypeRegistry typeRegistry,
+            ApplicationProperties config
+    ) {
+        this.typeRegistry = typeRegistry;
+        this.profileKeys = config.getProfileKeys();
+        this.alwaysAcceptAdditionalAttributes = config.isValidationAlwaysAllowAdditionalAttributes();
+    }
 
     @Override
-    public void validate(PIDRecord pidRecord) throws RecordValidationException, ExternalServiceException {
-        String profileKey = applicationProps.getProfileKey();
-        if (!pidRecord.hasProperty(profileKey)) {
-            throw new RecordValidationException(
-                    pidRecord,
-                    "Profile attribute not found. Expected key: " + profileKey);
+    public void validate(PIDRecord pidRecord)
+            throws RecordValidationException, ExternalServiceException
+    {
+        if (pidRecord.getPropertyIdentifiers().isEmpty()) {
+            throw new RecordValidationException(pidRecord, "Record is empty!");
         }
 
-        String[] profilePIDs = pidRecord.getPropertyValues(profileKey);
-        boolean hasProfile = profilePIDs.length > 0;
-        if (!hasProfile) {
+        // For each attribute in record, resolve schema and check the value
+        List<CompletableFuture<AttributeInfo>> attributeInfoFutures = pidRecord.getPropertyIdentifiers().stream()
+                // resolve attribute info (type and schema)
+                .map(this.typeRegistry::queryAttributeInfo)
+                // validate values using schema
+                .map(attributeInfoFuture -> attributeInfoFuture.thenApply(attributeInfo -> {
+                    for (String value : pidRecord.getPropertyValues(attributeInfo.pid())) {
+                        boolean isValid = attributeInfo.validate(value);
+                        if (!isValid) {
+                            throw new RecordValidationException(
+                                    pidRecord,
+                                    "Attribute %s has a non-complying value %s"
+                                            .formatted(attributeInfo.pid(), value));
+                        }
+                    }
+                    return attributeInfo;
+                }))
+                // resolve profiles and apply their validation
+                .map(attributeInfoFuture -> attributeInfoFuture.thenCompose(attributeInfo -> {
+                    boolean indicatesProfileValue = this.profileKeys.contains(attributeInfo.pid());
+                    if (!indicatesProfileValue) {
+                        return CompletableFuture.completedFuture(attributeInfo);
+                    }
+                    CompletableFuture<?>[] profileFutures = Arrays.stream(pidRecord.getPropertyValues(attributeInfo.pid()))
+                            .map(this.typeRegistry::queryAsProfile)
+                            .map(registeredProfileFuture -> registeredProfileFuture.thenAccept(
+                                    registeredProfile -> {
+                                        registeredProfile.validateAttributes(pidRecord, this.alwaysAcceptAdditionalAttributes);
+                                    }))
+                            .toArray(CompletableFuture[]::new);
+                    return CompletableFuture.allOf(profileFutures).thenApply(v -> attributeInfo);
+                }))
+                .toList();
+
+
+        try {
+            LOG.trace("Processing all attributes in the record {}.", pidRecord.getPid());
+            CompletableFuture.allOf(attributeInfoFutures.toArray(new CompletableFuture<?>[0])).join();
+            LOG.trace("Finished processing all attributes in the record {}.", pidRecord.getPid());
+        } catch (CompletionException e) {
+            LOG.trace("Exception occurred during validation of record {}. Unpack Exception, if required.", pidRecord.getPid(), e);
+            unpackAsyncExceptions(pidRecord, e);
+            LOG.trace("Exception was not unpacked. Rethrowing.", e);
+            throw new ExternalServiceException(this.typeRegistry.getRegistryIdentifier());
+        } catch (CancellationException e) {
+            unpackAsyncExceptions(pidRecord, e);
             throw new RecordValidationException(
                     pidRecord,
-                    "Profile attribute " + profileKey + " has no values.");
-        }
-
-        for (String profilePID : profilePIDs) {
-            TypeDefinition profileDefinition;
-            try {
-                profileDefinition = this.typeLoader.get(profilePID);
-            } catch (ExecutionException e) {
-                LOG.error("Could not resolve identifier {}.", profilePID);
-                throw new ExternalServiceException(
-                        applicationProps.getTypeRegistryUri().toString());
-            }
-            if (profileDefinition == null) {
-                LOG.error("No type definition found for identifier {}.", profilePID);
-                throw new RecordValidationException(
-                        pidRecord,
-                        String.format("No type found for identifier %s.", profilePID));
-            }
-
-            LOG.debug("validating profile {}", profilePID);
-            this.strictProfileValidation(pidRecord, profileDefinition);
-            LOG.debug("successfully validated {}", profilePID);
+                    String.format("Validation task was cancelled for %s. Please report.", pidRecord.getPid()));
         }
     }
 
     /**
-     * Exceptions indicate failure. No Exceptions mean success.
-     * 
-     * @param pidRecord the PID record to validate.
-     * @param profile   the profile to validate against.
-     * @throws RecordValidationException with error message on validation errors.
+     * Checks Exceptions' causes for a RecordValidationExceptions, and throws them, if present.
+     * <p>
+     * Usually used to avoid exposing exceptions related to futures.
+     * @param e the exception to unwrap.
      */
-    private void strictProfileValidation(PIDRecord pidRecord, TypeDefinition profile) throws RecordValidationException {
-        // if (profile.hasSchema()) {
-        // TODO issue https://github.com/kit-data-manager/pit-service/issues/104
-        // validate using schema and you are done (strict validation)
-        // String jsonRecord = ""; // TODO format depends on schema source
-        // return profile.validate(jsonRecord);
-        // }
+    private static void unpackAsyncExceptions(PIDRecord pidRecord, Throwable e) {
+        final int MAX_LEVEL = 10;
+        Throwable cause = e;
 
-        LOG.trace("Validating PID record against type definition.");
-
-        TypeValidationUtils.checkMandatoryAttributes(pidRecord, profile);
-
-        for (String attributeKey : pidRecord.getPropertyIdentifiers()) {
-            LOG.trace("Checking PID record key {}.", attributeKey);
-
-            TypeDefinition type = profile.getSubTypes().get(attributeKey);
-            if (type == null) {
-                LOG.error("No sub-type found for key {}.", attributeKey);
-                // TODO try to resolve it (for later when we support "allow additional
-                // attributes")
-                // if profile.allowsAdditionalAttributes() {...} else
+        for (int level = 0; level <= MAX_LEVEL && cause != null; level++) {
+            cause = cause.getCause();
+            if (cause instanceof RecordValidationException rve) {
+                throw rve;
+            } else if (cause instanceof TypeNotFoundException tnf) {
                 throw new RecordValidationException(
                         pidRecord,
-                        String.format("Attribute %s is not allowed in profile %s",
-                                attributeKey,
-                                profile.getIdentifier()));
-            }
-
-            validateValuesForKey(pidRecord, attributeKey, type);
-        }
-    }
-
-    /**
-     * Validates all values of an attribute against a given type definition.
-     * 
-     * @param pidRecord the record containing the attribute and value.
-     * @param attributeKey the attribute to check the values for.
-     * @param type the type definition to check against.
-     * @throws RecordValidationException on error.
-     */
-    private void validateValuesForKey(PIDRecord pidRecord, String attributeKey, TypeDefinition type)
-            throws RecordValidationException {
-        String[] values = pidRecord.getPropertyValues(attributeKey);
-        for (String value : values) {
-            if (value == null) {
-                LOG.error("'null' record value found for key {}.", attributeKey);
-                throw new RecordValidationException(
-                        pidRecord,
-                        String.format("Validation of value %s against type %s failed.",
-                                value,
-                                type.getIdentifier()));
-            }
-
-            if (!type.validate(value)) {
-                LOG.error("Validation of value {} against type {} failed.", value, type.getIdentifier());
-                throw new RecordValidationException(
-                        pidRecord,
-                        String.format("Validation of value %s against type %s failed.",
-                                value,
-                                type.getIdentifier()));
+                        "Type not found: %s".formatted(tnf.getMessage()));
             }
         }
     }

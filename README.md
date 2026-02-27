@@ -102,6 +102,27 @@ PID = prefix + (branding + uniquely-generated-string)
 
 All other configuration properties affect only the `uniquely-generated-string`. For example, you may choose a different generation method (UUID (default) or Hex Chunks) enforce casing (lower-case, upper-case).
 
+## What PID record validation means
+
+Our validation steps include the following:
+
+1. For each attribute, check if the values are valid according to their type specification.
+   - Values are considered to be in JSON format. If a type is complex, this implies a string-serialized JSON object.
+2. For each attribute which indicates a profile, resolve the profile definitions from the values of the attributes.
+   - Attributes which indicates profiles are internally known, but may be added using the [configuration](https://github.com/kit-data-manager/pit-service/blob/master/config/application-default.properties).
+3. For each profile definition, check if mandatory attributes are present.
+4. For each profile definition, check if only repeatable attributes have multiple occurrences.
+
+This implies the following properties:
+
+- A profile is not required,
+  - but all profiles which are present are being used for validation,
+  - and all of them have to pass.
+- Additional attributes are allowed if specified in the configuration of the Typed PID Maker instance.
+  - Otherwise, they are not allowed. Which makes it almost impossible to use multiple profiles.
+  - Only dtr-test supports an "additionalAttributesAllowed" boolean property per profile,
+  - But as it will not last and other DTRs do currently not support it, we don't support it either.
+
 ## How to build
 
 > Note: Alternatively, you can use the docker image.
@@ -111,9 +132,8 @@ All other configuration properties affect only the `uniquely-generated-string`. 
 - Building (with tests): `./gradlew clean build`
 - Building (with verbose test output) `./gradlew -Dprofile=verbose clean build`
 - Building (without tests): `./gradlew clean build -x test`
-- Run docker integration tests:
-  - `./gradlew clean build` (by default, this will reuse the local build)
-  - `time bash ./docker/test_docker.sh` (runs test script)
+- Run docker integration tests: `time bash ./docker/test_docker.sh` (will reuse the local build)
+- Run dockerized validation benchmarks: `time bash ./docker/test_docker.sh benchmark` (will reuse the local build)
 - Doing a release: `./gradlew clean build release`
   - Will prompt you about version number to use and next version number
   - Will make a git tag which can later be used in a GitHub release

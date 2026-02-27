@@ -62,7 +62,7 @@ class IIdentifierSystemWriteTest {
         String value = pidGenerator.generate().getWithPrefix(PID_PREFIX);
         r.addEntry(attribute, "test", value);
 
-        localPidSystem.registerPID(r);
+        localPidSystem.registerPid(r);
     }
 
     @Test
@@ -76,6 +76,6 @@ class IIdentifierSystemWriteTest {
         assertEquals(numAttributes, r.getPropertyIdentifiers().size());
         assertEquals(numValues, r.getPropertyValues(r.getPropertyIdentifiers().iterator().next()).length);
 
-        this.localPidSystem.registerPID(r);
+        this.localPidSystem.registerPid(r);
     }
 }

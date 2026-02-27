@@ -37,7 +37,7 @@ class ITypingRestResourceTest {
     private MockMvc mockMvc;
 
     @BeforeEach
-    void setup() throws Exception {
+    void setup() {
         this.mockMvc = MockMvcBuilders
                 .webAppContextSetup(this.webApplicationContext)
                 .build();
@@ -48,11 +48,9 @@ class ITypingRestResourceTest {
 
     /**
      * Tests if the swagger ui and openapi definition is accessible.
-     * 
+     * <p>
      * Note that this test is using mockMVC; it does probably not detect issues with
      * CSRF, but will recognize other kinds of internal issues.
-     * 
-     * @throws Exception
      */
     @Test
     void getOpenApiDefinition() throws Exception {

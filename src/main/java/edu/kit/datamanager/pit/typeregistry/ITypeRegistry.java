@@ -1,10 +1,6 @@
 package edu.kit.datamanager.pit.typeregistry;
 
-import java.io.IOException;
-
-import edu.kit.datamanager.pit.domain.TypeDefinition;
-
-import java.net.URISyntaxException;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Main abstraction interface towards the type registry. Contains all methods
@@ -12,13 +8,13 @@ import java.net.URISyntaxException;
  *
  */
 public interface ITypeRegistry {
+    CompletableFuture<AttributeInfo> queryAttributeInfo(String attributePid);
+    CompletableFuture<RegisteredProfile> queryAsProfile(String profilePid);
 
     /**
-     * Queries a type definition record from the type registry.
+     * An identifier for exceptions and debugging purposes.
      *
-     * @param typeIdentifier
-     * @return a type definition record or null if the type is not registered.
-     * @throws IOException on communication errors with a remote registry
+     * @return a name ur url string that identifies the implementation or configuration well in case of errors.
      */
-    public TypeDefinition queryTypeDefinition(String typeIdentifier) throws IOException, URISyntaxException;
+    String getRegistryIdentifier();
 }
