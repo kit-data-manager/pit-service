@@ -40,7 +40,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Set up openJDK version
         uses: actions/setup-java@v5
@@ -132,7 +132,7 @@ jobs:
           echo ${{ steps.split.outputs.branch }}
 
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Set up openJDK version
         uses: actions/setup-java@v5
