@@ -106,7 +106,7 @@ All other configuration properties affect only the `uniquely-generated-string`. 
 
 > Note: Alternatively, you can use the docker image.
 
-**Required**: Java SE Development Kit 21 (or openjdk 21) or higher
+**Required**: Java SE Development Kit 25 (or openjdk 25) or higher
 
 - Building (with tests): `./gradlew clean build`
 - Building (with verbose test output) `./gradlew -Dprofile=verbose clean build`
