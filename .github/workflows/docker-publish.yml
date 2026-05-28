@@ -55,7 +55,7 @@ jobs:
         run: ./gradlew -Dprofile=verbose build
 
       - name: Set up Docker
-        uses: docker/setup-docker-action@v4
+        uses: docker/setup-docker-action@b2189fbf2a6592b51fee7cdd93ee2bfaeba733db # v5
         with:
           daemon-config: |
             {
@@ -147,7 +147,7 @@ jobs:
         run: ./gradlew -Dprofile=verbose build
 
       - name: Set up Docker
-        uses: docker/setup-docker-action@v4
+        uses: docker/setup-docker-action@b2189fbf2a6592b51fee7cdd93ee2bfaeba733db # v5
         with:
           daemon-config: |
             {
