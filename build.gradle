@@ -51,6 +51,28 @@ ext {
     springDocVersion  = '2.8.17'
 }
 
+// The build profile can be specified via command line using -PbuildProfile=<profile>
+// For example: ./gradlew build -PbuildProfile=minimal
+// Default build profile is "complete" if not specified
+// Available profiles:
+// - "default" Only necessary tests for building online REST documentation will be executed.
+//             This is useful for building a production ready jar file without executing all tests.
+// - "release" Before releasing all tests will be executed.
+//             If successful, the release task will be executed to create a new release version and tag it in git.
+// - "complete" All tests with verbose output will be executed
+//              To ensure that the application is working as expected, it is recommended to use this profile for development and testing.
+def buildProfile = project.findProperty("buildProfile") ?: "minimal"
+
+def profileFile = file("$rootDir/gradle/profile-${buildProfile}.gradle")
+
+// The release task should only be executed with the "release" profile, which is defined in gradle/profile-minimal.gradle
+// Throw exception if the release task is executed with a different profile
+gradle.taskGraph.whenReady { graph ->
+    if (graph.allTasks.any { it.name == "release" } &&
+            findProperty("buildProfile") != "release") {
+        throw new GradleException("Task 'release' is only available with '-PbuildProfile=release'!" )
+    }
+}
 dependencies {
     // Due to the spring boot gradle plugin, we can omit versions in org.springframework.*
     // dependencies. It will automatically choose the fitting ones.
@@ -105,6 +127,14 @@ application {
     mainClass = 'edu.kit.datamanager.pit.Application'
 }
 
+test {
+    // for junit5
+    useJUnitPlatform()
+    // show stdio when tests are running
+    testLogging.showStandardStreams = true
+    println("This is the default test task. It will execute all tests with verbose output. For faster execution of only necessary tests, use the 'minimal' build profile.")
+}
+
 // Makes executable jar file.
 // Available function available through Spring Boot Gradle Plugin.
 bootJar {
@@ -143,30 +173,6 @@ java {
         // to enable the CI to test with different JDKs.
         // https://docs.gradle.org/current/userguide/toolchains.html#toolchains
         //languageVersion = JavaLanguageVersion.of(jdkVersion)
-    }
-}
-
-test {
-    finalizedBy jacocoTestReport
-    environment "spring.config.location", "classpath:/test/"
-    // for junit5
-    useJUnitPlatform()
-    if (System.getProperty("profile") == "verbose") {
-        println "Tests will have verbose output"
-        testLogging {
-            // tests are never "up-to-date", always print everything
-            outputs.upToDateWhen {false}
-            // show stdio when tests are running
-            showStandardStreams = true
-            // for junit5
-            events "passed", "skipped", "failed"
-        }
-    } else {
-        println "Test will have compact output"
-        testLogging {
-            // for junit5
-            events "passed", "skipped", "failed"
-        }
     }
 }
 
@@ -211,17 +217,16 @@ gitProperties {
     failOnNoGitDirectory = false
 }
 
-release {
-    // define tag pattern (tags have to start with 'v')
-    tagTemplate = 'v${version}'
-    git {
-        requireBranch.set("master")
-    }
-}
-
 tasks.withType(Jar).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
 tasks.withType(Tar).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
 tasks.withType(Copy).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
 tasks.withType(Zip).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
 
-apply from: 'gradle/updateCff.gradle'
+
+// Apply profile-specific build configuration at the end of this build script
+// to ensure that all settings are available.
+if (profileFile.exists()) {
+    apply from: profileFile
+} else {
+    throw new GradleException("Profile-file missing: $profileFile")
+}
