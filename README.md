@@ -109,7 +109,7 @@ All other configuration properties affect only the `uniquely-generated-string`. 
 **Required**: Java SE Development Kit 21 (or openjdk 21) or higher
 
 - Building (with tests): `./gradlew clean build`
-- Building (with verbose test output) `./gradlew -Dprofile=verbose clean build`
+- Building (with verbose test output) `./gradlew -DbuildProfile=complete clean build`
 - Building (without tests): `./gradlew clean build -x test`
 - Run docker integration tests:
   - `./gradlew clean build` (by default, this will reuse the local build)

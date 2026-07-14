@@ -52,7 +52,7 @@ jobs:
         uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
 
       - name: Build and Test with Gradle
-        run: ./gradlew -Dprofile=verbose build
+        run: ./gradlew -DbuildProfile=complete build
 
       - name: Set up Docker
         uses: docker/setup-docker-action@b2189fbf2a6592b51fee7cdd93ee2bfaeba733db # v5
@@ -144,7 +144,7 @@ jobs:
         uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
 
       - name: Build and Test with Gradle
-        run: ./gradlew -Dprofile=verbose build
+        run: ./gradlew -DbuildProfile=complete build
 
       - name: Set up Docker
         uses: docker/setup-docker-action@b2189fbf2a6592b51fee7cdd93ee2bfaeba733db # v5

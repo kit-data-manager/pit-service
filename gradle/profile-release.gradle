@@ -1,0 +1,161 @@
+/*
+ * Copyright 2026 Karlsruhe Institute of Technology.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+///////////////////////////////////////////////////////////////////////////////////////
+// Version tags start with 'v' e.g. v1.0.0
+// codemeta.json and CITATION.cff are updated before release
+// dateModified/releaseDate and version are updated in codemeta.json and CITATION.cff
+///////////////////////////////////////////////////////////////////////////////////////
+println "Using release profile for releasing a new version of '${name}'"
+
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+
+
+def todayDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
+
+///////////////////////////////////////////////////////////////////////////////////////
+//for plugin net.researchgate.release
+//see https://github.com/researchgate/gradle-release
+///////////////////////////////////////////////////////////////////////////////////////
+release {
+    //define template for tagging, e.g. v1.0.0
+    tagTemplate = 'v${version}'
+    //set source file of version property
+    versionPropertyFile = 'gradle.properties'
+    //set possible properties which may contain the version
+    versionProperties = ['version', 'mainversion']
+    git {
+        //branch from where to release (default: main)
+        requireBranch.set('main', 'master')
+    }
+}
+
+tasks.register('updateCitationFile') {
+    doLast {
+        def citationFile = file("$rootDir/CITATION.cff")
+        def lines = citationFile.readLines()
+        def map = ['version': project.version, 'date-released': todayDate]
+        map.each { key, value ->
+            lines = lines.collect { line ->
+                if (line.trim().startsWith("${key}:")) {
+                    return "${key}: ${value}"
+                } else {
+                    return "${line}"
+                }
+            }
+        }
+        citationFile.text = lines.join(System.lineSeparator())
+        println "Updated CITATION.cff with version ${project.version} and date ${todayDate}"
+    }
+}
+///////////////////////////////////////////////////////////////////////////////////////
+// update codemeta.json file (just date and version)
+///////////////////////////////////////////////////////////////////////////////////////
+tasks.register('updateCodemetaFile') {
+    doLast {
+        def codemetaFile = file('codemeta.json')
+        def codemeta = new JsonSlurper().parseText(codemetaFile.text)
+        codemeta.version = project.version
+        codemeta.softwareVersion = project.version
+        codemeta.dateModified = todayDate
+
+        codemetaFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(codemeta))
+        println "Updated codemeta.json with (software)version ${project.version} and date ${todayDate}"
+    }
+}
+/**
+ * This task hooks into the workflow of the release task,
+ * which, according to the source code of the release plugin,
+ * seems to be defined like this:
+ *
+ * tasks = [
+ * "${p}createScmAdapter" as String,
+ * "${p}initScmAdapter" as String,
+ * "${p}checkCommitNeeded" as String,
+ * "${p}checkUpdateNeeded" as String,
+ * "${p}checkoutMergeToReleaseBranch" as String,
+ * "${p}unSnapshotVersion" as String,
+ * "${p}confirmReleaseVersion" as String,
+ * -> we insert our tasks here <-
+ * "${p}checkSnapshotDependencies" as String,
+ * "${p}runBuildTasks" as String,
+ * "${p}preTagCommit" as String,
+ * "${p}createReleaseTag" as String,
+ * "${p}checkoutMergeFromReleaseBranch" as String,
+ * "${p}updateVersion" as String,
+ * "${p}commitNewVersion" as String
+ * ]
+ */
+///////////////////////////////////////////////////////////////////////////////////////
+// update CITATION.cff file (just date and version)
+///////////////////////////////////////////////////////////////////////////////////////
+tasks.register('updateCff') {
+    group = 'release'
+    description = 'Updates the version in CITATION.cff file'
+
+    inputs.file("CITATION.cff")
+    outputs.file("CITATION.cff")
+
+    doLast {
+        def version = project.version.toString()
+        def today = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
+
+        def cffFile = file('CITATION.cff')
+        def content = cffFile.text
+
+        if (!content.endsWith("\n")) {
+            content += "\n" // Ensure the file ends with a newline
+        }
+
+        // Update or insert version
+        if (content =~ /(?m)^version:/) {
+            content = content.replaceAll(/(?m)^version:\s*.+$/, "version: ${version}")
+        } else {
+            content = content + "version: ${version}\n"
+        }
+
+        // Update or insert date-released
+        if (content =~ /(?m)^date-released:/) {
+            content = content.replaceAll(/(?m)^date-released:\s*.+$/, "date-released: ${today}")
+        } else {
+            content = content + "date-released: ${today}\n"
+        }
+
+        cffFile.text = content
+        println "Updated CITATION.cff to version ${version} and date-released ${today}"
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+// Make sure your custom task runs after a specific task in the release sequence
+////////////////////////////////////////////////////////////////////////////////////
+tasks.named('updateCff') {
+    mustRunAfter(tasks.named('confirmReleaseVersion'))
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
+// Hook the update tasks into the release process
+// Ensure subsequent tasks in the release sequence run after your custom task
+///////////////////////////////////////////////////////////////////////////////////////
+tasks.named('checkSnapshotDependencies') {
+    dependsOn('updateCff', 'updateCodemetaFile')
+}
+
+tasks.named('beforeReleaseBuild') {
+    dependsOn 'updateCitationFile', 'updateCodemetaFile'
+}
