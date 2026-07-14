@@ -1,12 +1,12 @@
 plugins {
     // Spring boot & dependency management:
     // https://docs.spring.io/spring-boot/docs/current/gradle-plugin/reference/htmlsingle/
-    id 'org.springframework.boot' version '3.5.0'
+    id 'org.springframework.boot' version '3.5.14'
     // https://docs.spring.io/dependency-management-plugin/docs/current-SNAPSHOT/reference/html/
     id "io.spring.dependency-management" version "1.1.7"
     // Lombok generates getter and setter and more. https://projectlombok.org/
     // check for new versions here: https://plugins.gradle.org/plugin/io.freefair.lombok
-    id "io.freefair.lombok" version "8.13.1"
+    id "io.freefair.lombok" version "9.5.0"
     // Release tagging with `./gradlew release`
     // Check for new versions here: https://plugins.gradle.org/plugin/net.researchgate.release
     // Usage: https://github.com/researchgate/gradle-release
@@ -19,19 +19,19 @@ plugins {
     id 'jacoco'
     // Adds coveralls task for CI to send results to the coveralls service.
     id "com.github.kt3k.coveralls" version "2.12.2"
-    id "org.owasp.dependencycheck" version "12.1.2"
+    id "org.owasp.dependencycheck" version "12.2.2"
     // include build and git information via Spring Actuator
-    id "com.gorylenko.gradle-git-properties" version "2.5.0"
+    id "com.gorylenko.gradle-git-properties" version "2.5.7"
 }
 
 lombok {
     // check here for new versions: https://projectlombok.org/download
-    version = '1.18.38'
+    version = '1.18.46'
 }
 
 jacoco {
     // check here for new versions: https://www.jacoco.org/jacoco/
-    toolVersion = "0.8.13"
+    toolVersion = "0.8.15"
 }
 
 description = "A gateway to manage PIDs containing profiles and typed attributes."
@@ -48,16 +48,16 @@ repositories {
 }
 
 ext {
-    springDocVersion  = '2.8.8'
+    springDocVersion  = '2.8.17'
 }
 
 dependencies {
     // Due to the spring boot gradle plugin, we can omit versions in org.springframework.*
     // dependencies. It will automatically choose the fitting ones.
-    implementation("edu.kit.datamanager:service-base:1.3.4")
-    implementation("edu.kit.datamanager:repo-core:1.2.5")
+    implementation("edu.kit.datamanager:service-base:1.3.6")
+    implementation("edu.kit.datamanager:repo-core:1.2.7")
     // com.google.common, LoadingCache
-    implementation("com.google.guava:guava:33.4.8-jre")
+    implementation("com.google.guava:guava:33.6.0-jre")
 
     // spring core, e.g. @EnableJpaRepositories
     implementation "org.springframework:spring-core"
@@ -82,14 +82,14 @@ dependencies {
 
     // More flexibility when (de-)serializing json:
     //implementation("com.monitorjbl:spring-json-view:1.1.0")
-	implementation("com.github.everit-org.json-schema:org.everit.json.schema:1.14.4")
+	implementation("com.github.everit-org.json-schema:org.everit.json.schema:1.14.6")
     
     implementation('org.apache.httpcomponents:httpclient:4.5.14')
     implementation('org.apache.httpcomponents:httpclient-cache:4.5.14')
 
     implementation("net.handle:handle-client:9.3.2")
 
-    testImplementation(platform('org.junit:junit-bom:5.13.1'))
+    testImplementation(platform('org.junit:junit-bom:5.14.4'))
 	testImplementation('org.junit.jupiter:junit-jupiter')
     testImplementation('org.junit.jupiter:junit-jupiter-params')
 
@@ -98,7 +98,7 @@ dependencies {
     testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
     testImplementation("org.springframework.security:spring-security-test")
 
-    testImplementation("com.jayway.jsonpath:json-path:2.9.0")
+    testImplementation("com.jayway.jsonpath:json-path:2.10.0")
 }
 
 application {
