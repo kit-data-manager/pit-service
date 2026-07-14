@@ -39,9 +39,11 @@ jobs:
       uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
     - name: Build and Test with Gradle
       run: ./gradlew -Dprofile=verbose build
-    - name: Do one Coveralls test report
+    - name: Codecov
       if: matrix.operating-system == 'ubuntu-latest' && matrix.jdk == 21
-      run: ./gradlew jacocoTestReport coveralls
+      uses: codecov/codecov-action@v5
+      with:
+        files: ./build/reports/jacoco/test/jacocoTestReport.xml
     - name: Docker build and test
       if: matrix.operating-system == 'ubuntu-latest' && matrix.jdk == 21
       run: |
