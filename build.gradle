@@ -44,7 +44,7 @@ println "JDK version: ${JavaVersion.current()}"
 repositories {
     mavenLocal()
     mavenCentral()
-    maven { url 'https://jitpack.io' }
+    maven { url='https://jitpack.io' }
 }
 
 ext {
@@ -219,9 +219,9 @@ release {
     }
 }
 
-tasks.withType(Jar).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
-tasks.withType(Tar).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
-tasks.withType(Copy).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
-tasks.withType(Zip).configureEach { duplicatesStrategy(DuplicatesStrategy.EXCLUDE) }
+tasks.withType(Jar).configureEach { duplicatesStrategy=DuplicatesStrategy.EXCLUDE }
+tasks.withType(Tar).configureEach { duplicatesStrategy=DuplicatesStrategy.EXCLUDE }
+tasks.withType(Copy).configureEach { duplicatesStrategy=DuplicatesStrategy.EXCLUDE }
+tasks.withType(Zip).configureEach { duplicatesStrategy=DuplicatesStrategy.EXCLUDE }
 
 apply from: 'gradle/updateCff.gradle'
