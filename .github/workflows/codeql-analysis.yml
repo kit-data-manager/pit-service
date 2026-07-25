@@ -47,7 +47,7 @@ jobs:
     - name: Set up openJDK version
       uses: actions/setup-java@v5
       with:
-        java-version: 21
+        java-version: 25
         distribution: 'zulu'  # =openJDK
     - name: Setup gradle
       uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
