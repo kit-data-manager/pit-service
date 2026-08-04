@@ -48,7 +48,7 @@ repositories {
 }
 
 ext {
-    springDocVersion  = '2.8.17'
+    springDocVersion  = '3.1.0'
 }
 
 dependencies {
