@@ -5,6 +5,8 @@ import org.springframework.http.HttpStatus;
 
 import edu.kit.datamanager.pit.domain.PIDRecord;
 
+import java.io.Serial;
+
 /**
  * Indicates that a PID was given which could not be resolved to answer the
  * request properly.
@@ -12,11 +14,12 @@ import edu.kit.datamanager.pit.domain.PIDRecord;
 public class RecordValidationException extends ResponseStatusException {
 
 	private static final String VALIDATION_OF_RECORD = "Validation of record ";
-	private static final long serialVersionUID = 1L;
+	@Serial
+	private static final long serialVersionUID = -7287999233733933282L;
 	private static final HttpStatus HTTP_STATUS = HttpStatus.BAD_REQUEST;
 
-	// For cases in which the PID record shold be appended to the error response.
-	private final transient PIDRecord pidRecord;
+	// For cases in which the PID record should be appended to the error response.
+	private final PIDRecord pidRecord;
 
 	public RecordValidationException(PIDRecord pidRecord) {
 		super(HTTP_STATUS, VALIDATION_OF_RECORD + pidRecord.getPid() + " failed.");

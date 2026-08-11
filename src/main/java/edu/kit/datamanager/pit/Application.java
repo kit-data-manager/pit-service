@@ -37,6 +37,7 @@ import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.TypingService;
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import edu.kit.datamanager.pit.typeregistry.impl.TypeRegistry;
+import edu.kit.datamanager.pit.web.ExtendedErrorAttributes;
 import edu.kit.datamanager.pit.web.converter.SimplePidRecordConverter;
 import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
 
@@ -98,6 +99,11 @@ public class Application {
     public Logger logger(InjectionPoint injectionPoint) {
         Class<?> targetClass = injectionPoint.getMember().getDeclaringClass();
         return LoggerFactory.getLogger(targetClass.getCanonicalName());
+    }
+
+    @Bean
+    public ExtendedErrorAttributes errorAttributes(ObjectMapper objectMapper) {
+        return new ExtendedErrorAttributes(objectMapper);
     }
 
     @Bean
