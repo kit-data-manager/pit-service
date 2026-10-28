@@ -1,6 +1,8 @@
 # Typed PID Maker
 
-![License](https://img.shields.io/github/license/kit-data-manager/pit-service.svg) [![Java CI with Gradle](https://github.com/kit-data-manager/pit-service/actions/workflows/gradle.yml/badge.svg)](https://github.com/kit-data-manager/pit-service/actions/workflows/gradle.yml)
+![License](https://img.shields.io/github/license/kit-data-manager/pit-service.svg) 
+[![Java CI with Gradle](https://github.com/kit-data-manager/pit-service/actions/workflows/gradle.yml/badge.svg)](https://github.com/kit-data-manager/pit-service/actions/workflows/gradle.yml)
+[![codecov](https://codecov.io/gh/kit-data-manager/pit-service/graph/badge.svg?token=N8N3WFEGYJ)](https://codecov.io/gh/kit-data-manager/pit-service)
 
 The Typed PID Maker enables the creation, maintenance, and validation of PIDs. It ensures the PID contains typed, machine-actionable information using validation. This is especially helpful in the context of FAIR Digital Objects (FAIR DOs / FDOs). To make this work, our validation strategy requires a reference to a registered Kernel Information Profile within the PID record, as defined by the [recommendations of the Research Data Alliance (RDA)](https://doi.org/10.15497/rda00031). [In the RDA context, this kind of service is called a "PIT service"](https://doi.org/10.15497/FDAA09D5-5ED0-403D-B97A-2675E1EBE786). We use Handle PIDs, which can be created using a Handle Prefix (not included). For testing or other local purposes, we support sandboxed PIDs, which require no external service.
 
