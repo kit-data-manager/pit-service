@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest, macOS-latest, windows-latest]
-        jdk: [ 21 ]  # (open)JDK releases
+        jdk: [ 25 ]  # (open)JDK releases
 
     steps:
     - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
@@ -40,10 +40,10 @@ jobs:
     - name: Build and Test with Gradle
       run: ./gradlew -Dprofile=verbose build
     - name: Do one Coveralls test report
-      if: matrix.operating-system == 'ubuntu-latest' && matrix.jdk == 21
+      if: matrix.operating-system == 'ubuntu-latest' && matrix.jdk == 25
       run: ./gradlew jacocoTestReport coveralls
     - name: Docker build and test
-      if: matrix.operating-system == 'ubuntu-latest' && matrix.jdk == 21
+      if: matrix.operating-system == 'ubuntu-latest' && matrix.jdk == 25
       run: |
         curl --location --remote-name https://github.com/Orange-OpenSource/hurl/releases/download/4.0.0/hurl_4.0.0_amd64.deb
         sudo dpkg -i hurl_4.0.0_amd64.deb

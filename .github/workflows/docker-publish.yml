@@ -22,7 +22,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: kit-data-manager/Typed-PID-Maker # repo name != app name in our case!
-  jdk: 21
+  jdk: 25
   distro: 'temurin'
   DOCKER_PLATFORMS: linux/amd64,linux/arm64
 
