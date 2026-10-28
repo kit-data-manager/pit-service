@@ -11,6 +11,11 @@ authors:
   affiliation: Karlsruhe Institute of Technology
   email: thomas.jejkal@kit.edu
   orcid: "https://orcid.org/0000-0003-2804-688X"
+- family-names: "Hartmann"
+  given-names: "Volker"
+  affiliation: Karlsruhe Institute of Technology
+  email: volker.hartmann@kit.edu
+  orcid: "https://orcid.org/0000-0001-6383-5214"
 title: "Typed PID Maker"
 type: software
 abstract: The Typed PID Maker is the entry point to integrate digital resources into the FAIR DO ecosystem. It allows to create PIDs for resources and to provide them with the necessary metadata to ensure that the resources can be found.
