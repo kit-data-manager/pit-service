@@ -1,39 +1,38 @@
 package edu.kit.datamanager.pit.web;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import org.apache.http.HttpHeaders;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.ResultMatcher;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+
+import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.Application;
 import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.domain.SimplePidRecord;
-import edu.kit.datamanager.pit.pidlog.KnownPid;
-import java.io.PrintStream;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import org.apache.http.HttpHeaders;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.ResultHandler;
-import org.springframework.test.web.servlet.ResultMatcher;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 /**
  * A collection of reusable test components.
@@ -50,60 +49,6 @@ public class ApiMockUtils {
      */
     public static ObjectMapper getJsonMapper() {
         return Application.jsonObjectMapper();
-    }
-
-    /**
-     * Like {@link MockMvcResultHandlers#print()}, but omits request and response
-     * bodies, which keeps the output readable for large payloads (e.g.
-     * extensive PID records). Bodies are instead reported by their length.
-     */
-    public static ResultHandler printWithoutBody() {
-        return printWithoutBody(System.out);
-    }
-
-    public static ResultHandler printWithoutBody(PrintStream out) {
-        return result -> {
-            MockHttpServletRequest request = result.getRequest();
-            MockHttpServletResponse response = result.getResponse();
-            out.println(
-                "\nRequest (body omitted): " +
-                    request.getMethod() +
-                    " " +
-                    request.getRequestURI()
-            );
-            request
-                .getParameterMap()
-                .forEach((name, values) ->
-                    out.println(
-                        "   param  " + name + " = " + String.join(",", values)
-                    )
-                );
-            Collections.list(request.getHeaderNames()).forEach(name ->
-                out.println(
-                    "   header " + name + ": " + request.getHeader(name)
-                )
-            );
-            out.println(
-                "   request body: " +
-                    request.getContentAsByteArray().length +
-                    " bytes (omitted)"
-            );
-            out.println(
-                "Response (body omitted): status " + response.getStatus()
-            );
-            response
-                .getHeaderNames()
-                .forEach(name ->
-                    out.println(
-                        "   header " + name + ": " + response.getHeader(name)
-                    )
-                );
-            out.println(
-                "   response body: " +
-                    response.getContentAsByteArray().length +
-                    " bytes (omitted)"
-            );
-        };
     }
 
     /**
