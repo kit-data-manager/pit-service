@@ -2,18 +2,12 @@ package edu.kit.datamanager.pit.web;
 
 import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import jakarta.servlet.ServletContext;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.web.context.WebApplicationContext;
-
 import edu.kit.datamanager.pit.RecordTestHelper;
 import edu.kit.datamanager.pit.SpringTestHelper;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
@@ -25,25 +19,28 @@ import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.NoValidationStrategy;
-
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 // org.springframework.mock is for unit testing
 // Source: https://docs.spring.io/spring-framework/docs/current/reference/html/testing.html
 import org.springframework.mock.web.MockServletContext;
-
 // org.springframework.test is for integration testing (dependency "spring-test")
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
-
-import org.hamcrest.Matchers;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import org.springframework.web.context.WebApplicationContext;
 
 /**
  * This is a dedicated test for the validation/dryrun parameters, available for the REST interface.
@@ -91,7 +88,7 @@ class ExplicitValidationParametersTest {
 
     @Autowired
     private InMemoryIdentifierSystem inMemory;
-    
+
     @BeforeEach
     void setup() {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
@@ -108,7 +105,7 @@ class ExplicitValidationParametersTest {
         ServletContext servletContext = webApplicationContext.getServletContext();
         assertNotNull(servletContext);
         assertInstanceOf(MockServletContext.class, servletContext);
-        
+
         SpringTestHelper springTestHelper = new SpringTestHelper(webApplicationContext);
         springTestHelper.assertSingleBeanInstanceOf(ITypingRestResource.class);
         springTestHelper.assertSingleBeanInstanceOf(InMemoryIdentifierSystem.class);
@@ -128,7 +125,7 @@ class ExplicitValidationParametersTest {
             )
             .andDo(MockMvcResultHandlers.print())
             .andExpect(MockMvcResultMatchers.status().isBadRequest());
-        
+
         // we store PIDs only if the PID was created successfully
         assertEquals(0, this.knownPidsDao.count());
     }
@@ -142,7 +139,7 @@ class ExplicitValidationParametersTest {
         int numAttributes = 100;
         int numValues = 100;
         PIDRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
-        
+
         String rJson = ApiMockUtils.serialize(r);
         this.mockMvc
             .perform(
@@ -153,9 +150,9 @@ class ExplicitValidationParametersTest {
                     .content(rJson)
                     .accept(MediaType.ALL)
             )
-            //.andDo(MockMvcResultHandlers.print()) // output is massive due to the large record
+            .andDo(ApiMockUtils.printWithoutBody())
             .andExpect(MockMvcResultMatchers.status().isOk()); // instead of created (201)
-        
+
         // no PIDs are stored with dryrun
         assertEquals(0, this.knownPidsDao.count());
     }
@@ -169,7 +166,7 @@ class ExplicitValidationParametersTest {
         int numAttributes = 100;
         int numValues = 100;
         PIDRecord r = RecordTestHelper.getFakePidRecord(numAttributes, numValues, "sandboxed/", pidGenerator);
-        
+
         String rJson = ApiMockUtils.serialize(r);
         this.mockMvc
             .perform(
@@ -180,7 +177,7 @@ class ExplicitValidationParametersTest {
                     .content(rJson)
                     .accept(MediaType.ALL)
             )
-            //.andDo(MockMvcResultHandlers.print()) // output is massive due to the large record
+            .andDo(ApiMockUtils.printWithoutBody())
             .andExpect(MockMvcResultMatchers.status().isCreated()); // instead of created (201)
 
         // dryrun was false, so there should be a new PID known
@@ -202,7 +199,7 @@ class ExplicitValidationParametersTest {
             )
             .andDo(MockMvcResultHandlers.print())
             .andExpect(MockMvcResultMatchers.status().isBadRequest());
-        
+
         // we store PIDs only if the PID was created successfully
         assertEquals(0, this.knownPidsDao.count());
     }

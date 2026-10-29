@@ -1,4 +1,13 @@
 {
-  "labels": ["dependencies"],
-  "baseBranches": ["development"]
+  "extends": [
+    "config:best-practices",
+    ":semanticCommits"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "baseBranchPatterns": [
+    "development"
+  ],
+  "minimumReleaseAge": "3 days"
 }
