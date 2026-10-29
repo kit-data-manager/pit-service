@@ -3,20 +3,10 @@ package edu.kit.datamanager.pit.web;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import jakarta.servlet.ServletContext;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.web.context.WebApplicationContext;
-
 import edu.kit.datamanager.pit.RecordTestHelper;
 import edu.kit.datamanager.pit.SpringTestHelper;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
@@ -28,24 +18,27 @@ import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
 import edu.kit.datamanager.pit.pitservice.impl.NoValidationStrategy;
-
+import jakarta.servlet.ServletContext;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 // org.springframework.mock is for unit testing
 // Source: https://docs.spring.io/spring-framework/docs/current/reference/html/testing.html
 import org.springframework.mock.web.MockServletContext;
-
 // org.springframework.test is for integration testing (dependency "spring-test")
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
-
-import org.hamcrest.Matchers;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import org.springframework.web.context.WebApplicationContext;
 
 /**
  * This is a dedicated test for the validation/dryrun parameters, available for the REST interface.
@@ -153,7 +146,7 @@ class ExplicitValidationParametersTest {
                     .content(rJson)
                     .accept(MediaType.ALL)
             )
-            .andDo(MockMvcResultHandlers.print())
+            .andDo(ApiMockUtils.printWithoutBody())
             .andExpect(MockMvcResultMatchers.status().isOk()); // instead of created (201)
         
         // no PIDs are stored with dryrun
@@ -181,7 +174,7 @@ class ExplicitValidationParametersTest {
                     .content(rJson)
                     .accept(MediaType.ALL)
             )
-            .andDo(MockMvcResultHandlers.print())
+            .andDo(ApiMockUtils.printWithoutBody())
             .andExpect(MockMvcResultMatchers.status().isCreated()); // instead of created (201)
         
         // dryrun was false, so there should be a new PID known
