@@ -38,7 +38,12 @@ class SchemaSetGeneratorTest {
                 // checksum
                 Arguments.of(
                         "21.T11148/92e200311a56800b3e47",
-                        "\"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\"",
+                        "{ \"sha256sum\": \"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\" }",
+                        "\"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\""),
+                // checksum
+                Arguments.of(
+                        "21.T11148/92e200311a56800b3e47",
+                        "{ \"sha256sum\": \"sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c\" }",
                         "\"not a checksum\""),
                 // URI with schema making use of "format" to specify an uri
                 Arguments.of("21.T11969/cb371c93c5aa0e62198e", "\"https://example.com\"", "This is not a URI")
