@@ -11,7 +11,6 @@ import edu.kit.datamanager.pit.common.PidNotFoundException;
 import edu.kit.datamanager.pit.common.RecordValidationException;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties;
 import edu.kit.datamanager.pit.domain.PIDRecord;
-import edu.kit.datamanager.pit.domain.TypeDefinition;
 import edu.kit.datamanager.pit.pidsystem.IIdentifierSystem;
 
 import org.slf4j.Logger;
@@ -80,24 +79,14 @@ public class LocalPidSystem implements IIdentifierSystem {
     }
 
     @Override
-    public boolean isIdentifierRegistered(String pid) throws ExternalServiceException {
+    public boolean isPidRegistered(String pid) throws ExternalServiceException {
         return this.db.existsById(pid);
     }
 
     @Override
-    public PIDRecord queryAllProperties(String pid) throws PidNotFoundException, ExternalServiceException {
+    public PIDRecord queryPid(String pid) throws PidNotFoundException, ExternalServiceException {
         Optional<PidDatabaseObject> dbo = this.db.findByPid(pid);
-        if (dbo.isEmpty()) { return null; }
-        return new PIDRecord(dbo.get());
-    }
-
-    @Override
-    public String queryProperty(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
-        Optional<PidDatabaseObject> dbo = this.db.findByPid(pid);
-        if (dbo.isEmpty()) { throw new PidNotFoundException(pid); }
-        PIDRecord rec = new PIDRecord(dbo.get());
-        if (!rec.hasProperty(typeDefinition.getIdentifier())) { return null; }
-        return rec.getPropertyValue(typeDefinition.getIdentifier());
+        return new PIDRecord(dbo.orElseThrow(() -> new PidNotFoundException(pid)));
     }
     
     @Override
@@ -111,7 +100,7 @@ public class LocalPidSystem implements IIdentifierSystem {
     }
 
     @Override
-    public boolean updatePID(PIDRecord rec) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
+    public boolean updatePid(PIDRecord rec) throws PidNotFoundException, ExternalServiceException, RecordValidationException {
         if (this.db.existsById(rec.getPid())) {
             this.db.save(new PidDatabaseObject(rec));
             return true;
@@ -120,25 +109,7 @@ public class LocalPidSystem implements IIdentifierSystem {
     }
 
     @Override
-    public PIDRecord queryByType(String pid, TypeDefinition typeDefinition) throws PidNotFoundException, ExternalServiceException {
-        PIDRecord allProps = this.queryAllProperties(pid);
-        if (allProps == null) {return null;}
-        // only return properties listed in the type def
-        Set<String> typeProps = typeDefinition.getAllProperties();
-        PIDRecord result = new PIDRecord();
-        for (String propID : allProps.getPropertyIdentifiers()) {
-            if (typeProps.contains(propID)) {
-                String[] values = allProps.getPropertyValues(propID);
-                for (String value : values) {
-                    result.addEntry(propID, "", value);
-                }
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public boolean deletePID(String pid) {
+    public boolean deletePid(String pid) {
         throw new UnsupportedOperationException("Deleting PIDs is against the P in PID.");
     }
 

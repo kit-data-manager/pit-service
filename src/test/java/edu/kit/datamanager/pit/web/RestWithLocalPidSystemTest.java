@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
+import edu.kit.datamanager.pit.typeregistry.ITypeRegistry;
 import jakarta.servlet.ServletContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,7 +30,7 @@ import edu.kit.datamanager.pit.domain.PIDRecord;
 import edu.kit.datamanager.pit.pidgeneration.PidSuffixGenerator;
 import edu.kit.datamanager.pit.pidlog.KnownPid;
 import edu.kit.datamanager.pit.pidlog.KnownPidsDao;
-import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
+import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 import edu.kit.datamanager.pit.pidsystem.impl.local.LocalPidSystem;
 import edu.kit.datamanager.pit.pitservice.ITypingService;
@@ -81,6 +82,9 @@ class RestWithLocalPidSystemTest {
     ITypingService typingService;
 
     @Autowired
+    ITypeRegistry typeRegistry;
+
+    @Autowired
     ApplicationProperties appProps;
 
     private MockMvc mockMvc;
@@ -99,7 +103,8 @@ class RestWithLocalPidSystemTest {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
         this.mapper = this.webApplicationContext.getBean("OBJECT_MAPPER_BEAN", ObjectMapper.class);
         this.knownPidsDao.deleteAll();
-        this.typingService.setValidationStrategy(this.appProps.defaultValidationStrategy());
+        this.typingService.setValidationStrategy(
+                this.appProps.defaultValidationStrategy(typeRegistry));
     }
 
     @Test
