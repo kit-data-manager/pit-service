@@ -52,7 +52,7 @@ dryrun: true
         },
         {
             "key": "21.T11148/f3f0cbaa39fa9966b279",
-            "value": "{\"identifier\": \"this-is-a-string\"}"
+            "value": "this-is-a-string"
         },
         {
             "key": "21.T11148/4fe7cde52629b61e3b82",

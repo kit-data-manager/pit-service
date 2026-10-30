@@ -11,8 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.Objects;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @param pid the pid of this attribute
@@ -30,12 +31,32 @@ public record AttributeInfo(
 ) {
     private static final Logger log = LoggerFactory.getLogger(AttributeInfo.class);
 
-    public boolean validate(String value) {
-        return this.jsonSchema().stream()
-                .filter(schemaInfo -> schemaInfo.error() == null)
-                .filter(schemaInfo -> schemaInfo.schema() != null)
-                .peek(schemaInfo -> log.warn("Found valid schema from {} to validate {} / {}.", schemaInfo.origin(), pid, value))
-                .anyMatch(schemaInfo -> this.validate(schemaInfo.schema(), value));
+    /**
+     * Validates the given value against the JSON schema(s) of this attribute.
+     * @param value the value to validate
+     * @return the schema that matched, or empty if no schema matched
+     */
+    public AttributeValidationResult validate(String value) {
+
+        // if has error or schema is null -> rejected
+        // if validation is ok -> accepted
+        // rest stays as not invoked
+        // return all info for debugging and logging
+
+        AttributeValidationResult schemaWithStatus = new AttributeValidationResult(this.jsonSchema);
+        for (SchemaInfo schemaInfo : schemaWithStatus.allSchemas.keySet()) {
+            if (schemaInfo.error() != null || schemaInfo.schema() == null) {
+                schemaWithStatus.allSchemas.put(schemaInfo, SchemaStatus.REJECTED);
+                continue;
+            }
+            boolean isValid = validate(schemaInfo.schema(), value).isAcceptedBy(schemaInfo.schema());
+            if (isValid) {
+                schemaWithStatus.allSchemas.put(schemaInfo, SchemaStatus.ACCEPTED);
+            } else {
+                schemaWithStatus.allSchemas.put(schemaInfo, SchemaStatus.REJECTED);
+            }
+        }
+        return schemaWithStatus;
     }
 
     private boolean validate(JsonSchema schema, String value) {
