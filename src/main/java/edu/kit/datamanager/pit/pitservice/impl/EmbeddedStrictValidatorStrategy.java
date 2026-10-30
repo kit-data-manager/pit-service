@@ -56,7 +56,7 @@ public class EmbeddedStrictValidatorStrategy implements IValidationStrategy {
                 // validate values using schema
                 .map(attributeInfoFuture -> attributeInfoFuture.thenApply(attributeInfo -> {
                     for (String value : pidRecord.getPropertyValues(attributeInfo.pid())) {
-                        boolean isValid = attributeInfo.validate(value);
+                        boolean isValid = attributeInfo.validate(value).;
                         if (!isValid) {
                             throw new RecordValidationException(
                                     pidRecord,

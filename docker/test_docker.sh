@@ -63,10 +63,10 @@ else
 fi
 #####################################
 
-echo -n "> stopping container ... "
-docker container stop $container
-echo -n "> removing container ... "
-docker container rm $container
+#echo -n "> stopping container ... "
+#docker container stop $container
+#echo -n "> removing container ... "
+#docker container rm $container
 
 if [ $failure -eq 0 ]; then
   echo "> ALL TESTS SUCCESSFUL."

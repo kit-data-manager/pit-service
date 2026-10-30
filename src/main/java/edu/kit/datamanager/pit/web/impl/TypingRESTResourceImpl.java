@@ -355,6 +355,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
     ) {
         // PID validation
         String pid = getContentPathFromRequest("pid", request);
+        LOG.info("Updating PID record of {}", pid);
         String pidInternal = pidRecord.getPid();
         if (hasPid(pidRecord) && !pid.equals(pidInternal)) {
             throw new RecordValidationException(
@@ -437,6 +438,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             final UriComponentsBuilder uriBuilder
     ) {
         String pid = getContentPathFromRequest("pid", request);
+        LOG.info("Retrieving PID record of {}", pid);
         PIDRecord pidRecord = this.resolver.resolve(pid);
         if (applicationProps.getStorageStrategy().storesResolved()) {
             storeLocally(pid, false);
@@ -463,6 +465,7 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             UriComponentsBuilder uriBuilder
     ) throws IOException {
         String pid = getContentPathFromRequest("known-pid", request);
+        LOG.info("Retrieving known PID for {}", pid);
         Optional<KnownPid> known = this.localPidStorage.findByPid(pid);
         return known
                 .map(knownPid -> ResponseEntity.ok().body(knownPid))
@@ -522,7 +525,10 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             Pageable pageable,
             WebRequest request,
             HttpServletResponse response,
-            UriComponentsBuilder uriBuilder) {
+            UriComponentsBuilder uriBuilder
+    ) {
+        LOG.info("Retrieving all known PIDs with filters: createdAfter={}, createdBefore={}, modifiedAfter={}, modifiedBefore={}",
+                createdAfter, createdBefore, modifiedAfter, modifiedBefore);
         Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
         response.addHeader(
                 HeaderConstants.CONTENT_RANGE,
@@ -542,7 +548,10 @@ public class TypingRESTResourceImpl implements ITypingRestResource {
             Pageable pageable,
             WebRequest request,
             HttpServletResponse response,
-            UriComponentsBuilder uriBuilder) {
+            UriComponentsBuilder uriBuilder
+    ) {
+        LOG.info("Retrieving all known PIDs for tabular view with filters: createdAfter={}, createdBefore={}, modifiedAfter={}, modifiedBefore={}",
+                createdAfter, createdBefore, modifiedAfter, modifiedBefore);
         Page<KnownPid> page = this.findAllPage(createdAfter, createdBefore, modifiedAfter, modifiedBefore, pageable);
         response.addHeader(
                 HeaderConstants.CONTENT_RANGE,
