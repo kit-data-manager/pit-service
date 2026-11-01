@@ -1,5 +1,5 @@
 # Create a clean, minimal image
-FROM eclipse-temurin:25 AS typed-pid-maker
+FROM eclipse-temurin:25@sha256:83f4a7fc27df94dcc7b8de04d14cbbba8da14406f921e966969c3b09000aa507 AS typed-pid-maker
 LABEL maintainer="webmaster@datamanager.kit.edu"
 LABEL stage=run
 
