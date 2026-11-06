@@ -69,7 +69,7 @@ jobs:
       # registry using the account and password that will publish the packages.
       # Once published, the packages are scoped to the account defined here.
       - name: Log in to the Container registry
-        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -161,7 +161,7 @@ jobs:
       # registry using the account and password that will publish the packages.
       # Once published, the packages are scoped to the account defined here.
       - name: Log in to the Container registry
-        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
