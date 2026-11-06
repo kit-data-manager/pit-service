@@ -43,16 +43,8 @@ dryrun: true
             "value": "{\"md5sum\": \"2289159614f3e3b06fc436423c0dc398\"}"
         },
         {
-            "key": "21.T11148/7fdada5846281ef5d461",
-            "value": "{\"locationPreview/Sample\": \"https://example.com/my/path/to/image.svg\"}"
-        },
-        {
             "key": "21.T11148/6ae999552a0d2dca14d6",
             "value": "this-is-a-string"
-        },
-        {
-            "key": "21.T11148/f3f0cbaa39fa9966b279",
-            "value": "{\"identifier\": \"this-is-a-string\"}"
         },
         {
             "key": "21.T11148/4fe7cde52629b61e3b82",
