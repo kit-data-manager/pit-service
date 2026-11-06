@@ -12,7 +12,7 @@ import org.springframework.test.context.TestPropertySource;
 
 import edu.kit.datamanager.pit.SpringTestHelper;
 import edu.kit.datamanager.pit.configuration.ApplicationProperties.IdentifierSystemImpl;
-import edu.kit.datamanager.pit.pidsystem.impl.HandleProtocolAdapter;
+import edu.kit.datamanager.pit.pidsystem.impl.handle.HandleProtocolAdapter;
 import edu.kit.datamanager.pit.pidsystem.impl.InMemoryIdentifierSystem;
 
 
